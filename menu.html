@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Codex — Menu Builder</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#140f0c">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&family=Archivo:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="codexdata.js"></script>
+<style>
+  :root{
+    --bg:#14110f; --panel:#1d1916; --panel2:#26211d; --line:#38312b;
+    --txt:#ece3d4; --dim:#a3968840; --muted:#9b8c7a; --brass:#c79a4b; --brass-dim:#8a6d34;
+    --ok:#9fbf86; --no:#7a6a58;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  button{font-family:inherit;cursor:pointer;color:inherit;border:none;background:none}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#3a322b;border-radius:6px}
+
+  /* ---------- top bar ---------- */
+  header{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+  .brand{font-family:Fraunces,serif;font-weight:900;font-size:18px;letter-spacing:.02em}
+  .brand em{color:var(--brass);font-style:italic;font-weight:600}
+  .spacer{flex:1}
+  .btn{background:var(--brass);color:#20180c;font-weight:600;padding:9px 16px;border-radius:8px;font-size:14px;display:inline-flex;align-items:center;gap:8px;transition:filter .15s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+  .btn.ghost:hover{color:var(--txt);border-color:var(--brass-dim)}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;filter:none}
+
+  /* ---------- layout ---------- */
+  main{flex:1;display:flex;min-height:0}
+  .panel{width:360px;flex:none;border-right:1px solid var(--line);background:var(--panel);overflow-y:auto;padding:16px}
+  .stage{flex:1;overflow:auto;padding:34px;display:flex;justify-content:center;align-items:flex-start;background:
+     radial-gradient(circle at 30% 10%, #1d1a16 0, var(--bg) 60%)}
+
+  .grp{margin-bottom:20px}
+  .grp h3{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 9px;font-weight:600}
+  .field{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit}
+  .field:focus{outline:none;border-color:var(--brass-dim)}
+  label.mini{font-size:11px;color:var(--muted);display:block;margin:0 0 5px;letter-spacing:.04em}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{font-size:12.5px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);transition:all .12s}
+  .chip:hover{color:var(--txt)}
+  .chip.on{background:var(--brass);border-color:var(--brass);color:#20180c;font-weight:600}
+  .seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;padding:8px 6px;font-size:12.5px;color:var(--muted);background:var(--panel2)}
+  .seg button.on{background:var(--brass);color:#20180c;font-weight:600}
+  .seg button+button{border-left:1px solid var(--line)}
+
+  .picks{border:1px solid var(--line);border-radius:8px;max-height:340px;overflow-y:auto;background:var(--panel2)}
+  .pickhead{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel2);font-size:12px;color:var(--muted)}
+  .pickhead a{color:var(--brass);cursor:pointer}
+  .pick{display:flex;align-items:center;gap:9px;padding:7px 11px;border-bottom:1px solid #2c2621;font-size:13.5px}
+  .pick:last-child{border-bottom:none}
+  .pick:hover{background:#2c2621}
+  .pick input{accent-color:var(--brass);width:15px;height:15px;flex:none}
+  .pick .fam{margin-left:auto;font-size:10.5px;color:var(--muted);letter-spacing:.03em;white-space:nowrap}
+  .pick.sel{background:#2e2820}
+  .empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+
+  /* ---------- the menu paper ---------- */
+  .paper{width:640px;min-height:840px;padding:56px 60px 66px;background:var(--paper);color:var(--ink);
+     box-shadow:0 24px 60px rgba(0,0,0,.5);transition:background .2s,color .2s;position:relative}
+  .paper .mtitle{font-family:var(--fdisp);font-weight:var(--twt,900);font-size:40px;line-height:1.05;text-align:center;margin:0;letter-spacing:var(--tls,0)}
+  .paper .msub{text-align:center;font-family:var(--fbody);font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent);margin:12px 0 0}
+  .paper .rule{height:1px;background:var(--rule);margin:26px 0 30px}
+  .cols{column-gap:44px}
+  .fam{break-inside:avoid;margin:0 0 26px}
+  .fam-h{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 14px}
+  .fam-h svg{width:22px;height:22px;color:var(--accent);flex:none}
+  .fam-h span{font-family:var(--fdisp);font-style:italic;font-weight:600;font-size:19px;color:var(--accent)}
+  .fam-h .tilde{font-style:normal;opacity:.6}
+  .drink{break-inside:avoid;margin:0 0 14px;text-align:center}
+  .drink .dn{font-family:var(--fdisp);font-weight:600;font-size:17px;line-height:1.15}
+  .drink .di{font-family:var(--fbody);font-size:12.5px;line-height:1.5;color:var(--ink);opacity:.72;margin-top:3px}
+  .paper .foot{position:absolute;left:0;right:0;bottom:24px;text-align:center;font-family:var(--fbody);font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);opacity:.75}
+  .paper.empty-state{display:flex;align-items:center;justify-content:center;text-align:center}
+  .paper.empty-state .hint{font-family:var(--fbody);color:var(--ink);opacity:.5;font-size:14px;max-width:280px;line-height:1.6}
+
+  /* themes */
+  .theme-speakeasy{--paper:#161311;--ink:#ece0c6;--accent:#c79a4b;--rule:rgba(199,154,75,.32);--fdisp:'Fraunces',serif;--fbody:'Inter',sans-serif;--twt:900;--tls:0}
+  .theme-vintage{--paper:#f1e6cf;--ink:#3a2c22;--accent:#9c5a24;--rule:rgba(58,44,34,.3);--fdisp:'Fraunces',serif;--fbody:'Inter',sans-serif;--twt:900;--tls:0}
+  .theme-modern{--paper:#ffffff;--ink:#141414;--accent:#cf3f1c;--rule:#e3e3e3;--fdisp:'Archivo',sans-serif;--fbody:'Inter',sans-serif;--twt:900;--tls:-.01em}
+  .theme-modern .fam-h span{font-style:normal;text-transform:uppercase;letter-spacing:.08em;font-size:15px}
+  .theme-modern .msub{color:var(--ink);opacity:.5}
+  .theme-tiki{--paper:#0c3b39;--ink:#f4e6c8;--accent:#ef8a5a;--rule:rgba(244,230,200,.28);--fdisp:'Fraunces',serif;--fbody:'Inter',sans-serif;--twt:900;--tls:0}
+
+  .foot-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+  @media (max-width:880px){
+    main{flex-direction:column}
+    .panel{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:46vh}
+    .stage{padding:18px}
+    .paper{width:100%;padding:38px 30px 54px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">The Codex <em>· Menu Builder</em></div>
+  <div class="spacer"></div>
+  <button class="btn ghost" id="resetBtn">Clear selection</button>
+  <button class="btn" id="exportBtn" disabled>⬇ Export PNG</button>
+</header>
+
+<main>
+  <aside class="panel">
+    <div class="grp">
+      <h3>Menu</h3>
+      <label class="mini">Title</label>
+      <input class="field" id="titleIn" value="Cocktail Menu" style="font-family:Fraunces,serif;font-size:16px">
+      <label class="mini" style="margin-top:10px">Subtitle (optional)</label>
+      <input class="field" id="subIn" placeholder="e.g. Autumn 2026 · House Selections">
+    </div>
+
+    <div class="grp">
+      <h3>Narrow the pool</h3>
+      <input class="field" id="searchIn" placeholder="Search by name…" style="margin-bottom:10px">
+      <label class="mini">Base spirit</label>
+      <div class="chips" id="fSpirit"></div>
+      <label class="mini" style="margin-top:10px">Style</label>
+      <div class="chips" id="fStyle"></div>
+      <label class="mini" style="margin-top:10px">Mood</label>
+      <div class="chips" id="fMood"></div>
+      <label class="mini" style="margin-top:10px">Season</label>
+      <div class="chips" id="fSeason"></div>
+    </div>
+
+    <div class="grp">
+      <h3>Pick drinks <span id="selCount" style="color:var(--brass);font-weight:600"></span></h3>
+      <div class="picks">
+        <div class="pickhead"><span id="poolCount">—</span><a id="selAll">select all shown</a></div>
+        <div id="pickList"></div>
+      </div>
+    </div>
+
+    <div class="grp">
+      <h3>Layout</h3>
+      <label class="mini">Group by</label>
+      <div class="seg" id="segGroup">
+        <button data-g="family" class="on">Family</button>
+        <button data-g="spirit">Base spirit</button>
+        <button data-g="none">None</button>
+      </div>
+      <label class="mini" style="margin-top:10px">Ingredient line</label>
+      <div class="seg" id="segIng">
+        <button data-i="names" class="on">Names only</button>
+        <button data-i="amounts">With amounts</button>
+      </div>
+      <label class="mini" style="margin-top:10px">Columns</label>
+      <div class="seg" id="segCols">
+        <button data-c="1" class="on">One</button>
+        <button data-c="2">Two</button>
+        <button data-c="3">Three</button>
+      </div>
+      <label class="mini" style="margin-top:10px">Theme</label>
+      <div class="seg" id="segTheme">
+        <button data-t="speakeasy" class="on">Speakeasy</button>
+        <button data-t="vintage">Vintage</button>
+        <button data-t="modern">Modern</button>
+        <button data-t="tiki">Tiki</button>
+      </div>
+    </div>
+    <p class="foot-note">Reads the same data as the app (<span style="font-family:Space Mono,monospace">codexdata.js</span>). Update that file and the menu updates too.</p>
+  </aside>
+
+  <section class="stage">
+    <div class="paper theme-speakeasy empty-state" id="paper">
+      <div class="hint">Pick a few drinks on the left and your menu appears here — ready to export as an image.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+const DB = (window.CODEX_DATA || {cocktails:[]});
+const COCKTAILS = (DB.cocktails||[]).filter(c=>c.n);
+
+/* ---------- family glyphs (inline SVG, inherit currentColor) ---------- */
+const G = {
+  rocks:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 7h12l-1 11H7L6 7z"/><path d="M6 7l-.6-2.5h13.2L18 7"/></svg>',
+  coupe:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6h16a8 8 0 0 1-8 6 8 8 0 0 1-8-6z"/><path d="M12 12v7M8 20h8"/></svg>',
+  martini:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 5h16l-8 8-8-8z"/><path d="M12 13v6M8 20h8"/></svg>',
+  collins:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 3h8l-1 18H9L8 3z"/><path d="M8.4 8h7.2"/></svg>',
+  tiki:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 3h10v18H7z"/><circle cx="10" cy="9" r="1.1"/><circle cx="14" cy="9" r="1.1"/><path d="M9 13c1 1.4 5 1.4 6 0M9.5 16.5h5"/></svg>',
+  flute:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9.5 3h5l-.7 10h-3.6L9.5 3z"/><path d="M12 13v6M9 20h6"/></svg>',
+  mug:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6h11v13H6z"/><path d="M17 8h2.5a2 2 0 0 1 0 5H17"/></svg>',
+  glass:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M7 4h10l-1.2 16H8.2L7 4z"/></svg>'
+};
+function glyphFor(fam){
+  const f=(fam||'').toLowerCase();
+  if(/old fashioned|rocks|negroni|spirit|sazerac/.test(f)) return G.rocks;
+  if(/sour|daiquiri|gimlet|margarita|coupe|martinez|last word|flip|fizz whites/.test(f)) return G.coupe;
+  if(/martini|manhattan|cosmo|gibson/.test(f)) return G.martini;
+  if(/collins|highball|mule|rickey|cooler|soda/.test(f)) return G.collins;
+  if(/tiki|mai tai|zombie|colada|swizzle|painkiller/.test(f)) return G.tiki;
+  if(/spritz|champagne|sparkling|flute|75/.test(f)) return G.flute;
+  if(/punch|nog|hot|toddy|grog|coffee/.test(f)) return G.mug;
+  return G.glass;
+}
+
+/* ---------- state ---------- */
+const state={ q:'', spirit:new Set(), style:new Set(), mood:new Set(), season:new Set(),
+  selected:new Set(), group:'family', ing:'names', cols:1, theme:'speakeasy' };
+
+/* ---------- build filter chip sets ---------- */
+function uniq(vals){ return [...new Set(vals.filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+const spirits=uniq(COCKTAILS.map(c=>c.b));
+const styles=uniq(COCKTAILS.map(c=>c.s));
+const moods=uniq(COCKTAILS.flatMap(c=>c.mo||[]));
+const seasons=uniq(COCKTAILS.flatMap(c=>c.se||[]));
+
+function renderChips(elId, vals, setRef){
+  const el=document.getElementById(elId);
+  el.innerHTML='';
+  vals.forEach(v=>{
+    const b=document.createElement('button'); b.className='chip'; b.textContent=v;
+    b.onclick=()=>{ setRef.has(v)?setRef.delete(v):setRef.add(v); b.classList.toggle('on'); refresh(); };
+    el.appendChild(b);
+  });
+}
+renderChips('fSpirit',spirits,state.spirit);
+renderChips('fStyle',styles,state.style);
+renderChips('fMood',moods,state.mood);
+renderChips('fSeason',seasons,state.season);
+
+/* ---------- filtering ---------- */
+function pool(){
+  return COCKTAILS.filter(c=>{
+    if(state.q && !c.n.toLowerCase().includes(state.q)) return false;
+    if(state.spirit.size && !state.spirit.has(c.b)) return false;
+    if(state.style.size && !state.style.has(c.s)) return false;
+    if(state.mood.size && !(c.mo||[]).some(m=>state.mood.has(m))) return false;
+    if(state.season.size && !(c.se||[]).some(s=>state.season.has(s))) return false;
+    return true;
+  });
+}
+
+/* ---------- pick list ---------- */
+function renderPicks(){
+  const p=pool(); const list=document.getElementById('pickList');
+  document.getElementById('poolCount').textContent=p.length+' shown';
+  document.getElementById('selCount').textContent=state.selected.size?('· '+state.selected.size+' chosen'):'';
+  if(!p.length){ list.innerHTML='<div class="empty">No drinks match these filters.</div>'; return; }
+  list.innerHTML='';
+  p.forEach(c=>{
+    const row=document.createElement('label'); row.className='pick'+(state.selected.has(c.n)?' sel':'');
+    const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=state.selected.has(c.n);
+    cb.onchange=()=>{ cb.checked?state.selected.add(c.n):state.selected.delete(c.n); renderPicks(); renderPaper(); };
+    const nm=document.createElement('span'); nm.textContent=c.n;
+    const fam=document.createElement('span'); fam.className='fam'; fam.textContent=c.s||c.b||'';
+    row.append(cb,nm,fam); list.appendChild(row);
+  });
+}
+document.getElementById('selAll').onclick=()=>{
+  const p=pool(); const allSel=p.every(c=>state.selected.has(c.n));
+  p.forEach(c=>allSel?state.selected.delete(c.n):state.selected.add(c.n));
+  renderPicks(); renderPaper();
+};
+
+/* ---------- amount formatting ---------- */
+const FR=[[.125,'⅛'],[.25,'¼'],[.333,'⅓'],[.375,'⅜'],[.5,'½'],[.625,'⅝'],[.667,'⅔'],[.75,'¾'],[.875,'⅞']];
+function frac(n){
+  const w=Math.floor(n+1e-6), f=n-w; let best='',bd=.05;
+  for(const [v,g] of FR){ const d=Math.abs(v-f); if(d<bd){bd=d;best=g;} }
+  if(best) return (w>0?w:'')+best;
+  return (Math.round(n*100)/100).toString();
+}
+function amtStr(a,u){
+  if(a==null||a==='') return '';
+  const unit=(u==='fl oz')?'oz':(u||'');
+  return frac(Number(a))+(unit?' '+unit:'');
+}
+function ingLine(c){
+  let parts=(c.i||[]).map(x=>{
+    const name=x[0];
+    if(state.ing==='amounts'){ const a=amtStr(x[1],x[2]); return a?a+' '+name:name; }
+    return name;
+  });
+  if(state.ing==='names') parts=[...new Set(parts)];   // collapse repeated names (e.g. Mai Tai's three rums)
+  return parts.join('  |  ');
+}
+
+/* ---------- group + render menu ---------- */
+function groupKey(c){ return state.group==='spirit' ? (c.b||'Other') : state.group==='family' ? (c.s||'Other') : ''; }
+function renderPaper(){
+  const paper=document.getElementById('paper');
+  paper.className='paper theme-'+state.theme;
+  const chosen=COCKTAILS.filter(c=>state.selected.has(c.n));
+  document.getElementById('exportBtn').disabled=!chosen.length;
+  if(!chosen.length){
+    paper.classList.add('empty-state');
+    paper.innerHTML='<div class="hint">Pick a few drinks on the left and your menu appears here — ready to export as an image.</div>';
+    return;
+  }
+  const title=document.getElementById('titleIn').value||'Cocktail Menu';
+  const sub=document.getElementById('subIn').value.trim();
+  let html='<h1 class="mtitle">'+esc(title)+'</h1>';
+  if(sub) html+='<div class="msub">'+esc(sub)+'</div>';
+  html+='<div class="rule"></div>';
+
+  let body='';
+  if(state.group==='none'){
+    body=chosen.map(drinkHTML).join('');
+  }else{
+    const groups={};
+    chosen.forEach(c=>{ const k=groupKey(c); (groups[k]=groups[k]||[]).push(c); });
+    Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(k=>{
+      body+='<div class="fam"><div class="fam-h">'+glyphFor(k)+
+            '<span><span class="tilde">~</span> '+esc(k)+' <span class="tilde">~</span></span></div>'+
+            groups[k].map(drinkHTML).join('')+'</div>';
+    });
+  }
+  const wrap=(state.cols>1)?'<div class="cols" style="column-count:'+state.cols+'">'+body+'</div>':body;
+  html+=wrap+'<div class="foot">The Codex</div>';
+  paper.innerHTML=html;
+}
+function drinkHTML(c){
+  return '<div class="drink"><div class="dn">'+esc(c.n)+'</div><div class="di">'+esc(ingLine(c))+'</div></div>';
+}
+function esc(s){ return String(s).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+
+/* ---------- segmented controls ---------- */
+function wireSeg(id,key,cast){
+  document.querySelectorAll('#'+id+' button').forEach(b=>{
+    b.onclick=()=>{ document.querySelectorAll('#'+id+' button').forEach(x=>x.classList.remove('on'));
+      b.classList.add('on'); state[key]=cast(b.dataset[Object.keys(b.dataset)[0]]); renderPaper(); };
+  });
+}
+wireSeg('segGroup','group',v=>v);
+wireSeg('segIng','ing',v=>v);
+wireSeg('segCols','cols',v=>+v);
+wireSeg('segTheme','theme',v=>v);
+
+/* ---------- inputs ---------- */
+document.getElementById('searchIn').oninput=e=>{ state.q=e.target.value.toLowerCase().trim(); renderPicks(); };
+document.getElementById('titleIn').oninput=renderPaper;
+document.getElementById('subIn').oninput=renderPaper;
+document.getElementById('resetBtn').onclick=()=>{ state.selected.clear(); renderPicks(); renderPaper(); };
+
+function refresh(){ renderPicks(); }
+
+/* ---------- export PNG ---------- */
+document.getElementById('exportBtn').onclick=async()=>{
+  const btn=document.getElementById('exportBtn'); const paper=document.getElementById('paper');
+  btn.disabled=true; btn.textContent='Rendering…';
+  try{
+    await (document.fonts && document.fonts.ready);
+    const canvas=await html2canvas(paper,{scale:3,backgroundColor:null,useCORS:true,logging:false});
+    const url=canvas.toDataURL('image/png');
+    const a=document.createElement('a');
+    const t=(document.getElementById('titleIn').value||'menu').replace(/[^\w]+/g,'-').replace(/^-|-$/g,'').toLowerCase();
+    a.download=(t||'cocktail-menu')+'.png'; a.href=url; a.click();
+  }catch(e){ alert('Export ran into a snag: '+e.message); }
+  btn.disabled=false; btn.textContent='⬇ Export PNG';
+};
+
+/* ---------- boot ---------- */
+if(!COCKTAILS.length){
+  document.getElementById('paper').innerHTML='<div class="hint">Couldn\'t find codexdata.js. Make sure it sits next to this file.</div>';
+}
+renderPicks(); renderPaper();
+</script>
+</body>
+</html>
