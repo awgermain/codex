@@ -124,6 +124,12 @@
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;padding:8px 22px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
+  .sbar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:8px;background:var(--surface);margin:0 -22px 10px;padding:6px 16px 4px}
+  .sbar .grip{margin:8px auto}
+  .sspacer{width:34px;flex:none}
+  .sback{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:50%;cursor:pointer;padding:0}
+  .sback svg{width:18px;height:18px}
+  .sback:active{background:var(--raised)}
   .sheet .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
   .sheet h2{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:-.015em;line-height:1;margin:6px 0 12px}
   .spec-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -206,6 +212,7 @@
 <script src="codexdata.js"></script>
 <script>
 const DB = (window.CODEX_DATA || {cocktails:[],have:[],units:[],conv:{}});
+const BACK_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
 const C0 = DB.cocktails, HAVE = new Set(DB.have), UNITS = DB.units, CONV = DB.conv;
 const CAT_ORDER=["Spirit","Modifier","Acid","Sweetener","Seasoning","Top / Mix","Other"];
 const SEASON_COLOR={Spring:'var(--spring)',Summer:'var(--summer)',Autumn:'var(--autumn)',Winter:'var(--winter)'};
@@ -425,7 +432,7 @@ function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cu
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
-  s.innerHTML=`<div class="grip"></div><div class="kicker">${d.s||'Cocktail'}</div><h2>${d.n}</h2>
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div><div class="kicker">${d.s||'Cocktail'}</div><h2>${d.n}</h2>
     <div class="spec-tags">${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
@@ -449,8 +456,15 @@ window.setMultVal=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>0){ mult=n
 window.setUnit=function(u){ normU=u; updateRows(); };
 window.setQty=function(v){ batchQty=v; updateRows(); };
 window.setBatchU=function(u){ batchU=u; updateRows(); };
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); }
-function closeSheet(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
+let _overlay=null;
+function _hideSheet(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
+function _hideForm(){ document.getElementById('formScrim').classList.remove('show'); document.getElementById('formSheet').classList.remove('show'); }
+function _applyClose(){ if(_overlay==='sheet')_hideSheet(); else if(_overlay==='form')_hideForm(); _overlay=null; }
+function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
+function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
+window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); _pushNav('sheet'); }
+function closeSheet(){ _closeNav(); }
 
 /* ---------- ADD RECIPE FORM ---------- */
 const FUNITS=['fl oz','oz','ml','tsp','tbsp','dashes','barspoon','drops','parts','pinch',''];
@@ -466,7 +480,7 @@ window.addIngRow=function(){ document.getElementById('ingRows').insertAdjacentHT
 window.openForm=function(){
   const allIngs=[...new Set(Object.values(ingByCat).flatMap(s=>[...s]))].sort();
   const s=document.getElementById('formSheet');
-  s.innerHTML=`<div class="grip"></div><div class="kicker">Your Collection</div><h2>Add a recipe</h2>
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeForm()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div><div class="kicker">Your Collection</div><h2>Add a recipe</h2>
     <datalist id="allIngs">${allIngs.map(i=>`<option value="${i.replace(/"/g,'&quot;')}">`).join('')}</datalist>
     <datalist id="allStyles">${STYLES.map(i=>`<option value="${i}">`).join('')}</datalist>
     <datalist id="allBases">${BASES.map(i=>`<option value="${i}">`).join('')}</datalist>
@@ -488,7 +502,7 @@ window.openForm=function(){
     <div class="fbtns"><button class="fcancel" onclick="closeForm()">Cancel</button><button class="fsave" onclick="saveRecipe()">Save recipe</button></div>
     <p class="warn">Saved to this device only — your master list isn't touched. Opened in the in-app preview, entries last for the session; on your hosted/downloaded copy they persist.</p>
     ${manageHTML()}`;
-  document.getElementById('formScrim').classList.add('show'); s.classList.add('show');
+  document.getElementById('formScrim').classList.add('show'); s.classList.add('show'); _pushNav('form');
 };
 function manageHTML(){
   if(!CUSTOM.length) return '';
@@ -500,7 +514,7 @@ function manageHTML(){
       <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importCustom(this)">
     </div></div>`;
 }
-window.closeForm=function(){ document.getElementById('formScrim').classList.remove('show'); document.getElementById('formSheet').classList.remove('show'); };
+window.closeForm=function(){ _closeNav(); };
 window.saveRecipe=function(){
   const g=id=>document.getElementById(id).value.trim();
   const name=g('f_name'); if(!name){ alert('Give the recipe a name.'); return; }
