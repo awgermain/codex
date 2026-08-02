@@ -106,7 +106,11 @@
   .empty b{color:var(--muted);font-family:var(--display);font-size:19px;display:block;margin-bottom:6px;font-weight:600}
   .barhint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;margin:2px 0 12px;line-height:1.5}
   .bartoggle{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
-  .barhead{font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600;margin:15px 0 8px;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
+  .barhead{font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600;margin:12px 0 6px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
+  .barhead:hover{color:var(--ink);border-color:var(--brass-dim)}
+  .barhead .chev{display:inline-block;transition:transform .15s;font-size:11px;color:var(--faint)}
+  .barhead.open .chev{transform:rotate(90deg)}
+  .barhead.open{color:var(--ink)}
   .barhead .n{font-family:var(--mono);font-size:10px;color:var(--faint)}
   .ings{display:flex;flex-wrap:wrap;gap:7px}
   .ic{background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:12.5px;padding:7px 11px 7px 10px;border-radius:10px;cursor:pointer;transition:.14s;display:flex;align-items:center;gap:7px}
@@ -252,7 +256,7 @@ function deriveMoods(style,ings){
 }
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,filtersOpen=false;
-const sel=new Set(); let onlyHave=false;
+const sel=new Set(); let onlyHave=false; const barOpen=new Set();
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
 function ingLine(d){ return [...d._set].join(" · "); }
@@ -390,17 +394,21 @@ function renderBar(){
     if(!ingByCat[cat])return;
     const items=[...ingByCat[cat]].sort().filter(name=> !sel.size || compat.has(name) || sel.has(name));
     if(!items.length)return;
-    const h=document.createElement('div');h.className='barhead';h.innerHTML=`${cat} <span class="n">${items.length}</span>`;g.appendChild(h);
-    const box=document.createElement('div');box.className='ings';
+    const anySel=[...items].some(n=>sel.has(n));
+    const open=barOpen.has(cat)||anySel;   // auto-open a group if it holds a selected ingredient
+    const h=document.createElement('div');h.className='barhead'+(open?' open':'');
+    h.innerHTML=`<span class="chev">▸</span>${cat} <span class="n">${items.length}</span>`;
+    const box=document.createElement('div');box.className='ings';box.style.display=open?'':'none';
     items.forEach(name=>{
       const on=sel.has(name), have=HAVE.has(name);
       const el=document.createElement('div');
       el.className='ic '+(have?'have':'miss')+(on?' on':'');
       el.innerHTML=`<span class="dot"></span>${name}`;
-      el.onclick=()=>toggleSel(name);
+      el.onclick=(ev)=>{ev.stopPropagation();toggleSel(name);};
       box.appendChild(el);
     });
-    g.appendChild(box);
+    h.onclick=()=>{ const nowOpen=!(box.style.display!=='none'); box.style.display=nowOpen?'':'none'; h.classList.toggle('open',nowOpen); if(nowOpen)barOpen.add(cat); else barOpen.delete(cat); };
+    g.appendChild(h);g.appendChild(box);
   });
 }
 
@@ -418,7 +426,9 @@ function setMode(m){
 let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g';
 function convFactor(from,to){ if(from===to)return 1; if(NOCONV.has(from)||NOCONV.has(to))return null; if(CONV[from]&&CONV[from][to]!=null)return CONV[from][to]; return null; }
 function computeRows(d){
+  const BARE=new Set(['each','whole','-','']);
   const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'—',raw:null};
+    if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
     const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)} ${u}`,raw:null};
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
@@ -467,7 +477,7 @@ function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; re
 function closeSheet(){ _closeNav(); }
 
 /* ---------- ADD RECIPE FORM ---------- */
-const FUNITS=['fl oz','oz','ml','tsp','tbsp','dashes','barspoon','drops','parts','pinch',''];
+const FUNITS=['fl oz','-','whole','oz','ml','tsp','tbsp','dashes','barspoon','drops','parts','pinch',''];
 function ingRowHTML(a,u,n,cat){
   return `<div class="ingrow">
     <input class="amt" type="number" step="0.25" inputmode="decimal" placeholder="amt" value="${a||''}">
