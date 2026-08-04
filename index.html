@@ -64,9 +64,16 @@
   .modes{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;margin-bottom:14px}
   .modes button{flex:1;background:transparent;border:0;color:var(--muted);font-family:var(--sans);font-size:13.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.18s}
   .modes button.on{background:var(--raised);color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.3)}
-  .fgroup{margin-bottom:11px}
+  .fgroup{margin-bottom:8px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .fhead{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;user-select:none;background:var(--surface2)}
+  .fhead:hover{background:var(--raised)}
+  .fhead .fh-l{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .fhead .fh-a{flex:1;font-family:var(--sans);font-size:12px;color:var(--brass);text-align:left}
+  .fhead .chev{font-size:11px;color:var(--faint);transition:transform .15s}
+  .fgroup:not(.collapsed) .fhead .chev{transform:rotate(90deg)}
+  .fgroup.collapsed .frow{display:none}
   .flabel{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:0 0 7px 2px}
-  .frow{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px;scrollbar-width:none}
+  .frow{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px;background:var(--surface)}
   .frow::-webkit-scrollbar{display:none}
   .chip{flex:none;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:100px;cursor:pointer;white-space:nowrap;transition:.16s}
   .chip.on{background:var(--brass);border-color:var(--brass);color:#1a130b;font-weight:600}
@@ -159,6 +166,8 @@
   .srcbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:20px;background:var(--raised);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-weight:600;font-size:14px;padding:13px;border-radius:12px;text-decoration:none;cursor:pointer}
   .statusline{display:flex;gap:14px;margin-top:14px;font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
   .statusline .on-fav{color:var(--fav)} .statusline .on-made{color:var(--made)} .statusline .on-short{color:var(--short)}
+  .shufbtn{font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:100px;padding:2px 9px;margin-left:8px;cursor:pointer;vertical-align:middle}
+  .shufbtn:hover{color:var(--ink);border-color:var(--brass-dim)}
 </style>
 </head>
 <body>
@@ -185,13 +194,15 @@
     </div>
     <div id="activeChips" class="activechips"></div>
     <div id="filterPanel" class="fpanel" style="display:none">
-      <div class="fgroup"><div class="flabel">Spirit</div><div class="frow" id="fBase"></div></div>
-      <div class="fgroup"><div class="flabel">Style</div><div class="frow" id="fStyle"></div></div>
-      <div class="fgroup"><div class="flabel">Served</div><div class="frow" id="fServed"></div></div>
-      <div class="fgroup"><div class="flabel">Mood</div><div class="frow" id="fMood"></div></div>
-      <div class="fgroup"><div class="flabel">Season</div><div class="frow" id="fSeason"></div></div>
-      <div class="fgroup" id="hgroup"><div class="flabel">Holiday</div><div class="frow" id="fHoliday"></div></div>
-      <div class="fgroup"><div class="flabel">Marks</div><div class="frow" id="fStatus"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Spirit</span><span class="fh-a" id="fa_base"></span><span class="chev">▸</span></div><div class="frow" id="fBase"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Style</span><span class="fh-a" id="fa_style"></span><span class="chev">▸</span></div><div class="frow" id="fStyle"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Served</span><span class="fh-a" id="fa_served"></span><span class="chev">▸</span></div><div class="frow" id="fServed"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Mood</span><span class="fh-a" id="fa_mood"></span><span class="chev">▸</span></div><div class="frow" id="fMood"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Season</span><span class="fh-a" id="fa_season"></span><span class="chev">▸</span></div><div class="frow" id="fSeason"></div></div>
+      <div class="fgroup collapsed" id="hgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Holiday</span><span class="fh-a" id="fa_holiday"></span><span class="chev">▸</span></div><div class="frow" id="fHoliday"></div></div>
+      <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
+      <div class="fgroup collapsed" id="eragroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Era</span><span class="fh-a" id="fa_era"></span><span class="chev">▸</span></div><div class="frow" id="fEra"></div></div>
+      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Marks</span><span class="fh-a" id="fa_status"></span><span class="chev">▸</span></div><div class="frow" id="fStatus"></div></div>
       <button class="clearall-btn" id="clearAllBtn" onclick="clearAllFilters()">Clear all filters</button>
     </div>
     <div class="count-line" id="countLine" style="margin-bottom:12px"></div>
@@ -228,7 +239,8 @@ function loadCustom(){ try{ return JSON.parse(localStorage.getItem('codex_custom
 function persistCustom(){ try{ localStorage.setItem('codex_custom',JSON.stringify(CUSTOM)); }catch(e){} }
 let CUSTOM = loadCustom();
 
-let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, ingByCat;
+let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, FAMILIES, ERAS, ingByCat, shuffledC;
+function shuffle_(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;} return a; }
 function rebuild(){
   C = C0.concat(CUSTOM);
   C.forEach(d=>{ d._set = new Set(d.i.map(x=>x[0])); });
@@ -238,8 +250,12 @@ function rebuild(){
   MOODS=[...new Set(C.flatMap(d=>d.mo))].sort();
   SEASONS=['Spring','Summer','Autumn','Winter'].filter(s=>C.some(d=>(d.se||[]).includes(s)));
   HOLIDAYS=[...new Set(C.map(d=>d.ho).filter(Boolean))].sort();
+  FAMILIES=[...new Set(C.map(d=>d.fam).filter(Boolean))].sort();
+  ERAS=['Classic','Modern Classic','Contemporary','Original'].filter(e=>C.some(d=>d.era===e));
   ingByCat={}; C.forEach(d=>d.i.forEach(i=>{(ingByCat[i[3]]=ingByCat[i[3]]||new Set()).add(i[0]);}));
+  shuffledC = shuffle_(C.slice());
 }
+window.reshuffleHome=function(){ shuffledC=shuffle_(C.slice()); renderBrowse(); };
 rebuild();
 
 /* ---- light client-side mood/season derivation for custom recipes ---- */
@@ -255,7 +271,7 @@ function deriveMoods(style,ings){
   return ['Tropical','Bitter','Citrusy','Herbal','Tall','Creamy','Boozy','Classic'].filter(x=>m.has(x)).slice(0,3);
 }
 
-let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,filtersOpen=false;
+let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,filtersOpen=false;
 const sel=new Set(); let onlyHave=false; const barOpen=new Set();
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
@@ -269,7 +285,7 @@ function chip(label,active,onclick,pip,star){
 }
 function renderFilters(){
   const fb=document.getElementById('fBase'); fb.innerHTML='';
-  BASES.forEach(b=>fb.appendChild(chip(b,fBase===b,()=>{fBase=fBase===b?null:b;renderBrowse();})));
+  BASES.forEach(b=>fb.appendChild(chip(b,fBase===b,()=>{fBase=fBase===b?null:b;renderBrowse();}, HAVE.has(b)?'var(--have)':'var(--nothave)')));
   const fst=document.getElementById('fStyle'); fst.innerHTML='';
   STYLES.forEach(s=>fst.appendChild(chip(s,fStyle===s,()=>{fStyle=fStyle===s?null:s;renderBrowse();})));
   const fsv=document.getElementById('fServed'); fsv.innerHTML='';
@@ -285,7 +301,16 @@ function renderFilters(){
   fs.appendChild(chip('<span class="mk-made" style="margin-right:5px">✓</span>Made',fStatus==='md',()=>{fStatus=fStatus==='md'?null:'md';renderBrowse();}));
   fs.appendChild(chip('<span class="mk-short" style="margin-right:5px">✓</span>Shortlist',fStatus==='ts',()=>{fStatus=fStatus==='ts'?null:'ts';renderBrowse();}));
   fs.appendChild(chip('Favorite',fStatus==='fv',()=>{fStatus=fStatus==='fv'?null:'fv';renderBrowse();},null,'var(--fav)'));
+  setFA('fa_base',fBase); setFA('fa_style',fStyle); setFA('fa_served',fServed); setFA('fa_mood',fMood);
+  const ff=document.getElementById('fFam'); if(ff){ ff.innerHTML=''; FAMILIES.forEach(x=>ff.appendChild(chip(x,fFam===x,()=>{fFam=fFam===x?null:x;renderBrowse();}))); }
+  const fe=document.getElementById('fEra'); if(fe){ fe.innerHTML=''; ERAS.forEach(x=>fe.appendChild(chip(x,fEra===x,()=>{fEra=fEra===x?null:x;renderBrowse();}))); }
+  const fgg=document.getElementById('famgroup'); if(fgg) fgg.style.display=FAMILIES.length?'':'none';
+  const egg=document.getElementById('eragroup'); if(egg) egg.style.display=ERAS.length?'':'none';
+  setFA('fa_season',fSeason); setFA('fa_holiday',fHoliday); setFA('fa_fam',fFam); setFA('fa_era',fEra);
+  setFA('fa_status', fStatus?({md:'Made',ts:'Shortlist',fv:'Favorite'})[fStatus]:'');
 }
+function setFA(id,val){ const e=document.getElementById(id); if(e) e.textContent=val?('· '+val):''; }
+window.toggleFGroup=function(h){ h.parentElement.classList.toggle('collapsed'); };
 function matchB(d){
   if(fBase&&d.b!==fBase)return false;
   if(fStyle&&d.s!==fStyle)return false;
@@ -293,6 +318,8 @@ function matchB(d){
   if(fMood&&!d.mo.includes(fMood))return false;
   if(fSeason&&!(d.se||[]).includes(fSeason))return false;
   if(fHoliday&&d.ho!==fHoliday)return false;
+  if(fFam&&d.fam!==fFam)return false;
+  if(fEra&&d.era!==fEra)return false;
   if(fStatus&&!d[fStatus])return false;
   if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
   return true;
@@ -307,7 +334,7 @@ function cardEl(d,extra){
   const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:''); c.onclick=()=>openSheet(d);
   const badge=extra&&extra.badge?extra.badge:statusPips(d);
   c.innerHTML=`${badge}<h3>${d.n}</h3><div class="ing">${ingLine(d)}</div>
-    <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
+    <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
   return c;
 }
 function activeFilters(){
@@ -318,12 +345,14 @@ function activeFilters(){
   if(fMood)a.push(['Mood',()=>fMood=null,fMood]);
   if(fSeason)a.push(['Season',()=>fSeason=null,fSeason]);
   if(fHoliday)a.push(['Holiday',()=>fHoliday=null,fHoliday]);
+  if(fFam)a.push(['Family',()=>fFam=null,fFam]);
+  if(fEra)a.push(['Era',()=>fEra=null,fEra]);
   if(fStatus)a.push(['Marks',()=>fStatus=null,{md:'Made',ts:'Shortlist',fv:'Favorite'}[fStatus]]);
   return a;
 }
 window.toggleFilters=function(){ filtersOpen=!filtersOpen; document.getElementById('filterPanel').style.display=filtersOpen?'':'none'; document.getElementById('filterToggle').classList.toggle('act',filtersOpen); };
 window.clearFilter=function(i){ const a=activeFilters(); if(a[i]){a[i][1]();renderBrowse();} };
-window.clearAllFilters=function(){ fBase=fStyle=fServed=fMood=fSeason=fHoliday=fStatus=null; renderBrowse(); };
+window.clearAllFilters=function(){ fBase=fStyle=fServed=fMood=fSeason=fHoliday=fFam=fEra=fStatus=null; renderBrowse(); };
 function renderBrowse(){
   renderFilters();
   const act=activeFilters();
@@ -335,11 +364,12 @@ function renderBrowse(){
   ac.innerHTML = chips;
   const cab=document.getElementById('clearAllBtn'); if(cab) cab.style.display=act.length?'':'none';
   const list=document.getElementById('list'); list.innerHTML='';
-  const rows=C.filter(matchB);
-  document.getElementById('countLine').innerHTML=`<b>${rows.length}</b> ${rows.length===1?'recipe':'recipes'}`;
+  const noFilters = !act.length && !query;
+  const rows = noFilters ? shuffledC.filter(matchB) : C.filter(matchB);
+  document.getElementById('countLine').innerHTML=`<b>${rows.length}</b> ${rows.length===1?'recipe':'recipes'}`+(noFilters?` <button class="shufbtn" onclick="reshuffleHome()">\u{1F3B2} shuffle</button>`:'');
   if(!rows.length){list.innerHTML=`<div class="empty"><b>Nothing matches</b>Loosen a filter and try again.</div>`;return;}
   rows.slice(0,300).forEach(d=>list.appendChild(cardEl(d)));
-  if(rows.length>300){const m=document.createElement('div');m.className='barhint';m.style.textAlign='center';m.textContent=`Showing first 300 of ${rows.length} — refine to see more.`;list.appendChild(m);}
+  if(rows.length>300){const m=document.createElement('div');m.className='barhint';m.style.textAlign='center';m.textContent=noFilters?`A random 300 of ${rows.length} — tap \u{1F3B2} to reshuffle, or search/filter for a specific drink.`:`Showing first 300 of ${rows.length} — refine to see more.`;list.appendChild(m);}
 }
 function surprise(){
   const rows=C.filter(matchB); if(!rows.length)return;
@@ -443,7 +473,7 @@ function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
   s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div><div class="kicker">${d.s||'Cocktail'}</div><h2>${d.n}</h2>
-    <div class="spec-tags">${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
+    <div class="spec-tags">${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
         <div class="stepper"><button onclick="bumpMult(-0.5)">−</button><input class="multin" type="number" step="0.5" min="0.25" value="${mult}" oninput="setMultVal(this.value)"><button onclick="bumpMult(0.5)">+</button></div>
