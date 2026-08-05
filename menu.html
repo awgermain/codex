@@ -221,18 +221,21 @@ const styles=uniq(COCKTAILS.map(c=>c.s));
 const moods=uniq(COCKTAILS.flatMap(c=>c.mo||[]));
 const seasons=uniq(COCKTAILS.flatMap(c=>c.se||[]));
 
-function renderChips(elId, vals, setRef){
+const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'🌿',
+  'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
+function renderChips(elId, vals, setRef, icons){
   const el=document.getElementById(elId);
   el.innerHTML='';
   vals.forEach(v=>{
-    const b=document.createElement('button'); b.className='chip'; b.textContent=v;
+    const b=document.createElement('button'); b.className='chip';
+    b.textContent=(icons&&icons[v]?icons[v]+' ':'')+v;
     b.onclick=()=>{ setRef.has(v)?setRef.delete(v):setRef.add(v); b.classList.toggle('on'); refresh(); };
     el.appendChild(b);
   });
 }
 renderChips('fSpirit',spirits,state.spirit);
 renderChips('fStyle',styles,state.style);
-renderChips('fMood',moods,state.mood);
+renderChips('fMood',moods,state.mood,MOOD_ICON);
 renderChips('fSeason',seasons,state.season);
 
 /* ---------- filtering ---------- */

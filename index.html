@@ -100,6 +100,11 @@
   .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05;padding-right:52px}
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
   .card .meta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
+  .taxo-k .tk-sep{color:var(--line-2,#4a4038);opacity:.9}
+  .taxo-k .tk-1{color:var(--muted)}
+  .taxo-k .tk-2{color:var(--brass)}
+  .taxo-k .tk-3{color:var(--short)}
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
   .pips{position:absolute;top:14px;right:14px;display:flex;gap:6px;align-items:center}
@@ -196,12 +201,12 @@
     <div id="filterPanel" class="fpanel" style="display:none">
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Spirit</span><span class="fh-a" id="fa_base"></span><span class="chev">▸</span></div><div class="frow" id="fBase"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Style</span><span class="fh-a" id="fa_style"></span><span class="chev">▸</span></div><div class="frow" id="fStyle"></div></div>
+      <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
+      <div class="fgroup collapsed" id="eragroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Era</span><span class="fh-a" id="fa_era"></span><span class="chev">▸</span></div><div class="frow" id="fEra"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Served</span><span class="fh-a" id="fa_served"></span><span class="chev">▸</span></div><div class="frow" id="fServed"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Mood</span><span class="fh-a" id="fa_mood"></span><span class="chev">▸</span></div><div class="frow" id="fMood"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Season</span><span class="fh-a" id="fa_season"></span><span class="chev">▸</span></div><div class="frow" id="fSeason"></div></div>
       <div class="fgroup collapsed" id="hgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Holiday</span><span class="fh-a" id="fa_holiday"></span><span class="chev">▸</span></div><div class="frow" id="fHoliday"></div></div>
-      <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
-      <div class="fgroup collapsed" id="eragroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Era</span><span class="fh-a" id="fa_era"></span><span class="chev">▸</span></div><div class="frow" id="fEra"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Marks</span><span class="fh-a" id="fa_status"></span><span class="chev">▸</span></div><div class="frow" id="fStatus"></div></div>
       <button class="clearall-btn" id="clearAllBtn" onclick="clearAllFilters()">Clear all filters</button>
     </div>
@@ -232,7 +237,16 @@ const C0 = DB.cocktails, HAVE = new Set(DB.have), UNITS = DB.units, CONV = DB.co
 const CAT_ORDER=["Spirit","Modifier","Acid","Sweetener","Seasoning","Top / Mix","Other"];
 const SEASON_COLOR={Spring:'var(--spring)',Summer:'var(--summer)',Autumn:'var(--autumn)',Winter:'var(--winter)'};
 const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',"New Year's":'🎉',"Valentine's":'💘',"St. Patrick's":'🍀'};
-const NOCONV=new Set(['tsp','barspoon','dashes','drops','pinch','parts']);
+// 'tsp' removed — the Conversion Table DOES carry tsp factors (tsp->fl oz = 0.166667),
+// so listing it here was silently blocking a conversion that works fine. The rest have
+// no row in the table and genuinely can't be converted.
+// Filter chips only — deliberately not on the drink cards, where four emoji per
+// card competed with the ingredient line. Chosen for silhouette contrast at 10px:
+// no two vessels and no two round fruits sitting next to each other.
+const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'🌿',
+  'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
+const moodLbl=m=>(MOOD_ICON[m]?MOOD_ICON[m]+' ':'')+m;
+const NOCONV=new Set(['barspoon','dashes','drops','pinch','parts']);
 
 /* ---- personal storage (persists when hosted / opened as a file) ---- */
 function loadCustom(){ try{ return JSON.parse(localStorage.getItem('codex_custom')||'[]'); }catch(e){ return []; } }
@@ -267,8 +281,15 @@ function deriveMoods(style,ings){
   const hc=has('lime juice','lemon juice','grapefruit juice'); const ht=cats.has('Top / Mix')||has('soda','tonic','ginger beer','seltzer','sparkling');
   if(hc)m.add('Citrusy'); if(has('chartreuse','absinthe','benedictine')||/\bmint\b/.test(names))m.add('Herbal');
   if(ht)m.add('Tall'); if(has('egg white','heavy cream','coconut cream','baileys'))m.add('Creamy');
-  if(s.includes('spirit-forward')||(!hc&&!ht))m.add('Boozy'); if(!m.size)m.add('Classic');
-  return ['Tropical','Bitter','Citrusy','Herbal','Tall','Creamy','Boozy','Classic'].filter(x=>m.has(x)).slice(0,3);
+  const smoky=/\b(mezcal|mescal|lapsang|islay|peated|laphroaig|lagavulin|ardbeg|caol ila|bowmore|talisker)\b/.test(names)||has('smoked','smoke','smoky','smokey');
+  if(smoky)m.add('Smoky');
+  if(s.includes('spirit-forward')||(!hc&&!ht))m.add('Boozy'); if(!m.size)m.add('Boozy');
+  // Vocabulary must match the sheet's eight Mood values exactly — an extra value
+  // here would create a filter chip that matches nothing from the sheet. ('Classic'
+  // used to leak out of this function for that reason.) Smoky is sticky, as in TagMoods.gs.
+  const out=['Tropical','Bitter','Citrusy','Herbal','Smoky','Tall','Creamy','Boozy'].filter(x=>m.has(x)).slice(0,3);
+  if(smoky&&out.indexOf('Smoky')<0)out.push('Smoky');
+  return out;
 }
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,filtersOpen=false;
@@ -291,7 +312,7 @@ function renderFilters(){
   const fsv=document.getElementById('fServed'); fsv.innerHTML='';
   SERVED.forEach(s=>fsv.appendChild(chip(s,fServed===s,()=>{fServed=fServed===s?null:s;renderBrowse();})));
   const fm=document.getElementById('fMood'); fm.innerHTML='';
-  MOODS.forEach(m=>fm.appendChild(chip(m,fMood===m,()=>{fMood=fMood===m?null:m;renderBrowse();})));
+  MOODS.forEach(m=>fm.appendChild(chip(moodLbl(m),fMood===m,()=>{fMood=fMood===m?null:m;renderBrowse();})));
   const fse=document.getElementById('fSeason'); fse.innerHTML='';
   SEASONS.forEach(s=>fse.appendChild(chip(s,fSeason===s,()=>{fSeason=fSeason===s?null:s;renderBrowse();},SEASON_COLOR[s])));
   const hg=document.getElementById('hgroup'); hg.style.display=HOLIDAYS.length?'':'none';
@@ -334,7 +355,7 @@ function cardEl(d,extra){
   const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:''); c.onclick=()=>openSheet(d);
   const badge=extra&&extra.badge?extra.badge:statusPips(d);
   c.innerHTML=`${badge}<h3>${d.n}</h3><div class="ing">${ingLine(d)}</div>
-    <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
+    <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
   return c;
 }
 function activeFilters(){
@@ -469,11 +490,47 @@ function computeRows(d){
   }).join('');
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); }
+// Style -> Family -> Era is a genuine taxonomy: broad build, then the specific
+// template, then the period. Rendered as a descending strip rather than three
+// sibling badges so the relationship reads at a glance.
+// Spirit label for display. Column H alone under-describes a split-base drink,
+// but the raw list over-describes a blend: 58 of the 211 multi-spirit drinks
+// repeat one label (Mai Tai is Rum/Rum/Rum), so dedupe FIRST. After that: 58 read
+// as a single spirit, 137 as a pair, 16 as a trio.
+// d.b is left alone — the Spirit filter still keys off the true base.
+const RUM_FAMILY=/^(rum|rhum agricole|rhum|charanda)$/i;
+function spiritLabel(d){
+  const seen=[];
+  (d.i||[]).forEach(i=>{ if(i[3]==='Spirit' && seen.indexOf(i[0])<0) seen.push(i[0]); });
+  const total=(d.i||[]).filter(i=>i[3]==='Spirit').length;
+  if(!seen.length) return d.b||'';
+  // Same label more than once is a blend, not a split base — a Mai Tai's
+  // Rum / Rum / Rum is three rums chosen to layer, so say "Rum Blend".
+  if(seen.length===1) return total>1 ? seen[0]+' Blend' : seen[0];
+  // Different labels from the same rum family are also a blend (Rum + Rhum
+  // Agricole + Charanda). Agave is deliberately NOT folded this way — a
+  // Tequila / Mezcal drink reads differently from either on its own.
+  if(seen.every(x=>RUM_FAMILY.test(x))) return 'Rum Blend';
+  // Otherwise a slash, which doubles nicely as "either/or" for the drinks where
+  // that's the intent (Crabby Melter's Rye Whiskey / Bourbon).
+  if(seen.length<=3) return seen.join(' / ');
+  return seen.slice(0,2).join(' / ')+' +'+(seen.length-2);
+}
+function taxoKicker(d){
+  const segs=[];
+  if(d.s)   segs.push(['tk-1',d.s]);
+  if(d.fam) segs.push(['tk-2',d.fam]);
+  if(d.era) segs.push(['tk-3',d.era]);
+  if(!segs.length) segs.push(['tk-1','Cocktail']);
+  return '<div class="taxo-k">'+segs.map((x,i)=>
+    (i?'<span class="tk-sep">\u203a</span>':'')+`<span class="${x[0]}">${x[1]}</span>`
+  ).join('')+'</div>';
+}
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div><div class="kicker">${d.s||'Cocktail'}</div><h2>${d.n}</h2>
-    <div class="spec-tags">${d.b?`<span class="tag base">${d.b}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div>${taxoKicker(d)}<h2>${d.n}</h2>
+    <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
         <div class="stepper"><button onclick="bumpMult(-0.5)">−</button><input class="multin" type="number" step="0.5" min="0.25" value="${mult}" oninput="setMultVal(this.value)"><button onclick="bumpMult(0.5)">+</button></div>
