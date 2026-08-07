@@ -6,9 +6,10 @@
 <title>The Codex</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="favicon-16.png" sizes="16x16" type="image/png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="site.webmanifest">
-  <meta name="theme-color" content="#140f0c">
+  <meta name="theme-color" content="#130f0c">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,8 +30,28 @@
   body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:40px;overflow-x:hidden}
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 80% at 100% 0%,rgba(199,154,75,.07),transparent 60%),radial-gradient(80% 60% at 0% 100%,rgba(177,72,58,.06),transparent 60%)}
   .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:0 18px}
-  header{padding:24px 0 12px}
-  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px}
+  header{padding:24px 0 12px;position:relative;overflow:hidden;isolation:isolate}
+  /* Cancer over the melted crab, two layers so each tunes independently.
+     POSITION: asterism anchored by its gamma/delta midpoint, 85% of the way back
+     along the crab's eyes -> carapace-centre axis, then the CRAB alone nudged +44px
+     right (in source px) to close the dead margin under the beta arm. The asterism
+     did not move, so gamma/delta still sit behind the eyestalks.
+     WEIGHT: stars .38 vs crab .42 -- near-equal so the asterism reads as part of
+     the artwork rather than sitting on top of it.
+     Canvas aspect 1.1429; width and height must stay in step or the two
+     layers drift out of register. */
+  .header-art{position:absolute;right:2px;top:2px;width:130px;height:114px;pointer-events:none;z-index:0}
+  .header-art .ha-crab{position:absolute;left:0.92%;top:1.05%;width:88.97%;height:97.89%;opacity:.42}
+  /* Not var(--brass) (#c79a4b): at this opacity brass read muddy. Bright gold stays
+     crisp and the low opacity does the quietening. */
+  .header-art .ha-stars{position:absolute;inset:0;width:100%;height:100%;color:#e8c574;opacity:.38}
+  header>*:not(.header-art){position:relative;z-index:1}
+  .empty svg{color:var(--faint);margin-bottom:4px}
+  /* padding-right reserves the constellation's column so the ::after hairline
+     stops before it instead of striking through the stars. Keep in step with
+     .header-art width (130 + 2 inset + 12 breathing room). */
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px;padding-right:144px}
+  @media(max-width:620px){.header-art{width:104px;height:91px;right:0;top:2px}.header-art .ha-crab{opacity:.40}.header-art .ha-stars{opacity:.46}.eyebrow{padding-right:116px}}
   .eyebrow::after{content:"";height:1px;flex:1;background:var(--line)}
   h1{font-family:var(--display);font-weight:900;font-size:40px;line-height:.98;letter-spacing:-.015em;margin:8px 0 2px}
   h1 em{font-style:italic;font-weight:400;color:var(--brass)}
@@ -176,8 +197,13 @@
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs><symbol id="crabglum" viewBox="0 0 40 28"><g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="20" cy="16" rx="8" ry="5.5"/><path d="M16.5 10.8 16 9.4"/><path d="M14.6 7.2 16 9.4 17.4 7.4"/><path d="M23.5 10.8 24 9.4"/><path d="M22.6 7.4 24 9.4 25.4 7.2"/><path d="M12 13.6C9 13.1 7 11.6 5.6 9.6"/><path d="M5.6 9.6 3 8.2"/><path d="M5.6 9.6 3.8 11.9"/><path d="M28 13.6c3-.5 5-2 6.4-4"/><path d="M34.4 9.6 37 8.2"/><path d="M34.4 9.6 36.2 11.9"/><path d="M12.6 18.9l-3.5 1.7M14 20.2l-2.6 2.8M17.4 21.6l-1.6 3.2M22.6 21.6l1.6 3.2M26 20.2l2.6 2.8M27.4 18.9l3.5 1.7"/></g></symbol></defs></svg>
 <div class="wrap">
   <header>
+    <div class="header-art" aria-hidden="true">
+      <img class="ha-crab" src="crab-melted.png" alt="">
+      <svg class="ha-stars" viewBox="0 0 1086 950" focusable="false"><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="271.0" y1="47.2" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".16"/><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72"/><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85"/><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73"/><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77"/><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82"/><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79"/><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94"/><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81"/><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76"/><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88"/><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91"/><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96"/><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74"/><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85"/><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87"/><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88"/><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98"/><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91"/><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79"/><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84"/><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93"/><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96"/><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".17"/><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor"/><circle cx="271.0" cy="47.2" r="18.4" fill="currentColor" opacity=".17"/><circle cx="271.0" cy="47.2" r="6.13" fill="currentColor"/><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".17"/><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor"/><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".17"/><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor"/><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".17"/><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor"/><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".17"/><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor"/></svg>
+    </div>
     <div class="eyebrow">Cocktail Codex</div>
     <h1>What'll it <em>be?</em></h1>
     <p class="tagline">Search the collection by name, spirit, or mood — or tell it what's on your shelf.</p>
@@ -388,7 +414,7 @@ function renderBrowse(){
   const noFilters = !act.length && !query;
   const rows = noFilters ? shuffledC.filter(matchB) : C.filter(matchB);
   document.getElementById('countLine').innerHTML=`<b>${rows.length}</b> ${rows.length===1?'recipe':'recipes'}`+(noFilters?` <button class="shufbtn" onclick="reshuffleHome()">\u{1F3B2} shuffle</button>`:'');
-  if(!rows.length){list.innerHTML=`<div class="empty"><b>Nothing matches</b>Loosen a filter and try again.</div>`;return;}
+  if(!rows.length){list.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>Nothing matches</b>Loosen a filter and try again.</div>`;return;}
   rows.slice(0,300).forEach(d=>list.appendChild(cardEl(d)));
   if(rows.length>300){const m=document.createElement('div');m.className='barhint';m.style.textAlign='center';m.textContent=noFilters?`A random 300 of ${rows.length} — tap \u{1F3B2} to reshuffle, or search/filter for a specific drink.`:`Showing first 300 of ${rows.length} — refine to see more.`;list.appendChild(m);}
 }
@@ -437,7 +463,7 @@ function renderBar(){
       const badge=canMake?`<span class="status ok">Ready</span>`:(miss.length===1?`<span class="status one">Need ${miss[0]}</span>`:statusPips(d));
       rc.appendChild(cardEl(d,{cls:canMake?'makeable':(miss.length===1?'away':''),badge}));
     });
-    if(!rows.length) rc.innerHTML=`<div class="empty"><b>No match</b>Try removing an ingredient from your selection.</div>`;
+    if(!rows.length) rc.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>No match</b>Try removing an ingredient from your selection.</div>`;
   }
   // palette
   const g=document.getElementById('barGrid'); g.innerHTML='';
