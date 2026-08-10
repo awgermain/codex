@@ -6,13 +6,14 @@ The `.gs` files are *not* here — those get pasted into the Apps Script project
 
 ---
 
-## Upload these 12 files
+## Upload these 14 files  (see also `CLEANUP.md`)
 
 | File | What it is | Notes |
 |---|---|---|
 | `index.html` | main app | crab + asterism header art, `favicon-16` link added |
 | `menu.html` | menu view | `favicon-16` link added |
 | `crab-melted.png` | header art, crab layer | **new filename** — see cache note below |
+| `crab-melted@2x.png` | expanded view (easter egg) | lazy-loaded, only on first open |
 | `favicon.svg` | primary favicon | vector, scales to any size |
 | `favicon-32.png` | favicon fallback | for browsers without SVG favicon support |
 | `favicon-16.png` | favicon fallback | small-size tab rendering |
@@ -56,7 +57,7 @@ split the purposes across separate files:
 Android crops adaptive icons to a circle or squircle, keeping only the central 80%.
 Measured against that, **18% of the Sentry artwork fell outside the safe zone** — the
 claw tips and leg tips would have been sliced off. So the maskable variants scale the
-art to **72%** and centre it, which puts the outermost point at 38% radius against the
+art to **65%** and centre it, which puts the outermost point at 34.3% radius against the
 40% limit. They will look smaller than the `any` icons side by side. That is correct;
 they are filling a different box.
 
@@ -99,6 +100,130 @@ Two small edits, both files:
 <!-- changed, to match the manifest -->
 <meta name="theme-color" content="#130f0c">
 ```
+
+---
+
+## If the icon does not change after uploading
+
+**Check whether the file is actually live before re-uploading anything.** Open the icon
+URL directly in a new tab — not the site, the icon itself:
+
+```
+https://<your-site>/favicon.svg
+```
+
+- **You see the crab-and-coupe** → the file deployed fine and your *browser* was caching
+  the old favicon. Nothing more to upload.
+- **404** → the file is not at the repo root. Most likely cause: the whole
+  `github-upload` folder got dragged in, so everything landed at
+  `/github-upload/favicon.svg`. The files must sit **beside `codexdata.js`**, not in
+  a subfolder.
+- **You see the old coupe icon** → GitHub Pages' CDN is still serving the cached copy.
+  It clears on its own within about 10 minutes.
+
+### Filenames are canonical again — see `CLEANUP.md`
+An earlier pass used `-v2` / `-v3` suffixes to force a favicon refresh. That worked but
+littered the repo. Cache-busting now uses a `?v=3` query string instead, so filenames
+stay clean and future changes only bump the number. **`CLEANUP.md` lists the old files
+to delete.**
+
+### Force a local refresh
+- **Desktop:** open the icon URL directly (above), then hard-reload the site
+  (Cmd/Ctrl+Shift+R). If it still sticks, clear site data for the domain.
+- **iOS home screen:** remove the shortcut and re-add it. `apple-touch-icon` is only
+  read at the moment the shortcut is created — it never refreshes in place.
+- **Android PWA:** uninstall and reinstall the app for the maskable icons to re-read.
+
+---
+
+## The asterism alternates between X and Y on its own
+
+Cancer has two accepted stick figures — the inverted **Y**, and the same shape plus a
+fork up to **χ Cancri** (the **X**). Rather than picking one, `index.html` flips a coin
+on each page load.
+
+It costs almost nothing because **Y is literally X minus one star and one line.** Both
+live in a single SVG layer; the χ star and its line to γ are wrapped in
+`<g class="ha-chi">`, and that group is what toggles:
+
+```css
+.header-art   .ha-chi { display:none }    /* default -> Y */
+.header-art.x .ha-chi { display:inline }  /* with .x  -> X */
+```
+
+```js
+(function(){ var a=document.querySelector('.header-art');
+             if (a && Math.random() < 0.5) a.classList.add('x'); })();
+```
+
+Hidden by default on purpose, so a visitor with JS disabled gets a clean Y rather than a
+broken layer — and there is never a flash of the arm disappearing after paint.
+
+**To pin one instead of alternating**, edit the condition in that script:
+
+| you want | change `Math.random() < 0.5` to |
+|---|---|
+| always X (fork) | `true` |
+| always Y (inverted Y) | `false` |
+| favour X 3 loads in 4 | `Math.random() < 0.75` |
+
+Both variants share an identical **1086 × 950** viewBox, so nothing else moves — no CSS
+size change, no re-measuring, no change to the `.eyebrow` reserve.
+
+### Greek labels — available, but not enabled
+Labelled versions (ι χ γ δ α β) are in the project as reference images. They are *not*
+in the header, because at 130px the glyphs render about **6.6px** tall — they read as
+small marks rather than letters. At 178px they reach ~9px and become borderline
+readable, so labels would mean going back up in size.
+
+---
+
+## Easter egg: the watermark expands
+
+Clicking (or tabbing to and pressing Enter on) the header watermark opens a large
+labelled view of the constellation over the crab, with the Greek letters at a size
+where they are actually readable and a caption naming each star.
+
+There is **no visible affordance at rest** — hover or keyboard focus brightens the crab
+and stars slightly, and that is the only hint. Find it or don't.
+
+**It costs nothing until someone finds it.** `crab-melted@2x.png` (158KB) is declared
+with *no* `src` attribute; JS sets it on first open. A visitor who never clicks never
+downloads it.
+
+Implementation notes, in case you edit around it:
+
+- The watermark is a real `<button>` with an `aria-label`, not a click-handling div, so
+  it is keyboard-reachable. An easter egg nobody can reach by keyboard is just an
+  exclusion.
+- It hooks the existing `_pushNav` / `_closeNav` history stack, the same one `openSheet`
+  and `openForm` use. So **the browser Back button and the Android back gesture close
+  it**, rather than navigating away from the app.
+- The expanded figure **mirrors the header's X/Y coin flip.** Its own `.ha-chi` group is
+  scoped with `.starfig .ha-chi`, and `openStars()` copies the `.x` class across — so
+  expanding a Y watermark does not suddenly grow a sixth star.
+- Closes on: the × button, the scrim, clicking outside the figure, or Back.
+
+### Files this adds
+| File | Size | Notes |
+|---|---|---|
+| `crab-melted@2x.png` | 158KB | 1000px wide, 96-colour palette. Lazy — only fetched on first open. |
+
+---
+
+## Source credit needs the new `PublishCodex.gs`
+
+The recipe card now credits the source by name. `PublishCodex.gs` v2 exports it as `sn`
+— column Z's visible text — alongside the existing `src` URL.
+
+Paste the new `PublishCodex.gs` into Apps Script and run **Publish Codex to GitHub**.
+Until you do, the card falls back to a domain label ("Source: YouTube"), which is why
+this is a nice-to-have rather than a blocker.
+
+Why both fields are needed: **692 of 913 links are YouTube**, and a YouTube URL carries a
+video ID, never the channel name — so the creator cannot be derived on the client. And
+**Crabby Melter has no URL at all** (`src: null`), so without `sn` it shows no
+attribution; with it, the card reads *Source: Dad*.
 
 ## After pushing
 
