@@ -33,12 +33,15 @@
   header{padding:24px 0 12px;position:relative;overflow:hidden;isolation:isolate}
   /* The watermark is a button. No visible affordance at rest -- it brightens on
      hover/focus, which is the only hint that it does anything. */
-  .header-art{border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  /* hit target: sized to the art but 14px shorter so it can never cover the
+     "Add your own recipe" button that sits just below. */
+  .ha-hit{position:absolute;right:0;top:12px;width:130px;height:100px;z-index:3;
+    border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .ha-hit:focus{outline:none}
+  .ha-hit:focus-visible{outline:1px solid var(--line);outline-offset:4px;border-radius:4px}
   .header-art .ha-crab,.header-art .ha-stars{transition:opacity .45s ease}
-  .header-art:hover .ha-crab,.header-art:focus-visible .ha-crab{opacity:.62}
-  .header-art:hover .ha-stars,.header-art:focus-visible .ha-stars{opacity:.85}
-  .header-art:focus{outline:none}
-  .header-art:focus-visible{outline:1px solid var(--line);outline-offset:4px;border-radius:4px}
+  .ha-hit:hover ~ .header-art .ha-crab,.ha-hit:focus-visible ~ .header-art .ha-crab{opacity:.62}
+  .ha-hit:hover ~ .header-art .ha-stars,.ha-hit:focus-visible ~ .header-art .ha-stars{opacity:.85}
   /* expanded view */
   .starwrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
     padding:20px;opacity:0;pointer-events:none;transition:opacity .3s ease}
@@ -73,7 +76,7 @@
      right:0 really is flush -- no need to bleed.
      Canvas aspect 1.1429; width and height must stay in step or the two
      layers drift out of register. */
-  .header-art{position:absolute;right:0;top:12px;width:130px;height:114px;z-index:0}
+  .header-art{position:absolute;right:0;top:12px;width:130px;height:114px;z-index:0;pointer-events:none}
   .header-art .ha-crab,.header-art .ha-stars{pointer-events:none}
   .header-art .ha-crab{position:absolute;left:0.92%;top:1.05%;width:88.97%;height:97.89%;opacity:.42}
   /* Not var(--brass) (#c79a4b): at this opacity brass read muddy. Bright gold stays
@@ -83,13 +86,13 @@
   .header-art .ha-chi{display:none}
   .header-art.x .ha-chi{display:inline}
   .header-art .ha-stars{position:absolute;inset:0;width:100%;height:100%;color:#e8c574;opacity:.38}
-  header>*:not(.header-art){position:relative;z-index:1}
+  header>*:not(.header-art):not(.ha-hit){position:relative;z-index:1}
   .empty svg{color:var(--faint);margin-bottom:4px}
   /* padding-right reserves the constellation's column so the ::after hairline
      stops before it instead of striking through the stars. Keep in step with
      .header-art width (130 + 2 inset + 12 breathing room). */
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px;padding-right:142px}
-  @media(max-width:620px){.header-art{width:104px;height:91px;right:0;top:8px}.header-art .ha-crab{opacity:.40}.header-art .ha-stars{opacity:.46}.eyebrow{padding-right:114px}}
+  @media(max-width:620px){.header-art{width:104px;height:91px;right:0;top:8px}.ha-hit{width:104px;height:80px;top:8px}.header-art .ha-crab{opacity:.40}.header-art .ha-stars{opacity:.46}.eyebrow{padding-right:114px}}
   .eyebrow::after{content:"";height:1px;flex:1;background:var(--line)}
   h1{font-family:var(--display);font-weight:900;font-size:40px;line-height:.98;letter-spacing:-.015em;margin:8px 0 2px}
   h1 em{font-style:italic;font-weight:400;color:var(--brass)}
@@ -165,8 +168,10 @@
   .taxo-k .tk-2{color:var(--brass)}
   .taxo-k .tk-3{color:var(--short)}
   .recipe-row .nm{display:flex;align-items:center;gap:7px}
-  .srccredit{margin-top:14px;font-size:13px;color:var(--muted);text-align:center}
-  .srccredit b{color:var(--brass);font-weight:600}
+  /* No-link sources (Dad, Pinche Chivo, Pineapple Rum Punch...) get the SAME bar as
+     linked ones -- just non-interactive, so the card never changes shape. */
+  .srcbtn.nolink{color:var(--muted);cursor:default;border-style:dashed}
+  .srcbtn.nolink b{color:var(--brass);font-weight:600}
   .rdot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
   .recipe-row.have .rdot{background:var(--have);opacity:1}
   .recipe-row.miss .rdot{background:var(--nothave);opacity:.75}
@@ -244,11 +249,12 @@
 <svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false"><defs><symbol id="crabglum" viewBox="0 0 40 28"><g fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="20" cy="16" rx="8" ry="5.5"/><path d="M16.5 10.8 16 9.4"/><path d="M14.6 7.2 16 9.4 17.4 7.4"/><path d="M23.5 10.8 24 9.4"/><path d="M22.6 7.4 24 9.4 25.4 7.2"/><path d="M12 13.6C9 13.1 7 11.6 5.6 9.6"/><path d="M5.6 9.6 3 8.2"/><path d="M5.6 9.6 3.8 11.9"/><path d="M28 13.6c3-.5 5-2 6.4-4"/><path d="M34.4 9.6 37 8.2"/><path d="M34.4 9.6 36.2 11.9"/><path d="M12.6 18.9l-3.5 1.7M14 20.2l-2.6 2.8M17.4 21.6l-1.6 3.2M22.6 21.6l1.6 3.2M26 20.2l2.6 2.8M27.4 18.9l3.5 1.7"/></g></symbol></defs></svg>
 <div class="wrap">
   <header>
-    <button class="header-art" type="button" onclick="openStars()"
-            aria-label="Cancer constellation — expand">
+    <button class="ha-hit" type="button" onclick="openStars()"
+            aria-label="Cancer constellation — expand"></button>
+    <div class="header-art" aria-hidden="true">
       <img class="ha-crab" src="crab-melted.png" alt="">
       <svg class="ha-stars" viewBox="0 0 1086 950" focusable="false"><g class="ha-chi"><line x1="271.0" y1="47.2" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><circle cx="271.0" cy="47.2" r="18.4" fill="currentColor" opacity=".17"/><circle cx="271.0" cy="47.2" r="6.13" fill="currentColor"/></g><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".9" stroke-linecap="round"/><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".16"/><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72"/><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85"/><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73"/><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77"/><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82"/><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79"/><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94"/><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81"/><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76"/><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88"/><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91"/><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96"/><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74"/><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85"/><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87"/><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88"/><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98"/><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91"/><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79"/><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84"/><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93"/><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96"/><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".17"/><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor"/><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".17"/><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor"/><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".17"/><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor"/><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".17"/><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor"/><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".17"/><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor"/></svg>
-    </button>
+    </div>
 <script>
   /* Cancer has two accepted stick figures: the inverted Y, and the same plus a fork
      up to chi Cancri. Rather than pick one, flip a coin each load. Change to
@@ -652,7 +658,8 @@ function srcCredit(d){
     return `<a class="srcbtn" href="${url}" target="_blank" rel="noopener">\u25b6 ${label?'Source: '+label:'Open source recipe'}</a>`;
   }
   /* no link, but still worth crediting -- e.g. "Dad" */
-  return name?`<div class="srccredit">Source: <b>${name}</b></div>`:'';
+  return name?`<div class="srcbtn nolink">Source: <b>${name}</b></div>`
+             :`<div class="srcbtn nolink">Source not recorded</div>`;
 }
 
 function renderSheet(){
