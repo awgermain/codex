@@ -175,6 +175,7 @@
   .rdot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
   .recipe-row.have .rdot{background:var(--have);opacity:1}
   .recipe-row.miss .rdot{background:var(--nothave);opacity:.75}
+  .recipe-row.untracked .rdot{background:var(--faint);opacity:.35}
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
   .pips{position:absolute;top:14px;right:14px;display:flex;gap:6px;align-items:center}
@@ -338,6 +339,9 @@ const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',
 // Filter chips only — deliberately not on the drink cards, where four emoji per
 // card competed with the ingredient line. Chosen for silhouette contrast at 10px:
 // no two vessels and no two round fruits sitting next to each other.
+/* Ingredient categories not tracked in My Bar -> no have/missing dot.
+   Add 'Top / Mix' here too if you decide those shouldn't signal either. */
+const UNTRACKED_CATS=new Set(['Other']);
 const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'🌿',
   'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
 const moodLbl=m=>(MOOD_ICON[m]?MOOD_ICON[m]+' ':'')+m;
@@ -581,9 +585,12 @@ function computeRows(d){
   return d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
     if(batchQty&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
-    /* same green/red semantics as the Build chips: HAVE is the My Bar set */
-    const stocked=HAVE.has(it[0]);
-    return `<div class="recipe-row ${stocked?'have':'miss'}"><span class="amt">${cc.disp}</span>`
+    /* Green/red only for categories actually tracked in My Bar. "Other" matched
+       just 8% of the time (11 of 145), so its dot was permanently red -- worse
+       than no signal. Those rows get a neutral dot instead. */
+    const tracked=!UNTRACKED_CATS.has(it[3]);
+    const stocked=tracked&&HAVE.has(it[0]);
+    return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
          + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
