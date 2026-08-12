@@ -175,7 +175,9 @@
   .rdot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
   .recipe-row.have .rdot{background:var(--have);opacity:1}
   .recipe-row.miss .rdot{background:var(--nothave);opacity:.75}
-  .recipe-row.untracked .rdot{background:var(--faint);opacity:.35}
+  /* untracked categories: dot in the ingredient's own text colour, so it reads
+     as punctuation rather than a failed have/missing signal. */
+  .recipe-row.untracked .rdot{background:currentColor;opacity:.45}
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
   .pips{position:absolute;top:14px;right:14px;display:flex;gap:6px;align-items:center}
@@ -232,7 +234,15 @@
   select,.qty{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;padding:7px 10px;border-radius:9px;outline:none}
   .qty{width:72px}
   .recipe-row{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
-  .recipe-row .amt{font-family:var(--mono);font-size:14px;color:var(--brass);min-width:82px;font-weight:700}
+  /* Amounts are split into integer / fraction / unit spans. In a monospace face
+     `ch` is exact, so right-aligning the integer and left-aligning the fraction
+     makes every decimal point land on the same x, and every unit start on the
+     same x -- "1 fl oz", "0.5 fl oz" and "0.75 fl oz" all line up. */
+  .recipe-row .amt{display:inline-flex;align-items:baseline;font-family:var(--mono);
+    font-size:14px;color:var(--brass);font-weight:700;flex:none}
+  .recipe-row .amt .ai{width:2ch;text-align:right}
+  .recipe-row .amt .af{width:4ch;text-align:left}
+  .recipe-row .amt .au{margin-left:.6ch;white-space:nowrap}
   .recipe-row .nm{font-size:14.5px;flex:1}
   .recipe-row .pct{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:44px;text-align:right}
   .serve{display:flex;gap:22px;margin-top:18px}
@@ -579,10 +589,19 @@ let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g';
 function convFactor(from,to){ if(from===to)return 1; if(NOCONV.has(from)||NOCONV.has(to))return null; if(CONV[from]&&CONV[from][to]!=null)return CONV[from][to]; return null; }
 function computeRows(d){
   const BARE=new Set(['each','whole','-','']);
-  const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'—',raw:null};
-    if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
-    const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)} ${u}`,raw:null};
-    const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
+  /* amtHTML splits the number at the decimal point so the columns align. */
+  const amtHTML=(numStr,unit)=>{
+    if(numStr==='—') return `<span class="amt"><i class="ai"></i><i class="af">—</i></span>`;
+    const dot=numStr.indexOf('.');
+    const ip=dot<0?numStr:numStr.slice(0,dot);
+    const fp=dot<0?'':numStr.slice(dot);
+    return `<span class="amt"><i class="ai">${ip}</i><i class="af">${fp}</i>`
+         + (unit?`<i class="au">${unit}</i>`:'')+`</span>`;
+  };
+  const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'—',unit:'',raw:null};
+    if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,unit:'',raw:null};
+    const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)}`,unit:u,raw:null};
+    const v=a*mult*f; return{disp:`${fmt(v)}`,unit:normU,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
   return d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
@@ -592,7 +611,7 @@ function computeRows(d){
        than no signal. Those rows get a neutral dot instead. */
     const tracked=!UNTRACKED_CATS.has(it[3]);
     const stocked=tracked&&HAVE.has(it[0]);
-    return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
+    return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}">${amtHTML(cc.disp,cc.unit)}`
          + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
