@@ -340,8 +340,10 @@ const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',
 // card competed with the ingredient line. Chosen for silhouette contrast at 10px:
 // no two vessels and no two round fruits sitting next to each other.
 /* Ingredient categories not tracked in My Bar -> no have/missing dot.
-   Add 'Top / Mix' here too if you decide those shouldn't signal either. */
-const UNTRACKED_CATS=new Set(['Other']);
+   Comes from CODEX_UNTRACKED_CATS in Config.gs via the publisher, so the list
+   lives in ONE place. The literal is only a fallback for a codexdata.js
+   published before that field existed. */
+const UNTRACKED_CATS=new Set((DB && DB.untracked) ? DB.untracked : ['Other']);
 const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'🌿',
   'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
 const moodLbl=m=>(MOOD_ICON[m]?MOOD_ICON[m]+' ':'')+m;
