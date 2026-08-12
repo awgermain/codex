@@ -175,9 +175,10 @@
   .rdot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
   .recipe-row.have .rdot{background:var(--have);opacity:1}
   .recipe-row.miss .rdot{background:var(--nothave);opacity:.75}
-  /* untracked categories: dot in the ingredient's own text colour, so it reads
-     as punctuation rather than a failed have/missing signal. */
-  .recipe-row.untracked .rdot{background:currentColor;opacity:.45}
+  /* untracked categories: dot in EXACTLY the ingredient's own text colour. No
+     opacity -- currentColor was already right, the .45 fade was what made it
+     look grey. */
+  .recipe-row.untracked .rdot{background:currentColor;opacity:1}
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
   .pips{position:absolute;top:14px;right:14px;display:flex;gap:6px;align-items:center}
