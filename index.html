@@ -769,7 +769,7 @@ window.openForm=function(){
     <div id="ingRows">${ingRowHTML(2,'fl oz','','Spirit')+ingRowHTML(0.75,'fl oz','','Acid')+ingRowHTML(0.75,'fl oz','','Sweetener')}</div>
     <button class="addrow" onclick="addIngRow()">＋ add ingredient</button>
     <div class="flabel2">Mood (optional — auto-filled if left blank)</div>
-    <div class="mchips" id="f_moods">${['Tropical','Bitter','Citrusy','Herbal','Tall','Creamy','Boozy','Classic'].map(m=>`<span class="mchip" onclick="this.classList.toggle('on')">${m}</span>`).join('')}</div>
+    <div class="mchips" id="f_moods">${['Tropical','Bitter','Citrusy','Herbal','Smoky','Tall','Creamy','Boozy'].map(m=>`<span class="mchip" onclick="this.classList.toggle('on')">${m}</span>`).join('')}</div>
     <div style="display:flex;gap:10px"><div style="flex:1"><div class="flabel2">Season</div>
       <select class="fin" id="f_season"><option value="">—</option>${['Spring','Summer','Autumn','Winter'].map(x=>`<option>${x}</option>`).join('')}</select></div>
       <div style="flex:1"><div class="flabel2">Holiday</div>
