@@ -150,7 +150,7 @@
   .chip.on{background:var(--brass);border-color:var(--brass);color:#1a130b;font-weight:600}
   .chip.st{padding-left:11px}
   .chip .pip{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
-  .toolbar{display:flex;gap:9px;align-items:center;margin:6px 0 12px}
+  .toolbar{display:flex;gap:9px;align-items:stretch;margin:6px 0 12px}
   .fbtn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
   .fbtn.act{background:var(--raised);border-color:var(--brass-dim)}
   .fbtn #fcount{font-family:var(--mono);font-size:11px;color:var(--brass)}
@@ -162,13 +162,19 @@
   .clearall-btn:hover{color:var(--brass);border-color:var(--brass)}
   .count-line{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;flex:1}
   .count-line b{color:var(--brass)}
-  .dice{background:var(--surface2);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:100px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.15s}
+  /* Matched to .fbtn exactly -- padding 9/15 and 13px, not 8/14 and 12.5px, which is
+     what made it 2px shorter. The row is align-items:stretch so neither can drift again.
+     Colour is --winter (#7ba6c9) at 10% fill / 38% border, the same blue already used
+     for the Winter season tag, so this introduces no new hue to the palette. */
+  .dice{background:rgba(123,166,201,.10);border:1px solid rgba(123,166,201,.38);color:#b9d0e0;font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
+  .dice:hover{background:rgba(123,166,201,.16);border-color:rgba(123,166,201,.55)}
   .dice:active{transform:scale(.96)}
   .card{background:linear-gradient(180deg,var(--surface),var(--surface) 60%,#1d1611);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;transition:transform .12s,border-color .2s;position:relative;overflow:hidden}
   .card:active{transform:scale(.985)}
   .card.makeable{border-color:rgba(159,191,134,.4)}
   .card.away{border-color:rgba(199,154,75,.3)}
-  .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05;padding-right:52px}
+  .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05}
+  .card.has-status h3{padding-right:100px}
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
   .card .meta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
@@ -190,16 +196,40 @@
   .recipe-row.untracked .rdot{background:currentColor;opacity:1}
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
-  .pips{position:absolute;top:14px;right:14px;display:flex;gap:6px;align-items:center}
+  /* Marks ride with the NAME now, not the corner. They describe the drink -- you made
+     it, you starred it -- whereas .status describes your shelf. Both used to be
+     absolutely positioned at top/right 14px, i.e. stacked on identical coordinates,
+     which is why only one could ever be visible. */
+  .marks{display:inline-flex;gap:5px;align-items:center;margin-left:7px;vertical-align:2px}
+  .marks .mk-made,.marks .mk-short,.marks .pstar{font-size:13px;line-height:1}
   .pips .p{width:9px;height:9px;border-radius:50%}
   .mk-made{color:var(--made);font-size:13px;font-weight:700;line-height:1}
   .mk-short{color:var(--short);font-size:13px;font-weight:700;line-height:1}
   .pips .pstar{color:var(--fav);font-size:13px;line-height:9px}
-  .status{position:absolute;top:13px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase}
+  .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:92px;text-align:right;line-height:1.35}
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
   .empty b{color:var(--muted);font-family:var(--display);font-size:19px;display:block;margin-bottom:6px;font-weight:600}
   .barhint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;margin:2px 0 12px;line-height:1.5}
+  /* Next bottle drawer. Sits under the count line because that line is already a
+     statement about your bar -- "62 matches, 41 fully stocked" -- and "what to buy
+     next" is the same thought continued. Collapsed it is one row tall. */
+  .nbx{margin:0 0 11px}
+  .nb{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .nbh{display:flex;align-items:center;gap:9px;padding:11px 13px;cursor:pointer;-webkit-user-select:none;user-select:none}
+  .nbt{font-family:var(--display);font-size:14px;font-weight:600;color:var(--ink);flex:1;line-height:1.2}
+  .nbp{font-family:var(--mono);font-size:10px;color:var(--have)}
+  .nbc{color:var(--muted);font-size:10px;transition:transform .18s}
+  .nb.open .nbc{transform:rotate(180deg)}
+  .nbb{border-top:1px solid var(--line);padding:2px 13px 10px}
+  .nbr{padding:9px 0;border-bottom:1px solid rgba(199,154,75,.09)}
+  .nbr:last-of-type{border-bottom:none}
+  .nbrt{display:flex;align-items:baseline;gap:8px}
+  .nbk{font-family:var(--mono);font-size:10px;color:var(--faint);width:16px;flex:none}
+  .nbi{font-size:13.5px;color:var(--ink);flex:1;line-height:1.25}
+  .nbu{font-family:var(--mono);font-size:12.5px;color:var(--have);flex:none}
+  .nbs{font-size:10.5px;color:var(--faint);margin:2px 0 0 24px;line-height:1.45}
+  .nbf{font-family:var(--mono);font-size:10px;color:var(--faint);padding:9px 0 1px;letter-spacing:.04em}
   .bartoggle{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
   .barhead{font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600;margin:12px 0 6px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
   .barhead:hover{color:var(--ink);border-color:var(--brass-dim)}
@@ -321,6 +351,7 @@
     <div class="bartoggle" id="barToggle"></div>
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
+    <div class="nbx" id="nextBottle"></div>
     <div id="barGrid"></div>
     <div id="barResults" style="margin-top:8px"></div>
   </div>
@@ -376,7 +407,18 @@ let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, FAMILIES, ERAS, ingByCat
 function shuffle_(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;} return a; }
 function rebuild(){
   C = C0.concat(CUSTOM);
-  C.forEach(d=>{ d._set = new Set(d.i.map(x=>x[0])); });
+  /* _set  = EVERY ingredient. Drives the card's ingredient line and Build selection,
+              so muddled and Other things stay visible and pickable.
+     _stock = only the categories My Bar actually tracks. Drives every have/missing
+              calculation.
+     These must be two different sets. UNTRACKED_CATS was applied to the recipe-card
+     dots but never to the makeable maths, so Egg White, Mint and Cucumber -- which
+     are not in My Bar and never will be -- counted as missing bottles. That put 93
+     drinks into "not makeable" for no reason (450 ready instead of 543) and would
+     have opened the Next bottle drawer with "Egg White +24". */
+  C.forEach(d=>{ d._set = new Set(d.i.map(x=>x[0]));
+                 d._stock = new Set(d.i.filter(x=>!UNTRACKED_CATS.has(x[3])).map(x=>x[0])); });
+  _nbData = null;
   BASES=[...new Set(C.map(d=>d.b).filter(Boolean))].sort();
   STYLES=[...new Set(C.map(d=>d.s).filter(Boolean))].sort();
   SERVED=[...new Set(C.map(d=>d.g).filter(Boolean))].sort();
@@ -464,16 +506,16 @@ function matchB(d){
   if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
   return true;
 }
-function statusPips(d){
+function marksHTML(d){
   let h=''; if(d.md)h+=`<span class="mk-made" title="Made">✓</span>`;
   if(d.ts)h+=`<span class="mk-short" title="Shortlist">✓</span>`;
   if(d.fv)h+=`<span class="pstar" title="Favorite">★</span>`;
-  return h?`<div class="pips">${h}</div>`:'';
+  return h?`<span class="marks">${h}</span>`:'';
 }
 function cardEl(d,extra){
-  const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:''); c.onclick=()=>openSheet(d);
-  const badge=extra&&extra.badge?extra.badge:statusPips(d);
-  c.innerHTML=`${badge}<h3>${d.n}</h3><div class="ing">${ingLine(d)}</div>
+  const status=extra&&extra.badge?extra.badge:'';
+  const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:'')+(status?' has-status':''); c.onclick=()=>openSheet(d);
+  c.innerHTML=`${status}<h3>${d.n}${marksHTML(d)}</h3><div class="ing">${ingLine(d)}</div>
     <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
   return c;
 }
@@ -526,7 +568,7 @@ function renderBarToggle(){
 function barMatches(){
   const s=[...sel];
   let rows=C.filter(d=>s.every(x=>d._set.has(x)));
-  if(onlyHave) rows=rows.filter(d=>[...d._set].every(n=>HAVE.has(n)));
+  if(onlyHave) rows=rows.filter(d=>[...d._stock].every(n=>HAVE.has(n)));
   return rows;
 }
 function renderSelBar(){
@@ -534,26 +576,75 @@ function renderSelBar(){
   if(!sel.size){sb.innerHTML='';return;}
   sb.innerHTML=`<div class="selbar"><div class="row">${[...sel].map(n=>`<span class="seltag" onclick="toggleSel('${n.replace(/'/g,"\\'")}')">${n} ✕</span>`).join('')}</div></div>`;
 }
+/* ---------- NEXT BOTTLE ----------
+   Ranked by what a bottle would make READY today, not by how many recipes name it.
+   Those differ: Cachaca appears in 16 recipes but unlocks 6, because its drinks tend
+   to be missing something else too. Recipe count would quietly mislead a purchase.
+   Everything here comes from data already in codexdata.js -- no new published keys. */
+var nbOpen=false, _nbData=null;
+function nextBottleData(){
+  if(_nbData) return _nbData;
+  const unlock={}, uses={}, near={};
+  let ready=0, one=0;
+  C.forEach(d=>{
+    const miss=[...d._stock].filter(n=>!HAVE.has(n));
+    miss.forEach(n=>uses[n]=(uses[n]||0)+1);
+    if(!miss.length) ready++;
+    else if(miss.length===1){ one++; unlock[miss[0]]=(unlock[miss[0]]||0)+1; }
+    else if(miss.length===2) miss.forEach(n=>near[n]=(near[n]||0)+1);   // buying either drops these to one away
+  });
+  const list=Object.keys(unlock)
+    .map(n=>({n:n, unlock:unlock[n], uses:uses[n]||0, near:near[n]||0}))
+    .sort((a,b)=> b.unlock-a.unlock || b.near-a.near || (a.n<b.n?-1:1))
+    .slice(0,8);
+  _nbData={list:list, ready:ready, one:one, total:C.length};
+  return _nbData;
+}
+window.toggleNextBottle=function(){ nbOpen=!nbOpen; renderNextBottle(); };
+function renderNextBottle(){
+  const el=document.getElementById('nextBottle'); if(!el) return;
+  const D=nextBottleData();
+  if(!D.list.length){ el.innerHTML=''; return; }
+  const top=D.list[0];
+  const rows=D.list.map((r,i)=>
+      `<div class="nbr"><div class="nbrt"><span class="nbk">${String(i+1).padStart(2,'0')}</span>`
+    + `<span class="nbi">${r.n}</span><span class="nbu">+${r.unlock}</span></div>`
+    + `<div class="nbs">in ${r.uses} recipe${r.uses===1?'':'s'}`
+    + (r.near?` · puts ${r.near} more one bottle away`:'') + `</div></div>`).join('');
+  el.innerHTML=`<div class="nb${nbOpen?' open':''}">`
+    + `<div class="nbh" onclick="toggleNextBottle()">`
+    + `<span class="nbt">Next bottle</span>`
+    + `<span class="nbp">${nbOpen?(D.list.length+' shown'):(top.n+' +'+top.unlock)}</span>`
+    + `<span class="nbc">\u25be</span></div>`
+    + (nbOpen?`<div class="nbb">${rows}<div class="nbf">${D.ready} of ${D.total} ready now \u00b7 ${D.one} one bottle away</div></div>`:'')
+    + `</div>`;
+}
+
 window.toggleSel=function(n){ sel.has(n)?sel.delete(n):sel.add(n); renderBar(); };
 function renderBar(){
-  renderBarToggle(); renderSelBar();
+  renderBarToggle(); renderSelBar(); renderNextBottle();
   const rows=barMatches();
   // ingredients that still combine with current selection
   const compat=new Set(); rows.forEach(d=>d._set.forEach(n=>compat.add(n)));
   const bc=document.getElementById('barCount');
-  const makeable=rows.filter(d=>[...d._set].every(n=>HAVE.has(n))).length;
+  const makeable=rows.filter(d=>[...d._stock].every(n=>HAVE.has(n))).length;
   bc.innerHTML= sel.size||onlyHave ? `<b>${rows.length}</b> match${rows.length===1?'':'es'} · <b>${makeable}</b> fully stocked` : `Tap ingredients below to start`;
   // results
   const rc=document.getElementById('barResults'); rc.innerHTML='';
   if(sel.size||onlyHave){
     const sorted=rows.slice().sort((a,b)=>{
-      const am=[...a._set].every(n=>HAVE.has(n)), bm=[...b._set].every(n=>HAVE.has(n));
+      const am=[...a._stock].every(n=>HAVE.has(n)), bm=[...b._stock].every(n=>HAVE.has(n));
       if(am!==bm)return am?-1:1; return a._set.size-b._set.size;
     });
     sorted.slice(0,60).forEach(d=>{
-      const canMake=[...d._set].every(n=>HAVE.has(n));
-      const miss=[...d._set].filter(n=>!HAVE.has(n));
-      const badge=canMake?`<span class="status ok">Ready</span>`:(miss.length===1?`<span class="status one">Need ${miss[0]}</span>`:statusPips(d));
+      const canMake=[...d._stock].every(n=>HAVE.has(n));
+      const miss=[...d._stock].filter(n=>!HAVE.has(n));
+      /* Exact count rather than "2+": only 12 drinks of 920 need three or more, so
+         the extra precision costs nothing and reads shorter. Names for the 2+ cases
+         live one tap away on the recipe card. */
+      const badge=canMake?`<span class="status ok">Ready</span>`
+        :(miss.length===1?`<span class="status one">Need ${miss[0]}</span>`
+                         :`<span class="status one">Need ${miss.length}</span>`);
       rc.appendChild(cardEl(d,{cls:canMake?'makeable':(miss.length===1?'away':''),badge}));
     });
     if(!rows.length) rc.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>No match</b>Try removing an ingredient from your selection.</div>`;
