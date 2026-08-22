@@ -352,13 +352,12 @@
   .rfoot{display:flex;align-items:baseline;gap:12px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
   .rfoot .tv{width:13ch;flex:none;color:var(--muted)}
   .rfoot .rt{margin-left:auto;color:var(--brass)}
-  /* water is not part of the drink: divider above it, winter blue, and it is left out
-     of both the percentages and the proportion bar */
-  .recipe-row.water{border-top:1px solid var(--line);margin-top:4px}
+  /* water is not part of the drink: winter blue, and left out of both the
+     percentages and the proportion bar. No divider -- the colour carries it. */
   .recipe-row.water .amt,.recipe-row.water .nm{color:var(--winter)}
   .recipe-row.water .rdot{background:var(--winter);opacity:1}
   .dilrow .hint{font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.5;margin:6px 0 0}
-  .dilrow .hint b{color:var(--brass);font-weight:400}
+  .dilrow .hint b{color:var(--brass);font-weight:400;border-bottom:1px solid rgba(199,154,75,.45);padding-bottom:1px}
   .serve{display:flex;gap:22px;margin-top:18px}
   .serve div{flex:1}
   .serve .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
@@ -800,7 +799,17 @@ function setMode(m){
 }
 
 /* ---------- RECIPE SHEET + BATCH ---------- */
-let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g', dilution=25;
+let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g', dilution=25, dilTouched=false;
+/* Dilution default per Style. All eight of the sheet's styles are listed, so this is
+   a lookup rather than a guess:
+     stirred and spirit-forward -> 18   (Martini, Old Fashioned)
+     shaken                     -> 25   (Sour, Tiki, Flip, Punch)
+     dilution arrives at service -> 0   (Highball tops with soda, Toddy with hot water,
+                                         so you batch the base and add the rest in glass)
+   Once you change the number yourself it sticks for the session -- dilTouched stops
+   the default moving under you as you open one drink after another. */
+const DIL_BY_STYLE={'Sour':25,'Tiki':25,'Flip':25,'Punch':25,'Martini':18,'Old Fashioned':18,'Highball':0,'Toddy':0};
+function defaultDilution(d){ return DIL_BY_STYLE.hasOwnProperty(d&&d.s) ? DIL_BY_STYLE[d.s] : 25; }
 function convFactor(from,to){ if(from===to)return 1; if(NOCONV.has(from)||NOCONV.has(to))return null; if(CONV[from]&&CONV[from][to]!=null)return CONV[from][to]; return null; }
 function computeRows(d){
   const BARE=new Set(['each','whole','-','']);
@@ -977,9 +986,16 @@ function isBatching(){ return batchQty!=='' && !isNaN(parseFloat(batchQty)) && p
 function syncBatchUI(){
   const row=document.getElementById('dilRow');
   if(row) row.style.display = isBatching() ? 'flex' : 'none';
+  /* The active preset is highlighted so the hint doubles as the current-value
+     readout -- otherwise you have to look at the stepper and the legend separately
+     to work out which one you are on. */
   const h=document.getElementById('dilHint');
-  if(h) h.innerHTML = '0% stir when served \u00b7 18% spirit-forward \u00b7 25% shaken'
-      + ([0,18,25].indexOf(dilution)<0 ? ` \u00b7 <b>${dilution}% custom</b>` : '');
+  if(h){
+    const P=[[0,'stir when served'],[18,'spirit-forward'],[25,'shaken']];
+    let parts=P.map(([v,lab])=> v===dilution ? `<b>${v}% ${lab}</b>` : `${v}% ${lab}`);
+    if(P.every(([v])=>v!==dilution)) parts.push(`<b>${dilution}% custom</b>`);
+    h.innerHTML = parts.join(' \u00b7 ');
+  }
   const di=document.getElementById('dilIn');
   if(di && document.activeElement!==di) di.value=dilution;
 }
@@ -987,12 +1003,13 @@ window.setQty=function(v){ batchQty=v; updateRows(); };
 /* The stepper walks the three presets and then goes free-form, so the common cases
    are one tap and a custom value is still typeable. */
 window.bumpDil=function(dir){
+  dilTouched=true;
   const P=[0,18,25];
   if(P.indexOf(dilution)>=0){ let i=P.indexOf(dilution)+dir; if(i>=0&&i<P.length){ dilution=P[i]; } else { dilution=Math.max(0,Math.min(60,dilution+dir)); } }
   else dilution=Math.max(0,Math.min(60,dilution+dir));
   updateRows();
 };
-window.setDil=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>=0&&n<=60){ dilution=n; updateRows(); } };
+window.setDil=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>=0&&n<=60){ dilTouched=true; dilution=n; updateRows(); } };
 window.setBatchU=function(u){ batchU=u; updateRows(); };
 let _overlay=null;
 function _hideSheet(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
@@ -1028,7 +1045,7 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; if(!dilTouched) dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
 
 document.getElementById('q').addEventListener('input',e=>{query=e.target.value; if(mode==='browse')renderBrowse();});
