@@ -53,7 +53,7 @@
   .starfig{position:relative;width:min(92vw,620px);aspect-ratio:1.1432;
     transform:scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
   .starwrap.show .starfig{transform:scale(1)}
-  .starfig img{position:absolute;left:0.92%;top:1.05%;width:88.97%;height:97.89%;opacity:.72}
+  .starfig img{position:absolute;left:10.12%;top:1.05%;width:79.76%;height:97.89%;opacity:.72}
   .starfig svg{position:absolute;inset:0;width:100%;height:100%;color:#f2d79a;opacity:.95}
   /* One SVG serves both. Label type is sized here because the standalone file's
      <style> block does not survive being inlined. Each label group carries a
@@ -90,7 +90,13 @@
      layers drift out of register. */
   .header-art{position:absolute;right:0;top:12px;width:130px;height:114px;z-index:0;pointer-events:none}
   .header-art .ha-crab,.header-art .ha-stars{pointer-events:none}
-  .header-art .ha-crab{position:absolute;left:0.92%;top:1.05%;width:88.97%;height:97.89%;opacity:.44}
+  /* The melt stages are taller than the old single crab: the shared frame is
+     957x1030 (aspect .9291) against the old 966x930 (1.0387), because the puddle
+     needs room. Fitting by height keeps the 130x114 box intact -- which matters,
+     since .ha-hit is deliberately 14px shorter than the art so it can never cover
+     the Add-recipe button, and growing the art would put that back in play.
+     79.76% x 97.89% preserves the aspect exactly; left centres it in the box. */
+  .header-art .ha-crab{position:absolute;left:10.12%;top:1.05%;width:79.76%;height:97.89%;opacity:.44}
   /* Stars are var(--brass) at FULL layer opacity. The three-tier alpha lives
      INSIDE the svg: cores 1.0, connecting lines .44, halos .09. That RATIO is what
      makes a star read as a star -- a core has to dominate its own lines.
@@ -314,7 +320,7 @@
     <button class="ha-hit" type="button" onclick="openStars()"
             aria-label="Cancer constellation — expand"></button>
     <div class="header-art" aria-hidden="true">
-      <img class="ha-crab" src="crab-melted.png" alt="">
+      <img class="ha-crab" id="crabArt" src="" alt="">
       <svg class="ha-stars" viewBox="0 0 1086 950" focusable="false"><g><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".09" /><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72" /><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85" /><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73" /><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77" /><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82" /><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79" /><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94" /><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81" /><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76" /><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88" /><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91" /><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96" /><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74" /><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85" /><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87" /><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88" /><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98" /><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91" /><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79" /><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84" /><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93" /><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96" /><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".09" /><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor" /><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".09" /><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor" /><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".09" /><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor" /><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".09" /><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor" /><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".09" /><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor" /><g class="ast-labels"><g transform="translate(-37.152,-181.491) scale(1.667)"><text class="glyph" x="73" y="244" text-anchor="middle">ι</text><text class="name" x="90" y="244" text-anchor="start">Cnc</text></g><g transform="translate(-252.326,-275.805) scale(1.667) translate(22,-8)"><text class="glyph" x="320" y="440" text-anchor="middle">γ</text><text class="name" x="303" y="442" text-anchor="end">Asellus Borealis</text></g><g transform="translate(-338.969,-338.436) scale(1.667)"><text class="glyph" x="473" y="541" text-anchor="middle">δ</text><text class="name" x="456" y="537.74377" text-anchor="end">Asellus Australis</text></g><g transform="translate(-461.231,-529.665) scale(1.667)"><text class="glyph" x="714" y="839" text-anchor="middle">α</text><text class="name" x="731" y="839" text-anchor="start">Acubens</text></g><g transform="translate(-694.280,-297.015) scale(1.667) translate(0,-8)"><text class="glyph" x="1038" y="428" text-anchor="middle">β</text><text class="name" x="1020" y="426" text-anchor="end">Al Tarf</text></g><g transform="translate(-305.953,-278.473) scale(1.667) translate(23.607541,-28.491859)"><text class="glyph" x="499" y="428" text-anchor="middle">M44</text><text class="name" x="533" y="428" text-anchor="start">Beehive</text></g></g></g></svg>
     </div>
 <script>
@@ -829,9 +835,23 @@ function _applyClose(){ if(_overlay==='sheet')_hideSheet(); else if(_overlay==='
    open, so finding it costs a fetch and never opens costs nothing. */
 function _hideStars(){ document.getElementById('starScrim').classList.remove('show');
   document.getElementById('starWrap').classList.remove('show'); }
+/* ---------- CRAB MELT ----------
+   Seven stages sharing one frame, so nothing shifts between them. The stage is
+   picked once per load and never changes mid-session: a crab that melts while you
+   are reading is a distraction, not an easter egg.
+   TO SWITCH TO TIME OF DAY, replace the body of crabStage() -- e.g.
+     var h=new Date().getHours();
+     return Math.min(7, Math.max(1, Math.floor((h<12?h+24:h)-15)+1));
+   Nothing else in the app knows or cares which stage is showing. */
+var CRAB_STAGES=7;
+function crabStage(){ return 1+Math.floor(Math.random()*CRAB_STAGES); }
+var CRAB_N=crabStage();
+(function(){ var c=document.getElementById('crabArt');
+  if(c) c.src='crab-melt-'+CRAB_N+'.png?v=4'; })();
+
 window.openStars=function(){
   var i=document.getElementById('starImg');
-  if(!i.getAttribute('src')) i.setAttribute('src','crab-melted@2x.png');
+  if(!i.getAttribute('src')) i.setAttribute('src','crab-melt-'+CRAB_N+'@2x.png?v=4');  // same stage as the watermark
   document.getElementById('starScrim').classList.add('show');
   document.getElementById('starWrap').classList.add('show');
   _pushNav('stars');
