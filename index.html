@@ -161,7 +161,11 @@
   .frow{display:flex;flex-wrap:wrap;gap:7px;padding:11px 12px;background:var(--surface)}
   .frow::-webkit-scrollbar{display:none}
   .chip{flex:none;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-family:var(--sans);font-size:12.5px;font-weight:500;padding:7px 13px;border-radius:100px;cursor:pointer;white-space:nowrap;transition:.16s}
-  .chip.on{background:var(--brass);border-color:var(--brass);color:#1a130b;font-weight:600}
+    .chip.on{background:var(--brass);border-color:var(--brass);color:#1a130b;font-weight:600}
+  /* The three mark filters select in their own colour so the chip matches the mark
+     it filters for. --on-tint is set per chip; the dark text works on all three. */
+  .chip.on.tint{background:var(--on-tint);border-color:var(--on-tint)}
+  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pip{color:#1a130b}
   .chip.st{padding-left:11px}
   .chip .pip{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
   .toolbar{display:flex;gap:9px;align-items:stretch;margin:6px 0 12px}
@@ -224,7 +228,11 @@
   .pips .p{width:9px;height:9px;border-radius:50%}
   .mk-made{color:var(--made);font-size:13px;font-weight:700;line-height:1}
   .mk-short{color:var(--short);font-size:13px;font-weight:700;line-height:1}
-  .pips .pstar{color:var(--fav);font-size:13px;line-height:9px}
+  /* Was .pips .pstar -- when the marks moved into the heading the container was
+     renamed to .marks and this rule silently stopped matching, so the star inherited
+     the heading colour and went white. .mk-made and .mk-short are unscoped, which is
+     why only the star broke. */
+  .marks .pstar{color:var(--fav);font-size:13px;line-height:1}
   .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:92px;text-align:right;line-height:1.35}
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
@@ -478,8 +486,9 @@ function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toS
 function ingLine(d){ return [...d._set].join(" · "); }
 
 /* ---------- BROWSE ---------- */
-function chip(label,active,onclick,pip,star){
-  const b=document.createElement('button'); b.className='chip'+(active?' on':'')+((pip||star)?' st':'');
+function chip(label,active,onclick,pip,star,tint){
+  const b=document.createElement('button'); b.className='chip'+(active?' on':'')+((pip||star)?' st':'')+(tint?' tint':'');
+  if(tint) b.style.setProperty('--on-tint',tint);
   const ic = star?`<span class="pip" style="background:none;color:${star};font-size:12px;line-height:1;width:auto">★</span>`:(pip?`<span class="pip" style="background:${pip}"></span>`:'');
   b.innerHTML=ic+label; b.onclick=onclick; return b;
 }
@@ -498,9 +507,9 @@ function renderFilters(){
   const fh=document.getElementById('fHoliday'); fh.innerHTML='';
   HOLIDAYS.forEach(h=>fh.appendChild(chip((HOLIDAY_ICON[h]?HOLIDAY_ICON[h]+' ':'')+h,fHoliday===h,()=>{fHoliday=fHoliday===h?null:h;renderBrowse();})));
   const fs=document.getElementById('fStatus'); fs.innerHTML='';
-  fs.appendChild(chip('<span class="mk-made" style="margin-right:5px">✓</span>Made',fStatus==='md',()=>{fStatus=fStatus==='md'?null:'md';renderBrowse();}));
-  fs.appendChild(chip('<span class="mk-short" style="margin-right:5px">✓</span>Shortlist',fStatus==='ts',()=>{fStatus=fStatus==='ts'?null:'ts';renderBrowse();}));
-  fs.appendChild(chip('Favorite',fStatus==='fv',()=>{fStatus=fStatus==='fv'?null:'fv';renderBrowse();},null,'var(--fav)'));
+  fs.appendChild(chip('<span class="mk-made" style="margin-right:5px">\u2714\uFE0E</span>Made',fStatus==='md',()=>{fStatus=fStatus==='md'?null:'md';renderBrowse();},null,null,'var(--made)'));
+  fs.appendChild(chip('<span class="mk-short" style="margin-right:5px">\u2714\uFE0E</span>Shortlist',fStatus==='ts',()=>{fStatus=fStatus==='ts'?null:'ts';renderBrowse();},null,null,'var(--short)'));
+  fs.appendChild(chip('Favorite',fStatus==='fv',()=>{fStatus=fStatus==='fv'?null:'fv';renderBrowse();},null,'var(--fav)','var(--fav)'));
   setFA('fa_base',fBase); setFA('fa_style',fStyle); setFA('fa_served',fServed); setFA('fa_mood',fMood);
   const ff=document.getElementById('fFam'); if(ff){ ff.innerHTML=''; FAMILIES.forEach(x=>ff.appendChild(chip(x,fFam===x,()=>{fFam=fFam===x?null:x;renderBrowse();}))); }
   const fe=document.getElementById('fEra'); if(fe){ fe.innerHTML=''; ERAS.forEach(x=>fe.appendChild(chip(x,fEra===x,()=>{fEra=fEra===x?null:x;renderBrowse();}))); }
@@ -527,8 +536,8 @@ function matchB(d){
 function marksHTML(d){
   // \uFE0E is the text-presentation selector: it tells the browser these are type,
   // not emoji, so they keep taking their colour from CSS.
-  let h=''; if(d.md)h+=`<span class="mk-made" title="Made">\u2713\uFE0E</span>`;
-  if(d.ts)h+=`<span class="mk-short" title="Shortlist">\u2713\uFE0E</span>`;
+  let h=''; if(d.md)h+=`<span class="mk-made" title="Made">\u2714\uFE0E</span>`;
+  if(d.ts)h+=`<span class="mk-short" title="Shortlist">\u2714\uFE0E</span>`;
   if(d.fv)h+=`<span class="pstar" title="Favorite">\u2605\uFE0E</span>`;
   return h?`<span class="marks">${h}</span>`:'';
 }
