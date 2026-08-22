@@ -35,7 +35,7 @@
      hover/focus, which is the only hint that it does anything. */
   /* hit target: sized to the art but 14px shorter so it can never cover the
      "Add your own recipe" button that sits just below. */
-  .ha-hit{position:absolute;right:0;top:12px;width:130px;height:100px;z-index:3;
+  .ha-hit{position:absolute;right:0;top:8px;width:130px;height:108px;z-index:3;
     border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .ha-hit:focus{outline:none}
   .ha-hit:focus-visible{outline:1px solid var(--line);outline-offset:4px;border-radius:4px}
@@ -50,11 +50,11 @@
   /* Canvas is now 1086x950, identical to the header, so the expanded figure is a
      true scale-up of the watermark and the crab registers at the same percentages
      as .ha-crab. aspect-ratio 1086/950 = 1.1432. */
-  .starfig{position:relative;width:min(92vw,620px);aspect-ratio:1.1432;
+  .starfig{position:relative;width:min(92vw,620px);aspect-ratio:1.0613;
     transform:scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
   .starwrap.show .starfig{transform:scale(1)}
-  .starfig img{position:absolute;left:10.12%;top:1.05%;width:79.76%;height:97.89%;opacity:.72}
-  .starfig svg{position:absolute;inset:0;width:100%;height:100%;color:#f2d79a;opacity:.95}
+  .starfig img{position:absolute;inset:0;width:100%;height:100%;opacity:.72}
+  .starfig svg{position:absolute;left:2.655%;top:15.030%;width:82.422%;height:76.519%;color:#f2d79a;opacity:.95}
   /* One SVG serves both. Label type is sized here because the standalone file's
      <style> block does not survive being inlined. Each label group carries a
      scale(1.667) about ITS OWN star, so the type got bigger without disturbing the
@@ -69,6 +69,12 @@
   /* Watermark keeps the Greek letters only -- at 130px the full names would render
      at 4.4px, which is noise rather than type. */
   .header-art .name{display:none}
+    .starstory{max-width:620px;margin:14px auto 0;text-align:left}
+  .starstory h3{font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink);margin:0 0 2px;letter-spacing:-.01em}
+  .starstory .sub{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 12px}
+  .starstory h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:15px 0 5px;font-weight:400}
+  .starstory p{font-size:13.5px;line-height:1.65;color:var(--muted);margin:0}
+  .starstory p em{color:var(--ink);font-style:italic}
   .starcap{position:fixed;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom));
     text-align:center;padding:0 24px}
   .starcap b{font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;
@@ -92,7 +98,15 @@
      right:0 really is flush -- no need to bleed.
      Canvas aspect 1.1429; width and height must stay in step or the two
      layers drift out of register. */
-  .header-art{position:absolute;right:0;top:12px;width:130px;height:114px;z-index:0;pointer-events:none}
+  /* The box is now the CRAB's frame (1143x1077, aspect 1.0613) with the asterism
+     placed inside it. That inversion is forced by the aligned reference: at 20.75deg
+     the crab is 102.6% of the asterism box wide and 110.6% of it tall, so the
+     asterism can no longer be the container. Everything scales together now.
+     Placement is registered on the CARAPACE, not the silhouette: the reference art
+     and the melt stages have different puddle extents, so their bounding boxes do
+     not correspond and a bbox fit inherits a translation error. Matching the upper
+     body instead gives IoU .80 and puts the two donkeys on the eyes. */
+  .header-art{position:absolute;right:0;top:8px;width:130px;height:122px;z-index:0;pointer-events:none}
   .header-art .ha-crab,.header-art .ha-stars{pointer-events:none}
   /* The melt stages are taller than the old single crab: the shared frame is
      957x1030 (aspect .9291) against the old 966x930 (1.0387), because the puddle
@@ -100,7 +114,7 @@
      since .ha-hit is deliberately 14px shorter than the art so it can never cover
      the Add-recipe button, and growing the art would put that back in play.
      79.76% x 97.89% preserves the aspect exactly; left centres it in the box. */
-  .header-art .ha-crab{position:absolute;left:10.12%;top:1.05%;width:79.76%;height:97.89%;opacity:.44}
+  .header-art .ha-crab{position:absolute;inset:0;width:100%;height:100%;opacity:.44}
   /* Stars are var(--brass) at FULL layer opacity. The three-tier alpha lives
      INSIDE the svg: cores 1.0, connecting lines .44, halos .09. That RATIO is what
      makes a star read as a star -- a core has to dominate its own lines.
@@ -112,20 +126,31 @@
      and the ratio survives. Do NOT flatten the per-element values to compensate. */
   /* X vs Y: the ONLY difference is chi's star and its line to gamma, so both live
      in one layer and the chi arm toggles. Hidden by default -> no-JS gets Y. */
-  .header-art .ha-stars{position:absolute;inset:0;width:100%;height:100%;color:var(--brass);opacity:1}
+  /* Asterism placed inside the crab frame, measured off the aligned reference:
+     x 24..1138 of 1143 wide, y 181..1155 of 1077 tall. */
+  .header-art .ha-stars{position:absolute;left:2.655%;top:15.030%;width:82.422%;height:76.519%;color:var(--brass);opacity:1}
   header>*:not(.header-art):not(.ha-hit){position:relative;z-index:1}
   .empty svg{color:var(--faint);margin-bottom:4px}
   /* padding-right reserves the constellation's column so the ::after hairline
      stops before it instead of striking through the stars. Keep in step with
      .header-art width (130 + 2 inset + 12 breathing room). */
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px;padding-right:142px}
-  @media(max-width:620px){.header-art{width:104px;height:91px;right:0;top:8px}.ha-hit{width:104px;height:80px;top:8px}.header-art .ha-crab{opacity:.42}.eyebrow{padding-right:114px}}
+  @media(max-width:620px){.header-art{width:104px;height:98px;right:0;top:6px}.ha-hit{width:104px;height:86px;top:6px}.header-art .ha-crab{opacity:.42}.eyebrow{padding-right:114px}}
   .eyebrow::after{content:"";height:1px;flex:1;background:var(--line)}
   h1{font-family:var(--display);font-weight:900;font-size:40px;line-height:.98;letter-spacing:-.015em;margin:8px 0 2px}
   h1 em{font-style:italic;font-weight:400;color:var(--brass)}
   .tagline{color:var(--muted);font-size:13px;max-width:36ch}
-  .addbtn{margin-top:14px;background:var(--raised);border:1px solid var(--brass-dim);color:var(--brass);font-family:var(--sans);font-weight:600;font-size:13px;padding:10px 16px;border-radius:100px;cursor:pointer;width:100%}
-  .addbtn:active{transform:translateY(1px)}
+/* ---- My Bar (visitor's shelf) ---- */
+  .shelfhead{display:flex;align-items:baseline;gap:10px;margin:2px 0 10px}
+  .shelfhead .cnt{font-family:var(--mono);font-size:11px;color:var(--faint);flex:1}
+  .shelfhead button{background:none;border:none;color:var(--brass);font-family:var(--sans);font-size:12px;cursor:pointer;padding:0}
+  .shelfnote{font-size:11.5px;color:var(--faint);line-height:1.5;margin:0 0 12px}
+  .shelfcat{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+  .shelfrow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .shelfrow .bx{width:16px;height:16px;border-radius:5px;border:1px solid var(--brass-dim);flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent}
+  .shelfrow.on .bx{background:var(--have);border-color:var(--have);color:#17110f}
+  .shelfrow .lb{font-size:13.5px;color:var(--ink);flex:1}
+  .shelfrow .use{font-family:var(--mono);font-size:10px;color:var(--faint)}
   .flabel2{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:14px 0 6px}
   .fin{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:15px;padding:11px 12px;border-radius:10px;outline:none}
   .fin:focus{border-color:var(--brass-dim)}
@@ -314,6 +339,19 @@
     color:var(--brass);font-weight:700}
   .recipe-row .nm{font-size:14.5px;flex:1}
   .recipe-row .pct{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:44px;text-align:right}
+  /* proportion bar + footer */
+  .propbar{display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden;margin:12px 0 0}
+  .propbar i{display:block;height:100%}
+  .rfoot{display:flex;align-items:baseline;gap:12px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
+  .rfoot .tv{width:13ch;flex:none;color:var(--muted)}
+  .rfoot .rt{margin-left:auto;color:var(--brass)}
+  /* water is not part of the drink: divider above it, winter blue, and it is left out
+     of both the percentages and the proportion bar */
+  .recipe-row.water{border-top:1px solid var(--line);margin-top:4px}
+  .recipe-row.water .amt,.recipe-row.water .nm{color:var(--winter)}
+  .recipe-row.water .rdot{background:var(--winter);opacity:1}
+  .dilrow .hint{font-family:var(--mono);font-size:10px;color:var(--faint);line-height:1.5;margin:6px 0 0}
+  .dilrow .hint b{color:var(--brass);font-weight:400}
   .serve{display:flex;gap:22px;margin-top:18px}
   .serve div{flex:1}
   .serve .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
@@ -335,15 +373,9 @@
       <img class="ha-crab" id="crabArt" src="" alt="">
       <svg class="ha-stars" viewBox="0 0 1086 950" focusable="false"><g><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".09" /><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72" /><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85" /><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73" /><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77" /><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82" /><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79" /><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94" /><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81" /><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76" /><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88" /><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91" /><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96" /><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74" /><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85" /><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87" /><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88" /><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98" /><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91" /><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79" /><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84" /><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93" /><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96" /><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".09" /><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor" /><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".09" /><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor" /><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".09" /><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor" /><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".09" /><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor" /><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".09" /><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor" /><g class="ast-labels"><g transform="translate(-37.152,-181.491) scale(1.667)"><text class="glyph" x="73" y="244" text-anchor="middle">ι</text><text class="name" x="90" y="244" text-anchor="start">Cnc</text></g><g transform="translate(-252.326,-275.805) scale(1.667) translate(22,-8)"><text class="glyph" x="320" y="440" text-anchor="middle">γ</text><text class="name" x="303" y="442" text-anchor="end">Asellus Borealis</text></g><g transform="translate(-338.969,-338.436) scale(1.667)"><text class="glyph" x="473" y="541" text-anchor="middle">δ</text><text class="name" x="456" y="537.74377" text-anchor="end">Asellus Australis</text></g><g transform="translate(-461.231,-529.665) scale(1.667)"><text class="glyph" x="714" y="839" text-anchor="middle">α</text><text class="name" x="731" y="839" text-anchor="start">Acubens</text></g><g transform="translate(-694.280,-297.015) scale(1.667) translate(0,-8)"><text class="glyph" x="1038" y="428" text-anchor="middle">β</text><text class="name" x="1020" y="426" text-anchor="end">Al Tarf</text></g><g transform="translate(-305.953,-278.473) scale(1.667) translate(23.607541,-28.491859)"><text class="glyph" x="499" y="428" text-anchor="middle">M44</text><text class="name" x="533" y="428" text-anchor="start">Beehive</text></g></g></g></svg>
     </div>
-<script>
-  /* Cancer has two accepted stick figures: the inverted Y, and the same plus a fork
-     up to chi Cancri. Rather than pick one, flip a coin each load. Change to
-     `true` to pin X, or `false` to pin Y. */
-</script>
     <div class="eyebrow">Cocktail Codex</div>
     <h1>What'll it <em>be?</em></h1>
     <p class="tagline">Search the collection by name, spirit, or mood — or tell it what's on your shelf.</p>
-    <button class="addbtn" onclick="openForm()">＋ Add your own recipe</button>
   </header>
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -352,6 +384,7 @@
   <div class="modes">
     <button id="mBrowse" class="on" onclick="setMode('browse')">Browse</button>
     <button id="mBar" onclick="setMode('bar')">Build</button>
+    <button id="mShelf" onclick="setMode('shelf')">My Bar</button>
   </div>
 
   <div id="browseView">
@@ -385,6 +418,7 @@
     <div id="barGrid"></div>
     <div id="barResults" style="margin-top:8px"></div>
   </div>
+  <div id="shelfView" style="display:none"></div>
 </div>
 
 <div class="scrim" id="starScrim" onclick="closeStars()"></div>
@@ -394,15 +428,22 @@
     <svg viewBox="0 0 1086 950" aria-hidden="true" focusable="false"><g><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".09" /><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72" /><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85" /><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73" /><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77" /><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82" /><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79" /><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94" /><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81" /><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76" /><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88" /><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91" /><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96" /><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74" /><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85" /><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87" /><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88" /><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98" /><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91" /><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79" /><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84" /><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93" /><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96" /><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".09" /><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor" /><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".09" /><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor" /><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".09" /><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor" /><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".09" /><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor" /><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".09" /><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor" /><g class="ast-labels"><g transform="translate(-37.152,-181.491) scale(1.667)"><text class="glyph" x="73" y="244" text-anchor="middle">ι</text><text class="name" x="90" y="244" text-anchor="start">Cnc</text></g><g transform="translate(-252.326,-275.805) scale(1.667) translate(22,-8)"><text class="glyph" x="320" y="440" text-anchor="middle">γ</text><text class="name" x="303" y="442" text-anchor="end">Asellus Borealis</text></g><g transform="translate(-338.969,-338.436) scale(1.667)"><text class="glyph" x="473" y="541" text-anchor="middle">δ</text><text class="name" x="456" y="537.74377" text-anchor="end">Asellus Australis</text></g><g transform="translate(-461.231,-529.665) scale(1.667)"><text class="glyph" x="714" y="839" text-anchor="middle">α</text><text class="name" x="731" y="839" text-anchor="start">Acubens</text></g><g transform="translate(-694.280,-297.015) scale(1.667) translate(0,-8)"><text class="glyph" x="1038" y="428" text-anchor="middle">β</text><text class="name" x="1020" y="426" text-anchor="end">Al Tarf</text></g><g transform="translate(-305.953,-278.473) scale(1.667) translate(23.607541,-28.491859)"><text class="glyph" x="499" y="428" text-anchor="middle">M44</text><text class="name" x="533" y="428" text-anchor="start">Beehive</text></g></g></g></svg>
   </div>
   <button class="starclose" type="button" onclick="closeStars()" aria-label="Close">×</button>
-  <div class="starcap">
-    <b>Cancer</b>
-    <span>&iota;&nbsp;Cnc &middot; &chi;&nbsp;Cnc &middot; &gamma;&nbsp;Asellus Borealis &middot; &delta;&nbsp;Asellus Australis &middot; &alpha;&nbsp;Acubens &middot; &beta;&nbsp;Al Tarf. The cluster between &gamma; and &delta; is M44, the Beehive &mdash; known since antiquity as <i>Praesepe</i>, the manger, with the two <i>aselli</i> feeding either side of it.</span>
+  <div class="starstory">
+    <h3>Why a melting crab?</h3>
+    <p class="sub">The Crabby Melter</p>
+
+    <h4>The sky</h4>
+    <p>Cancer is one of the twelve constellations of the zodiac and the faintest of them all. Latin for &ldquo;crab,&rdquo; it is a shape you have to work hard to find in the northern sky. &gamma; and &delta; are Asellus Borealis and Asellus Australis, the northern and southern donkeys. Between them sits Messier&nbsp;44 &mdash; <em>Praesepe</em>, the manger they&rsquo;re feeding from, better known now as the Beehive Cluster. Acubens (&alpha;&nbsp;Cancri) marks the crab&rsquo;s southern claw. The name derives from the Arabic <em>al-zub&#257;n&#257;</em>, &ldquo;the claw.&rdquo; It&rsquo;s a multiple star system sitting close enough to the ecliptic that the Moon can pass in front of it and blot it out entirely.</p>
+
+    <h4>The drink</h4>
+    <p>My grandparents made Manhattans in big red glass tumblers the size of small vases &mdash; enormous, unfussy, cheap whiskey and even cheaper vermouth. My father kept the idea though dropped the volume to that of a double rocks glass, upgraded the ingredients for the better, but stopped short of anything you might call refined technique. Two parts Rye or Bourbon, one part Carpano Antica, a little maraschino syrup, at least two cherries, built in the glass over ice and barely stirred &hellip; possibly with a finger. He started referring to them as Crabby Melters &hellip; Double pours, quick to build, strong, and straight to the point. He will make one to &ldquo;melt the crab away&rdquo; &hellip; to take the edge off and loosen up.</p>
+
+    <h4>The connection</h4>
+    <p>This one&rsquo;s an homage to my father&rsquo;s unfussy Manhattan. His waggish name for it and the crab connection made a natural pairing, so this app&rsquo;s mascot pretty much picked itself. As a Cancer who is both rather partial to a Manhattan and can, at times, live up to the crabby nature of my astrological sign, I too like something to help melt that crabby edge away. I guess it runs in the family.</p>
   </div>
 </div>
 <div class="scrim" id="scrim" onclick="closeSheet()"></div>
 <div class="sheet" id="sheet"></div>
-<div class="scrim" id="formScrim" onclick="closeForm()"></div>
-<div class="sheet" id="formSheet"></div>
 
 <script src="codexdata.js"></script>
 <script>
@@ -427,16 +468,30 @@ const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'�
   'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
 const moodLbl=m=>(MOOD_ICON[m]?MOOD_ICON[m]+' ':'')+m;
 const NOCONV=new Set(['barspoon','dashes','drops','pinch','parts']);
+/* Proportion-bar colours, keyed by CATEGORY rather than by ingredient, so the same
+   colour means the same thing on every card and the bar actually says something.
+   Hues are the Cocktails header fills from the sheet (Spirit #134F5C, Modifier
+   #38761D, Acid #F1C232, Sweetener #E69138, Seasoning #741B47, Top/Mix #351C75),
+   lifted for a dark background -- Google's defaults are mixed for white paper and
+   go to mud at 4px on #17110f. */
+const CAT_COLOR={'Spirit':'#4FA3B8','Modifier':'#7FB84F','Acid':'#F1C232','Sweetener':'#E69138',
+                 'Seasoning':'#C4568C','Top / Mix':'#8577D6','Muddled':'#6f6153','Other':'#6f6153'};
 
-/* ---- personal storage (persists when hosted / opened as a file) ---- */
-function loadCustom(){ try{ return JSON.parse(localStorage.getItem('codex_custom')||'[]'); }catch(e){ return []; } }
-function persistCustom(){ try{ localStorage.setItem('codex_custom',JSON.stringify(CUSTOM)); }catch(e){} }
-let CUSTOM = loadCustom();
+/* ---- visitor's bar (persists locally; the sheet stays the source of truth) ----
+   MY_BAR is null until a visitor edits it. Null means "use the published bar", so a
+   first-time visitor sees the curator's 543 ready drinks rather than an empty app --
+   an empty shelf is a terrible first impression and tells them nothing. Editing
+   forks a personal copy; Reset drops back to the published one. */
+const BAR_KEY='codex_bar';
+function loadBar(){ try{ const v=localStorage.getItem(BAR_KEY); return v?new Set(JSON.parse(v)):null; }catch(e){ return null; } }
+function persistBar(){ try{ MY_BAR?localStorage.setItem(BAR_KEY,JSON.stringify([...MY_BAR])):localStorage.removeItem(BAR_KEY); }catch(e){} }
+let MY_BAR = loadBar();
+function HAVE_SET(){ return MY_BAR || HAVE; }
 
 let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, FAMILIES, ERAS, ingByCat, shuffledC;
 function shuffle_(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;} return a; }
 function rebuild(){
-  C = C0.concat(CUSTOM);
+  C = C0;
   /* _set  = EVERY ingredient. Drives the card's ingredient line and Build selection,
               so muddled and Other things stay visible and pickable.
      _stock = only the categories My Bar actually tracks. Drives every have/missing
@@ -463,25 +518,6 @@ function rebuild(){
 window.reshuffleHome=function(){ shuffledC=shuffle_(C.slice()); renderBrowse(); };
 rebuild();
 
-/* ---- light client-side mood/season derivation for custom recipes ---- */
-function deriveMoods(style,ings){
-  const names=ings.map(i=>i[0].toLowerCase()).join(' '); const cats=new Set(ings.map(i=>i[3])); const s=(style||'').toLowerCase(); const m=new Set();
-  const has=(...w)=>w.some(x=>names.includes(x));
-  if(s.includes('tiki')||has('orgeat','falernum','pineapple','coconut'))m.add('Tropical');
-  if(/\b(campari|aperol|amaro|fernet|cynar|suze|bianco|amaretto|averna|nonino)\b/.test(names))m.add('Bitter');
-  const hc=has('lime juice','lemon juice','grapefruit juice'); const ht=cats.has('Top / Mix')||has('soda','tonic','ginger beer','seltzer','sparkling');
-  if(hc)m.add('Citrusy'); if(has('chartreuse','absinthe','benedictine')||/\bmint\b/.test(names))m.add('Herbal');
-  if(ht)m.add('Tall'); if(has('egg white','heavy cream','coconut cream','baileys'))m.add('Creamy');
-  const smoky=/\b(mezcal|mescal|lapsang|islay|peated|laphroaig|lagavulin|ardbeg|caol ila|bowmore|talisker)\b/.test(names)||has('smoked','smoke','smoky','smokey');
-  if(smoky)m.add('Smoky');
-  if(s.includes('spirit-forward')||(!hc&&!ht))m.add('Boozy'); if(!m.size)m.add('Boozy');
-  // Vocabulary must match the sheet's eight Mood values exactly — an extra value
-  // here would create a filter chip that matches nothing from the sheet. ('Classic'
-  // used to leak out of this function for that reason.) Smoky is sticky, as in TagMoods.gs.
-  const out=['Tropical','Bitter','Citrusy','Herbal','Smoky','Tall','Creamy','Boozy'].filter(x=>m.has(x)).slice(0,3);
-  if(smoky&&out.indexOf('Smoky')<0)out.push('Smoky');
-  return out;
-}
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,filtersOpen=false;
 const sel=new Set(); let onlyHave=false; const barOpen=new Set();
@@ -549,7 +585,7 @@ function cardEl(d,extra){
   const status=extra&&extra.badge?extra.badge:'';
   const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:'')+(status?' has-status':''); c.onclick=()=>openSheet(d);
   c.innerHTML=`${status}<h3>${d.n}${marksHTML(d)}</h3><div class="ing">${ingLine(d)}</div>
-    <div class="meta">${d.custom?`<span class="tag" style="color:var(--have);border-color:rgba(159,191,134,.4)">Yours</span>`:''}${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
+    <div class="meta">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${d.s?`<span class="tag">${d.s}</span>`:''}${d.fam?`<span class="tag" style="border-color:var(--brass);color:var(--brass)">${d.fam}</span>`:''}${d.era?`<span class="tag" style="color:var(--short)">${d.era}</span>`:''}${d.mo.slice(0,2).map(m=>`<span class="tag">${m}</span>`).join('')}</div>`;
   return c;
 }
 function activeFilters(){
@@ -601,7 +637,7 @@ function renderBarToggle(){
 function barMatches(){
   const s=[...sel];
   let rows=C.filter(d=>s.every(x=>d._set.has(x)));
-  if(onlyHave) rows=rows.filter(d=>[...d._stock].every(n=>HAVE.has(n)));
+  if(onlyHave) rows=rows.filter(d=>[...d._stock].every(n=>HAVE_SET().has(n)));
   return rows;
 }
 function renderSelBar(){
@@ -620,7 +656,7 @@ function nextBottleData(){
   const unlock={}, uses={}, near={};
   let ready=0, one=0;
   C.forEach(d=>{
-    const miss=[...d._stock].filter(n=>!HAVE.has(n));
+    const miss=[...d._stock].filter(n=>!HAVE_SET().has(n));
     miss.forEach(n=>uses[n]=(uses[n]||0)+1);
     if(!miss.length) ready++;
     else if(miss.length===1){ one++; unlock[miss[0]]=(unlock[miss[0]]||0)+1; }
@@ -653,6 +689,44 @@ function renderNextBottle(){
     + `</div>`;
 }
 
+/* ---------- MY BAR ----------
+   Lets a visitor keep their own shelf without touching the curator's, which lives in
+   the sheet and ships in codexdata.js. Until they tick something, MY_BAR is null and
+   every have/missing calculation reads the published bar -- so the app opens useful
+   rather than empty. The first tick forks a copy of the published set; Reset deletes
+   it and hands control back. Ingredients are ordered by how many drinks use them,
+   because the useful ones should be reachable without scrolling. */
+function shelfIngredients(){
+  const use={};
+  C.forEach(d=>d.i.forEach(it=>{ if(!UNTRACKED_CATS.has(it[3])) use[it[0]]=(use[it[0]]||0)+1; }));
+  const byCat={};
+  C.forEach(d=>d.i.forEach(it=>{ if(!UNTRACKED_CATS.has(it[3])) (byCat[it[3]]=byCat[it[3]]||new Set()).add(it[0]); }));
+  return {use:use, byCat:byCat};
+}
+window.toggleShelf=function(n){
+  if(!MY_BAR) MY_BAR=new Set(HAVE);          // fork the published bar on first edit
+  MY_BAR.has(n)?MY_BAR.delete(n):MY_BAR.add(n);
+  persistBar(); _nbData=null; rebuild(); renderShelf();
+};
+window.resetShelf=function(){ MY_BAR=null; persistBar(); _nbData=null; rebuild(); renderShelf(); };
+function renderShelf(){
+  const el=document.getElementById('shelfView'); if(!el) return;
+  const {use,byCat}=shelfIngredients(); const H=HAVE_SET();
+  const ready=C.filter(d=>[...d._stock].every(n=>H.has(n))).length;
+  let html=`<div class="shelfhead"><span class="cnt">${H.size} INGREDIENTS · ${ready} DRINKS READY</span>`
+    + (MY_BAR?`<button onclick="resetShelf()">Reset to the house bar</button>`:'')+`</div>`
+    + `<p class="shelfnote">${MY_BAR?'This is your shelf. It is stored on this device only.'
+        :'Showing the house bar. Tick anything to start your own — it stays on this device and never touches the collection.'}</p>`;
+  CAT_ORDER.forEach(cat=>{
+    if(UNTRACKED_CATS.has(cat)||!byCat[cat]) return;
+    const list=[...byCat[cat]].sort((a,b)=>(use[b]||0)-(use[a]||0)||(a<b?-1:1));
+    html+=`<div class="shelfcat">${cat} · ${list.length}</div>`;
+    html+=list.map(n=>`<div class="shelfrow${H.has(n)?' on':''}" onclick="toggleShelf('${n.replace(/'/g,"\\'")}')">`
+      +`<span class="bx">\u2714</span><span class="lb">${n}</span><span class="use">${use[n]}</span></div>`).join('');
+  });
+  el.innerHTML=html;
+}
+
 window.toggleSel=function(n){ sel.has(n)?sel.delete(n):sel.add(n); renderBar(); };
 function renderBar(){
   renderBarToggle(); renderSelBar(); renderNextBottle();
@@ -660,18 +734,18 @@ function renderBar(){
   // ingredients that still combine with current selection
   const compat=new Set(); rows.forEach(d=>d._set.forEach(n=>compat.add(n)));
   const bc=document.getElementById('barCount');
-  const makeable=rows.filter(d=>[...d._stock].every(n=>HAVE.has(n))).length;
+  const makeable=rows.filter(d=>[...d._stock].every(n=>HAVE_SET().has(n))).length;
   bc.innerHTML= sel.size||onlyHave ? `<b>${rows.length}</b> match${rows.length===1?'':'es'} · <b>${makeable}</b> fully stocked` : `Tap ingredients below to start`;
   // results
   const rc=document.getElementById('barResults'); rc.innerHTML='';
   if(sel.size||onlyHave){
     const sorted=rows.slice().sort((a,b)=>{
-      const am=[...a._stock].every(n=>HAVE.has(n)), bm=[...b._stock].every(n=>HAVE.has(n));
+      const am=[...a._stock].every(n=>HAVE_SET().has(n)), bm=[...b._stock].every(n=>HAVE_SET().has(n));
       if(am!==bm)return am?-1:1; return a._set.size-b._set.size;
     });
     sorted.slice(0,60).forEach(d=>{
-      const canMake=[...d._stock].every(n=>HAVE.has(n));
-      const miss=[...d._stock].filter(n=>!HAVE.has(n));
+      const canMake=[...d._stock].every(n=>HAVE_SET().has(n));
+      const miss=[...d._stock].filter(n=>!HAVE_SET().has(n));
       /* Exact count rather than "2+": only 12 drinks of 920 need three or more, so
          the extra precision costs nothing and reads shorter. Names for the 2+ cases
          live one tap away on the recipe card. */
@@ -711,33 +785,76 @@ function setMode(m){
   mode=m;
   document.getElementById('mBrowse').classList.toggle('on',m==='browse');
   document.getElementById('mBar').classList.toggle('on',m==='bar');
+  document.getElementById('mShelf').classList.toggle('on',m==='shelf');
   document.getElementById('browseView').style.display=m==='browse'?'':'none';
   document.getElementById('barView').style.display=m==='bar'?'':'none';
-  m==='bar'?renderBar():renderBrowse();
+  document.getElementById('shelfView').style.display=m==='shelf'?'':'none';
+  if(m==='bar')renderBar(); else if(m==='shelf')renderShelf(); else renderBrowse();
 }
 
 /* ---------- RECIPE SHEET + BATCH ---------- */
-let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g';
+let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g', dilution=25;
 function convFactor(from,to){ if(from===to)return 1; if(NOCONV.has(from)||NOCONV.has(to))return null; if(CONV[from]&&CONV[from][to]!=null)return CONV[from][to]; return null; }
 function computeRows(d){
   const BARE=new Set(['each','whole','-','']);
-  const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'—',raw:null};
+  const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'\u2014',raw:null};
     if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
     const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)} ${u}`,raw:null};
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
-  return d.i.map((it,idx)=>{
+  const batching = batchQty!=='' && !isNaN(parseFloat(batchQty)) && parseFloat(batchQty)>0;
+  let html=d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
-    if(batchQty&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
+    if(batching&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
     /* Green/red only for categories actually tracked in My Bar. "Other" matched
        just 8% of the time (11 of 145), so its dot was permanently red -- worse
        than no signal. Those rows get a neutral dot instead. */
     const tracked=!UNTRACKED_CATS.has(it[3]);
-    const stocked=tracked&&HAVE.has(it[0]);
+    const stocked=tracked&&HAVE_SET().has(it[0]);
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
          + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
+
+  /* Water joins the ingredient list rather than a second table, so there is one
+     anatomy to read. It is excluded from the percentages and from the bar, because
+     "20% water" is a fact about the batch, not about the drink. */
+  if(batching && dilution>0){
+    const w=parseFloat(batchQty)*dilution/100;
+    html+=`<div class="recipe-row water"><span class="amt">${Math.round(w*10)/10} ${batchU}</span>`
+        + `<span class="nm"><i class="rdot" aria-hidden="true"></i>Water (dilution)</span>`
+        + `<span class="pct">${dilution}%</span></div>`;
+  }
+
+  // proportion bar, by category, water excluded
+  const segs=d.i.map((it,idx)=>({c:CAT_COLOR[it[3]]||'#6f6153',v:conv[idx].raw||0})).filter(x=>x.v>0);
+  if(segs.length>1&&tot) html+=`<div class="propbar">`
+    + segs.map(x=>`<i style="width:${(x.v/tot*100).toFixed(2)}%;background:${x.c}"></i>`).join('')+`</div>`;
+
+  // footer: total under the amounts column, ratio on the right when it reduces cleanly
+  /* Ratio rule, tuned against the sheet rather than invented: reduce to whole
+     numbers, then require the largest part <= 8 and at most 4 volume ingredients.
+     The cap of 8 keeps the sour family (Daiquiri is 8:3:2 here, Sidecar 3:2:1); the
+     ingredient limit drops things like Jungle Bird's 3:3:3:6:3:2, which is accurate
+     and unreadable. Fires on 66% of the 694 drinks with two or more volume
+     ingredients. Non-volume rows (egg white, dashes) are ignored rather than
+     suppressing the ratio, because a Whiskey Sour is still 2:1. */
+  const rats=conv.map(x=>x.raw).filter(v=>v>0);
+  let ratio='';
+  if(rats.length>=2 && rats.length<=4){
+    const mn=Math.min(...rats);
+    for(let m=1;m<=8&&!ratio;m++){
+      const r=rats.map(v=>v/mn*m);
+      if(r.every(v=>Math.abs(v-Math.round(v))<0.06) && Math.max(...r)<=8 && Math.min(...r)>=1)
+        ratio=r.map(v=>Math.round(v)).join(' : ');
+    }
+  }
+  const grand = batching ? parseFloat(batchQty)*(1+(dilution>0?dilution/100:0)) : tot;
+  const gu = batching ? batchU : normU;
+  if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(grand*10)/10)} ${gu}</span>`
+    + `<span>TOTAL${batching&&dilution>0?' WITH WATER':''}</span>`
+    + (ratio?`<span class="rt">${ratio}</span>`:'')+`</div>`;
+  return html;
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); }
 // Style -> Family -> Era is a genuine taxonomy: broad build, then the specific
@@ -829,6 +946,12 @@ function renderSheet(){
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
         <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">optional · fills right column by weight</span>
       </div>
+      ${(batchQty!==''&&parseFloat(batchQty)>0)?`<div class="brow dilrow" style="margin-bottom:0;flex-wrap:wrap">
+        <label>Dilution</label>
+        <div class="stepper"><button onclick="bumpDil(-1)">−</button><input class="multin" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onclick="bumpDil(1)">+</button></div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">%</span>
+        <div class="hint" style="flex-basis:100%">0% stir when served · 18% spirit-forward · 25% shaken${[0,18,25].indexOf(dilution)<0?` · <b>${dilution}% custom</b>`:''}</div>
+      </div>`:''}
     </div>
     <div id="recipeRows">${computeRows(d)}</div>
     <div class="serve"><div><div class="lbl">Served</div><div class="val">${d.g||'—'}</div></div><div><div class="lbl">Garnish</div><div class="val">${d.ga||'—'}</div></div></div>
@@ -838,12 +961,27 @@ function renderSheet(){
 window.bumpMult=function(delta){ mult=Math.max(0.25, Math.round((mult+delta)*4)/4); const inp=document.querySelector('.multin'); if(inp)inp.value=mult; updateRows(); };
 window.setMultVal=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>0){ mult=n; updateRows(); } };
 window.setUnit=function(u){ normU=u; updateRows(); };
-window.setQty=function(v){ batchQty=v; updateRows(); };
+/* Re-render the whole sheet only when batching TOGGLES on or off, because that is
+   when the dilution control appears or disappears. Doing it on every keystroke would
+   rebuild the DOM under the caret and drop focus mid-number. */
+window.setQty=function(v){
+  const was=(batchQty!==''&&parseFloat(batchQty)>0), now=(v!==''&&parseFloat(v)>0);
+  batchQty=v;
+  if(was!==now) renderSheet(); else updateRows();
+};
+/* The stepper walks the three presets and then goes free-form, so the common cases
+   are one tap and a custom value is still typeable. */
+window.bumpDil=function(dir){
+  const P=[0,18,25];
+  if(P.indexOf(dilution)>=0){ let i=P.indexOf(dilution)+dir; if(i>=0&&i<P.length){ dilution=P[i]; } else { dilution=Math.max(0,Math.min(60,dilution+dir)); } }
+  else dilution=Math.max(0,Math.min(60,dilution+dir));
+  renderSheet();
+};
+window.setDil=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>=0&&n<=60){ dilution=n; updateRows(); } };
 window.setBatchU=function(u){ batchU=u; updateRows(); };
 let _overlay=null;
 function _hideSheet(){ document.getElementById('scrim').classList.remove('show'); document.getElementById('sheet').classList.remove('show'); }
-function _hideForm(){ document.getElementById('formScrim').classList.remove('show'); document.getElementById('formSheet').classList.remove('show'); }
-function _applyClose(){ if(_overlay==='sheet')_hideSheet(); else if(_overlay==='form')_hideForm(); else if(_overlay==='stars')_hideStars(); _overlay=null; }
+function _applyClose(){ if(_overlay==='sheet')_hideSheet(); else if(_overlay==='stars')_hideStars(); _overlay=null; }
 /* Easter egg: the header watermark expands. The hi-res crab has no src until first
    open, so finding it costs a fetch and never opens costs nothing. */
 function _hideStars(){ document.getElementById('starScrim').classList.remove('show');
@@ -860,11 +998,11 @@ var CRAB_STAGES=7;
 function crabStage(){ return 1+Math.floor(Math.random()*CRAB_STAGES); }
 var CRAB_N=crabStage();
 (function(){ var c=document.getElementById('crabArt');
-  if(c) c.src='crab-melt-'+CRAB_N+'.png?v=4'; })();
+  if(c) c.src='crab-melt-'+CRAB_N+'.png?v=5'; })();
 
 window.openStars=function(){
   var i=document.getElementById('starImg');
-  if(!i.getAttribute('src')) i.setAttribute('src','crab-melt-'+CRAB_N+'@2x.png?v=4');  // same stage as the watermark
+  if(!i.getAttribute('src')) i.setAttribute('src','crab-melt-'+CRAB_N+'@2x.png?v=5');  // same stage as the watermark
   document.getElementById('starScrim').classList.add('show');
   document.getElementById('starWrap').classList.add('show');
   _pushNav('stars');
@@ -876,84 +1014,6 @@ function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
 function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
-
-/* ---------- ADD RECIPE FORM ---------- */
-const FUNITS=['fl oz','-','whole','oz','ml','tsp','tbsp','dashes','barspoon','drops','parts','pinch',''];
-function ingRowHTML(a,u,n,cat){
-  return `<div class="ingrow">
-    <input class="amt" type="number" step="0.25" inputmode="decimal" placeholder="amt" value="${a||''}">
-    <select class="un">${FUNITS.map(x=>`<option ${x===u?'selected':''}>${x}</option>`).join('')}</select>
-    <input class="nm" list="allIngs" placeholder="ingredient" value="${n||''}">
-    <select class="cat">${CAT_ORDER.map(x=>`<option ${x===(cat||'Spirit')?'selected':''}>${x}</option>`).join('')}</select>
-    <button class="rm" onclick="this.parentNode.remove()">×</button></div>`;
-}
-window.addIngRow=function(){ document.getElementById('ingRows').insertAdjacentHTML('beforeend',ingRowHTML()); };
-window.openForm=function(){
-  const allIngs=[...new Set(Object.values(ingByCat).flatMap(s=>[...s]))].sort();
-  const s=document.getElementById('formSheet');
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeForm()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div><div class="kicker">Your Collection</div><h2>Add a recipe</h2>
-    <datalist id="allIngs">${allIngs.map(i=>`<option value="${i.replace(/"/g,'&quot;')}">`).join('')}</datalist>
-    <datalist id="allStyles">${STYLES.map(i=>`<option value="${i}">`).join('')}</datalist>
-    <datalist id="allBases">${BASES.map(i=>`<option value="${i}">`).join('')}</datalist>
-    <div class="flabel2">Name *</div><input class="fin" id="f_name" placeholder="e.g. Brother's Old Fashioned">
-    <div style="display:flex;gap:10px"><div style="flex:1"><div class="flabel2">Style</div><input class="fin" id="f_style" list="allStyles" placeholder="Sour, Tiki…"></div>
-      <div style="flex:1"><div class="flabel2">Spirit base</div><input class="fin" id="f_base" list="allBases" placeholder="Gin…"></div></div>
-    <div style="display:flex;gap:10px"><div style="flex:1"><div class="flabel2">Served</div><input class="fin" id="f_served" placeholder="Up, Rocks…"></div>
-      <div style="flex:1"><div class="flabel2">Garnish</div><input class="fin" id="f_garnish" placeholder="Lime wheel…"></div></div>
-    <div class="flabel2">Source link (optional)</div><input class="fin" id="f_src" placeholder="https://…">
-    <div class="flabel2">Ingredients *</div>
-    <div id="ingRows">${ingRowHTML(2,'fl oz','','Spirit')+ingRowHTML(0.75,'fl oz','','Acid')+ingRowHTML(0.75,'fl oz','','Sweetener')}</div>
-    <button class="addrow" onclick="addIngRow()">＋ add ingredient</button>
-    <div class="flabel2">Mood (optional — auto-filled if left blank)</div>
-    <div class="mchips" id="f_moods">${['Tropical','Bitter','Citrusy','Herbal','Smoky','Tall','Creamy','Boozy'].map(m=>`<span class="mchip" onclick="this.classList.toggle('on')">${m}</span>`).join('')}</div>
-    <div style="display:flex;gap:10px"><div style="flex:1"><div class="flabel2">Season</div>
-      <select class="fin" id="f_season"><option value="">—</option>${['Spring','Summer','Autumn','Winter'].map(x=>`<option>${x}</option>`).join('')}</select></div>
-      <div style="flex:1"><div class="flabel2">Holiday</div>
-      <select class="fin" id="f_holiday"><option value="">—</option>${["Christmas","Halloween","Thanksgiving","New Year's","Valentine's","St. Patrick's"].map(x=>`<option>${x}</option>`).join('')}</select></div></div>
-    <div class="fbtns"><button class="fcancel" onclick="closeForm()">Cancel</button><button class="fsave" onclick="saveRecipe()">Save recipe</button></div>
-    <p class="warn">Saved to this device only — your master list isn't touched. Opened in the in-app preview, entries last for the session; on your hosted/downloaded copy they persist.</p>
-    ${manageHTML()}`;
-  document.getElementById('formScrim').classList.add('show'); s.classList.add('show'); _pushNav('form');
-};
-function manageHTML(){
-  if(!CUSTOM.length) return '';
-  return `<div class="manage"><div class="flabel2">Your recipes (${CUSTOM.length})</div>
-    ${CUSTOM.map((d,i)=>`<div class="mrow"><span class="nm">${d.n}</span><button onclick="delCustom(${i})">Delete</button></div>`).join('')}
-    <div style="margin-top:12px;display:flex;gap:16px">
-      <button class="iolink" onclick="exportCustom()">⬇ Export backup</button>
-      <button class="iolink" onclick="document.getElementById('importFile').click()">⬆ Import backup</button>
-      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importCustom(this)">
-    </div></div>`;
-}
-window.closeForm=function(){ _closeNav(); };
-window.saveRecipe=function(){
-  const g=id=>document.getElementById(id).value.trim();
-  const name=g('f_name'); if(!name){ alert('Give the recipe a name.'); return; }
-  const ings=[];
-  document.querySelectorAll('#ingRows .ingrow').forEach(row=>{
-    const nm=row.querySelector('.nm').value.trim(); if(!nm)return;
-    const a=row.querySelector('.amt').value; const u=row.querySelector('.un').value; const cat=row.querySelector('.cat').value;
-    ings.push([nm, (a!==''&&!isNaN(parseFloat(a)))?parseFloat(a):null, u, cat]);
-  });
-  if(!ings.length){ alert('Add at least one ingredient.'); return; }
-  const style=g('f_style');
-  let mo=[...document.querySelectorAll('#f_moods .mchip.on')].map(c=>c.textContent);
-  if(!mo.length) mo=deriveMoods(style,ings);
-  const rec={n:name,b:g('f_base'),s:style,g:g('f_served'),ga:g('f_garnish'),src:g('f_src')||null,
-    md:false,ts:false,fv:false,mo:mo,se:g('f_season')?[g('f_season')]:[],ho:g('f_holiday'),i:ings,custom:true};
-  CUSTOM.push(rec); persistCustom(); rebuild(); closeForm();
-  mode='browse'; setMode('browse');
-};
-window.delCustom=function(i){ CUSTOM.splice(i,1); persistCustom(); rebuild(); openForm(); if(mode==='browse')renderBrowse(); else renderBar(); };
-window.exportCustom=function(){
-  const blob=new Blob([JSON.stringify(CUSTOM,null,2)],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='codex_my_recipes.json'; a.click();
-};
-window.importCustom=function(inp){
-  const f=inp.files[0]; if(!f)return; const rd=new FileReader();
-  rd.onload=e=>{ try{ const arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ arr.forEach(r=>{r.custom=true;}); CUSTOM=CUSTOM.concat(arr); persistCustom(); rebuild(); openForm(); } }catch(err){ alert('Could not read that file.'); } };
-  rd.readAsText(f);
-};
 
 document.getElementById('q').addEventListener('input',e=>{query=e.target.value; if(mode==='browse')renderBrowse();});
 renderBrowse();
