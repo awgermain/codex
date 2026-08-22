@@ -44,13 +44,20 @@
   /* Only the crab brightens now -- the stars sit at full opacity, so a hover rule
      here could only DIM them. */
   /* expanded view */
-  .starwrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;
-    padding:20px;opacity:0;pointer-events:none;transition:opacity .3s ease}
+/* Column, not the default row. With the story panel added as a sibling this was
+     laying the figure and the text out SIDE BY SIDE, which squeezed the figure and
+     is why it stopped filling. overflow-y makes the whole thing scrollable now that
+     it is taller than a phone; overscroll-behavior stops the page behind it moving. */
+  .starwrap{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;
+    justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    padding:24px 20px calc(56px + env(safe-area-inset-bottom));
+    opacity:0;pointer-events:none;transition:opacity .3s ease}
   .starwrap.show{opacity:1;pointer-events:auto}
-  /* Canvas is now 1086x950, identical to the header, so the expanded figure is a
-     true scale-up of the watermark and the crab registers at the same percentages
-     as .ha-crab. aspect-ratio 1086/950 = 1.1432. */
-  .starfig{position:relative;width:min(92vw,620px);aspect-ratio:1.0613;
+/* The expanded figure is a true scale-up of the watermark: same crab frame, same
+     asterism placement inside it. aspect-ratio 1143/1077 = 1.0613.
+     flex:none is load-bearing -- as a flex item it would otherwise shrink to fit the
+     viewport height and the aspect-ratio would drag the width down with it. */
+  .starfig{position:relative;flex:none;width:min(92vw,620px);aspect-ratio:1.0613;margin-top:auto;
     transform:scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
   .starwrap.show .starfig{transform:scale(1)}
   .starfig img{position:absolute;inset:0;width:100%;height:100%;opacity:.72}
@@ -69,7 +76,7 @@
   /* Watermark keeps the Greek letters only -- at 130px the full names would render
      at 4.4px, which is noise rather than type. */
   .header-art .name{display:none}
-    .starstory{max-width:620px;margin:14px auto 0;text-align:left}
+    .starstory{flex:none;width:100%;max-width:620px;margin:18px auto auto;text-align:left}
   .starstory h3{font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink);margin:0 0 2px;letter-spacing:-.01em}
   .starstory .sub{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 12px}
   .starstory h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:15px 0 5px;font-weight:400}
@@ -802,7 +809,7 @@ function computeRows(d){
     const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)} ${u}`,raw:null};
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
-  const batching = batchQty!=='' && !isNaN(parseFloat(batchQty)) && parseFloat(batchQty)>0;
+  const batching = isBatching();
   let html=d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
     if(batching&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
@@ -856,7 +863,7 @@ function computeRows(d){
     + (ratio?`<span class="rt">${ratio}</span>`:'')+`</div>`;
   return html;
 }
-function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); }
+function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); syncBatchUI(); }
 // Style -> Family -> Era is a genuine taxonomy: broad build, then the specific
 // template, then the period. Rendered as a descending strip rather than three
 // sibling badges so the relationship reads at a glance.
@@ -946,12 +953,12 @@ function renderSheet(){
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
         <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">optional · fills right column by weight</span>
       </div>
-      ${(batchQty!==''&&parseFloat(batchQty)>0)?`<div class="brow dilrow" style="margin-bottom:0;flex-wrap:wrap">
+      <div class="brow dilrow" id="dilRow" style="margin-bottom:0;flex-wrap:wrap;display:${isBatching()?'flex':'none'}">
         <label>Dilution</label>
-        <div class="stepper"><button onclick="bumpDil(-1)">−</button><input class="multin" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onclick="bumpDil(1)">+</button></div>
+        <div class="stepper"><button onclick="bumpDil(-1)">−</button><input class="multin" id="dilIn" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onclick="bumpDil(1)">+</button></div>
         <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">%</span>
-        <div class="hint" style="flex-basis:100%">0% stir when served · 18% spirit-forward · 25% shaken${[0,18,25].indexOf(dilution)<0?` · <b>${dilution}% custom</b>`:''}</div>
-      </div>`:''}
+        <div class="hint" id="dilHint" style="flex-basis:100%"></div>
+      </div>
     </div>
     <div id="recipeRows">${computeRows(d)}</div>
     <div class="serve"><div><div class="lbl">Served</div><div class="val">${d.g||'—'}</div></div><div><div class="lbl">Garnish</div><div class="val">${d.ga||'—'}</div></div></div>
@@ -961,21 +968,29 @@ function renderSheet(){
 window.bumpMult=function(delta){ mult=Math.max(0.25, Math.round((mult+delta)*4)/4); const inp=document.querySelector('.multin'); if(inp)inp.value=mult; updateRows(); };
 window.setMultVal=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>0){ mult=n; updateRows(); } };
 window.setUnit=function(u){ normU=u; updateRows(); };
-/* Re-render the whole sheet only when batching TOGGLES on or off, because that is
-   when the dilution control appears or disappears. Doing it on every keystroke would
-   rebuild the DOM under the caret and drop focus mid-number. */
-window.setQty=function(v){
-  const was=(batchQty!==''&&parseFloat(batchQty)>0), now=(v!==''&&parseFloat(v)>0);
-  batchQty=v;
-  if(was!==now) renderSheet(); else updateRows();
-};
+/* Nothing here re-renders the sheet. An earlier version re-rendered when batching
+   toggled on or off -- but that toggle happens on the FIRST keystroke, so typing
+   "1000" rebuilt the DOM after the "1", the input lost focus, and the rest of the
+   number went nowhere. The dilution row now always exists and is shown or hidden in
+   place, so the field you are typing into is never replaced. */
+function isBatching(){ return batchQty!=='' && !isNaN(parseFloat(batchQty)) && parseFloat(batchQty)>0; }
+function syncBatchUI(){
+  const row=document.getElementById('dilRow');
+  if(row) row.style.display = isBatching() ? 'flex' : 'none';
+  const h=document.getElementById('dilHint');
+  if(h) h.innerHTML = '0% stir when served \u00b7 18% spirit-forward \u00b7 25% shaken'
+      + ([0,18,25].indexOf(dilution)<0 ? ` \u00b7 <b>${dilution}% custom</b>` : '');
+  const di=document.getElementById('dilIn');
+  if(di && document.activeElement!==di) di.value=dilution;
+}
+window.setQty=function(v){ batchQty=v; updateRows(); };
 /* The stepper walks the three presets and then goes free-form, so the common cases
    are one tap and a custom value is still typeable. */
 window.bumpDil=function(dir){
   const P=[0,18,25];
   if(P.indexOf(dilution)>=0){ let i=P.indexOf(dilution)+dir; if(i>=0&&i<P.length){ dilution=P[i]; } else { dilution=Math.max(0,Math.min(60,dilution+dir)); } }
   else dilution=Math.max(0,Math.min(60,dilution+dir));
-  renderSheet();
+  updateRows();
 };
 window.setDil=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>=0&&n<=60){ dilution=n; updateRows(); } };
 window.setBatchU=function(u){ batchU=u; updateRows(); };
@@ -1004,7 +1019,8 @@ window.openStars=function(){
   var i=document.getElementById('starImg');
   if(!i.getAttribute('src')) i.setAttribute('src','crab-melt-'+CRAB_N+'@2x.png?v=5');  // same stage as the watermark
   document.getElementById('starScrim').classList.add('show');
-  document.getElementById('starWrap').classList.add('show');
+  var w=document.getElementById('starWrap');
+  w.classList.add('show'); w.scrollTop=0;      // always open at the figure, not mid-story
   _pushNav('stars');
 };
 window.closeStars=function(){ _closeNav(); };
