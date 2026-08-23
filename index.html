@@ -270,7 +270,12 @@
   .taxo-k .tk-1{color:var(--muted)}
   .taxo-k .tk-2{color:var(--brass)}
   .taxo-k .tk-3{color:var(--short)}
-  .recipe-row .nm{display:flex;align-items:center;gap:7px}
+  .recipe-row .nm{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  /* The note from the sheet cell, e.g. which rum a "Rum" actually is. flex-basis:100%
+     drops it to its own line under the name; the row is align-items:baseline so the
+     amount stays level with the ingredient, not with the note. */
+  .ingnote{flex-basis:100%;font-size:11.5px;font-style:italic;color:var(--faint);line-height:1.4;margin-top:1px}
+  .ingnote a{color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(199,154,75,.35);font-style:normal}
   /* No-link sources (Dad, Pinche Chivo, Pineapple Rum Punch...) get the SAME bar as
      linked ones -- just non-interactive, so the card never changes shape. */
   .srcbtn.nolink{color:var(--muted);cursor:default;border-style:dashed}
@@ -377,12 +382,18 @@
      -- the back bar -- went off screen. That is why it only appeared after the
      dilution field showed up. `dvh` tracks the real viewport; the plain vh line stays
      as a fallback for anything that does not support it. */
-  .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 22px calc(34px + env(safe-area-inset-bottom))}
+  /* padding-top:12px -- the bar only had 8px of its own bottom padding and the body
+     had none, so the breadcrumb sat almost against it. */
+  .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 22px calc(34px + env(safe-area-inset-bottom))}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
   /* Plain static header now -- no sticky, no negative margins, no radius of its own.
      It sits outside the scroll box, so nothing can pass under or over it. */
-  .sbar{flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 8px;box-shadow:0 6px 10px -8px rgba(0,0,0,.55)}
+  /* Same --surface as the sheet, so there is no colour step. What reads as one is the
+     shadow, which marks where content disappears under the bar as you scroll. It is
+     lighter now; delete the box-shadow line entirely if you would rather the header
+     and card be visually seamless. */
+  .sbar{flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 6px;box-shadow:0 5px 8px -9px rgba(0,0,0,.45)}
   .sbar .grip{margin:8px auto}
   .sspacer{width:34px;flex:none}
   .sback{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:50%;cursor:pointer;padding:0}
@@ -729,6 +740,21 @@ let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatu
 const sel=new Set(); let onlyHave=false; const barOpen=new Set();
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
+/* Notes are rendered verbatim -- "Recommend Punt e Mes" reads exactly as typed -- with
+   two additions: the text is HTML-escaped first, and any URL in it becomes a link.
+   That last part matters because it inverts the reason those five cells are threaded
+   comments rather than notes. A note cannot hold a clickable link IN THE SHEET, but a
+   plain URL typed into a note becomes clickable HERE, which is where you would tap it
+   anyway. So a note is now the more capable of the two for this purpose. */
+function noteHTML(t){
+  const esc=String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return esc.replace(/(https?:\/\/[^\s<]+)/g, function(u){
+    const url=u.replace(/[.,;:)\]]+$/,'');
+    let label=url.replace(/^https?:\/\/(www\.)?/,'');
+    if(label.length>40) label=label.slice(0,38)+'\u2026';
+    return '<a href="'+url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">'+label+'</a>';
+  });
+}
 function ingLine(d){ return [...d._set].join(" · "); }
 
 /* ---------- BROWSE ---------- */
@@ -1061,9 +1087,12 @@ function computeRows(d){
     const stocked=tracked&&HAVE_SET().has(it[0]);
     // it[4], when published, is the row on RC - AmountIndex -- link straight to it
     const eu = it[4] ? sheetUrl(it[4],'rc') : '';
+    // it[5], when published, is the cell note -- the specificity the value omits
+    const note = it[5] ? noteHTML(it[5]) : '';
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
          + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}`
          + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
+         + (note?`<span class="ingnote">${note}</span>`:'')
          + `</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
