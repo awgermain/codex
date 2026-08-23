@@ -224,7 +224,7 @@
      margin-right to 6px. `.chip .pip.pipstar` is (0,3,0) and wins regardless of order.
      10px because the star glyph has almost no right side bearing where a dot does. */
   .chip .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;
-    width:auto;height:auto;margin-right:10px}
+    width:auto;height:auto;margin-right:8px}
   /* An inline style beats a stylesheet rule, so the star's colour has to arrive as a
      custom property for the selected state to be able to override it. */
   .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .chip .pip.pipstar,.chip.on.tint .pip.pipstar,.chip.on.tint .pip{color:#1a130b}
@@ -259,6 +259,12 @@
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
   .card .meta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
+/* ---- owner-only edit links ---- */
+  .ownedit{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(199,154,75,.35);padding-bottom:1px}
+  .recipe-row .rowedit{font-family:var(--mono);font-size:10px;color:var(--brass);text-decoration:none;
+    opacity:.55;margin-left:8px;flex:none}
+  .recipe-row .rowedit:hover{opacity:1}
   .taxo-k .tk-sep{color:var(--line-2,#4a4038);opacity:.9}
   .taxo-k .tk-1{color:var(--muted)}
   .taxo-k .tk-2{color:var(--brass)}
@@ -383,7 +389,10 @@
      wider, because batch totals run to four digits. */
   .multin.wide{width:64px}
   .bhint{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--faint);line-height:1.5;margin:-2px 0 2px}
-  .qty{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;padding:7px 10px;border-radius:9px;outline:none}
+  /* `select,` restored to the front of this selector -- I dropped it while rewriting
+     the .qty rule, which left both unit dropdowns unstyled and rendering as native
+     white controls. */
+  select,.qty{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;padding:7px 10px;border-radius:9px;outline:none}
   .qty{width:72px}
   .recipe-row{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
   /* FIXED width, not min-width. The amount column used to grow with its content,
@@ -398,11 +407,14 @@
   /* proportion bar + footer */
   .propbar{display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden;margin:12px 0 0}
   .propbar i{display:block;height:100%}
-  .rfoot{display:flex;align-items:baseline;gap:10px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
+  /* The ratio is absolutely centred on the row so it lines up with the middle of the
+     proportion bar above, rather than centring in whatever space is left over after
+     the TOTAL label -- which put it off to the right. */
+  .rfoot{position:relative;display:flex;align-items:baseline;gap:7px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
   .rfoot .tv{width:13ch;flex:none;color:var(--muted)}   /* same width as .amt */
   .rfoot .lbl{flex:none}
-  .rfoot .rt{flex:1;text-align:center;color:var(--brass)}
-  .rfoot .gt{flex:none;color:var(--muted);text-align:right}
+  .rfoot .rt{position:absolute;left:50%;transform:translateX(-50%);color:var(--brass);white-space:nowrap}
+  .rfoot .gt{margin-left:auto;flex:none;color:var(--muted);text-align:right}
   /* water is not part of the drink: winter blue, and left out of both the
      percentages and the proportion bar. No divider -- the colour carries it. */
   .recipe-row.water .amt,.recipe-row.water .nm{color:var(--winter)}
@@ -540,6 +552,45 @@ const CAT_COLOR={'Spirit':'#4FA3B8','Modifier':'#7FB84F','Acid':'#F1C232','Sweet
    first-time visitor sees the curator's 543 ready drinks rather than an empty app --
    an empty shelf is a terrible first impression and tells them nothing. Editing
    forks a personal copy; Reset drops back to the published one. */
+/* ---------- OWNER EDIT LINKS ----------
+   The app never writes to the sheet -- that was a design decision at the start and it
+   stands. But it can point. With the sheet id stored, a recipe gets a link that opens
+   Google Sheets at the exact row, which on a phone hands off to the Sheets app.
+
+   SETUP: visit the app once with ?sheet=<spreadsheetId> (and optionally
+   &gid=<tabGid>). It is kept in localStorage and never appears in the repo, so the
+   public source carries the mechanism but no link -- nothing leaks. ?sheet= with an
+   empty value clears it.
+
+   ROW NUMBERS: the link needs one. codexdata.js does not publish row numbers yet, so
+   until it does this degrades to opening the spreadsheet rather than a specific row.
+   To enable it, add to the per-drink payload in PublishCodex.gs:
+       r: rowIndex                      // the drink's row on Cocktails
+   and, if you want per-ingredient links into RC - AmountIndex, push the amount row
+   number as a 5th element of each ingredient tuple: [name, amt, unit, cat, rcRow].
+   Both are read defensively below, so publishing them is optional and additive. */
+const SHEET_KEY='codex_sheet';
+(function(){
+  try{
+    const q=new URLSearchParams(location.search);
+    if(q.has('sheet')){
+      const v=(q.get('sheet')||'').trim();
+      v ? localStorage.setItem(SHEET_KEY,v) : localStorage.removeItem(SHEET_KEY);
+      if(q.has('gid')) localStorage.setItem(SHEET_KEY+'_gid',(q.get('gid')||'').trim());
+      history.replaceState(null,'',location.pathname);   // keep the id out of the address bar
+    }
+  }catch(e){}
+})();
+function sheetId(){ try{ return localStorage.getItem(SHEET_KEY)||''; }catch(e){ return ''; } }
+function sheetGid(){ try{ return localStorage.getItem(SHEET_KEY+'_gid')||''; }catch(e){ return ''; } }
+function sheetUrl(row,gid){
+  const id=sheetId(); if(!id) return '';
+  let u='https://docs.google.com/spreadsheets/d/'+id+'/edit';
+  const g=gid||sheetGid();
+  if(g||row) u+='#'+(g?('gid='+g):'')+(g&&row?'&':'')+(row?('range=A'+row):'');
+  return u;
+}
+
 const BAR_KEY='codex_bar';
 function loadBar(){ try{ const v=localStorage.getItem(BAR_KEY); return v?new Set(JSON.parse(v)):null; }catch(e){ return null; } }
 function persistBar(){ try{ MY_BAR?localStorage.setItem(BAR_KEY,JSON.stringify([...MY_BAR])):localStorage.removeItem(BAR_KEY); }catch(e){} }
@@ -908,8 +959,12 @@ function computeRows(d){
        than no signal. Those rows get a neutral dot instead. */
     const tracked=!UNTRACKED_CATS.has(it[3]);
     const stocked=tracked&&HAVE_SET().has(it[0]);
+    // it[4], when published, is the row on RC - AmountIndex -- link straight to it
+    const eu = it[4] ? sheetUrl(it[4], sheetGid()) : '';
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
-         + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}</span>`
+         + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}`
+         + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
+         + `</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
 
@@ -1039,7 +1094,8 @@ function srcCredit(d){
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span></div>${taxoKicker(d)}<h2>${d.n}</h2>
+  const _eu=sheetUrl(d.r);
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div>${taxoKicker(d)}<h2>${d.n}</h2>
     <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
