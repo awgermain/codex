@@ -435,6 +435,7 @@
     color:var(--brass);font-weight:700}
   .recipe-row .nm{font-size:14.5px;flex:1}
   .recipe-row .pct{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:44px;text-align:right}
+  .recipe-row .pct .approx{display:block;color:var(--brass);opacity:.75;font-size:10px;margin-top:2px;white-space:nowrap}
   /* proportion bar + footer */
   .propbar{display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden;margin:12px 0 0}
   .propbar i{display:block;height:100%}
@@ -569,6 +570,30 @@ const MOOD_ICON={'Citrusy':'🍋','Bitter':'🍊','Tropical':'🌴','Herbal':'�
   'Smoky':'💨','Creamy':'🥛','Tall':'🥤','Boozy':'😵‍💫'};
 const moodLbl=m=>(MOOD_ICON[m]?MOOD_ICON[m]+' ':'')+m;
 const NOCONV=new Set(['barspoon','dashes','drops','pinch','parts']);
+/* Approximate volume of the count units, in ml. These are deliberately NOT in the
+   sheet's Conversion Table, because they are not conversions -- a dash is whatever
+   your bottle and your wrist produce, commonly quoted anywhere from 0.6 to 1.2 ml.
+   They exist only so a batch can say "68 dashes, about 68 g", which is how bitters
+   actually get batched: nobody dashes 68 times, they measure.
+   MEASURE YOUR OWN and change these: count 20 dashes into a jigger and divide. */
+const COUNT_ML={'dash':1,'drop':0.05,'barspoon':5,'pinch':0.3};
+/* Count units are stored in the sheet however they read at their written quantity --
+   "1 dash", "2 dashes" -- which is correct there and wrong the moment you scale, since
+   the unit is a literal string and 1 dash x 10 would print "10 dash". Pluralising in
+   the sheet only inverts the problem ("1 dashes"). So the app decides the word from
+   the number it is about to print, and the sheet can hold either form.
+   Measurement abbreviations are left alone: nobody writes "2 fl ozs". */
+const UNIT_PLURAL={'dash':'dashes','drop':'drops','barspoon':'barspoons','pinch':'pinches',
+  'leaf':'leaves','slice':'slices','sprig':'sprigs','wedge':'wedges','twist':'twists',
+  'peel':'peels','cube':'cubes','wheel':'wheels','berry':'berries'};
+const UNIT_SINGULAR=Object.keys(UNIT_PLURAL).reduce(function(m,k){ m[UNIT_PLURAL[k]]=k; m[k]=k; return m; },{});
+function unitBase(u){ const k=String(u||'').toLowerCase().trim(); return UNIT_SINGULAR[k]||k; }
+function unitLabel(n,u){
+  const raw=String(u||'').trim(); if(!raw) return '';
+  const base=unitBase(raw);
+  if(!UNIT_PLURAL[base]) return raw;             // fl oz, tsp, g -- pass through
+  return Math.abs(n)===1 ? base : UNIT_PLURAL[base];
+}
 /* Proportion-bar colours, keyed by CATEGORY rather than by ingredient, so the same
    colour means the same thing on every card and the bar actually says something.
    Hues are the Cocktails header fills from the sheet (Spirit #134F5C, Modifier
@@ -1073,13 +1098,34 @@ function computeRows(d){
   const BARE=new Set(['each','whole','-','']);
   const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'\u2014',raw:null};
     if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
-    const f=convFactor(u,normU); if(f==null)return{disp:`${fmt(a*mult)} ${u}`,raw:null};
+    const f=convFactor(u,normU); if(f==null){ const q=a*mult; return{disp:`${fmt(q)} ${unitLabel(q,u)}`,raw:null}; }
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
   const batching = isBatching();
+  /* How many recipes' worth the batch target represents. The sheet's own Conversion
+     Table already crosses mass and volume at 1 g/ml, so g, kg, ml, l, fl oz and oz
+     all resolve through it -- no separate density assumption needed here. */
+  let bmult=null;
+  if(batching && tot){
+    const f=convFactor(batchU, normU);
+    if(f!=null) bmult = (parseFloat(batchQty)*f)/tot;
+  }
   let html=d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
     if(batching&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
+    /* Count units used to show nothing at all in the batch column, so 2 dashes of
+       Angostura silently dropped out of a 1000 g batch. They scale like everything
+       else; they just cannot be expressed as a share of a volume total. The scaled
+       count comes first because that is the recipe, and the approximate volume sits
+       under it in the SAME unit as the rest of the column so it can be measured. */
+    if(batching && bmult && cc.raw==null && it[1]!=null){
+      const n=it[1]*mult*bmult;
+      const ml=COUNT_ML[unitBase(it[2])];
+      const approx = ml!=null ? (ml*n)*(convFactor('ml',batchU)||0) : null;
+      const nr=Math.round(n*10)/10;
+      right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim()
+            + (approx ? `<span class="approx">\u2248${fmt(Math.round(approx*10)/10)} ${batchU}</span>` : '');
+    }
     /* Green/red only for categories actually tracked in My Bar. "Other" matched
        just 8% of the time (11 of 145), so its dot was permanently red -- worse
        than no signal. Those rows get a neutral dot instead. */
