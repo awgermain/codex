@@ -216,11 +216,14 @@
   /* The three mark filters select in their own colour so the chip matches the mark
      it filters for. --on-tint is set per chip; the dark text works on all three. */
   .chip.on.tint{background:var(--on-tint);border-color:var(--on-tint)}
-    .pip.pipstar{background:none;color:var(--pip-color);font-size:12px;line-height:1;width:auto;height:auto;margin-right:8px}
+    /* 14px, not 13: a star reads optically smaller than a check at the same size. */
+  .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;width:auto;height:auto;margin-right:6px}
   /* An inline style beats a stylesheet rule, so the star's colour has to arrive as a
      custom property for the selected state to be able to override it. */
   .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pip.pipstar,.chip.on.tint .pip{color:#1a130b}
-  .chip.st{padding-left:11px}
+    /* was 11px: the star needs the same left padding as a chip whose glyph sits in
+     the label, otherwise it crowds the edge */
+  .chip.st{padding-left:13px}
   .chip .pip{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
   .toolbar{display:flex;gap:9px;align-items:stretch;margin:6px 0 12px}
   .fbtn{background:var(--surface2);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
@@ -230,8 +233,7 @@
   .activechips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
   .achip{background:var(--brass);color:#1a130b;font-size:12px;font-weight:600;padding:6px 11px;border-radius:100px;cursor:pointer;border:0}
   .achip-clear{background:rgba(199,154,75,.14);color:var(--brass);border:1px solid var(--brass);font-weight:600}
-  .clearall-btn{width:100%;background:transparent;border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:600;padding:9px;border-radius:10px;cursor:pointer;margin:0 0 10px}
-  .clearall-btn:hover{color:var(--brass);border-color:var(--brass)}
+    .fclear{display:flex;justify-content:flex-end;margin:0 0 8px}
   .count-line{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;flex:1}
   .count-line b{color:var(--brass)}
   /* Matched to .fbtn exactly -- padding 9/15 and 13px, not 8/14 and 12.5px, which is
@@ -266,7 +268,7 @@
      opacity -- currentColor was already right, the .45 fade was what made it
      look grey. */
   .recipe-row.untracked .rdot{background:currentColor;opacity:1}
-    .card .kick{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);margin:4px 0 0;line-height:1.5}
+    .card .kick{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:4px 0 0;line-height:1.5}
   .card .kick b{color:var(--brass);font-weight:400}
   .card .kick i{color:var(--short);font-style:normal}
   .card .kick .sep{color:var(--line);margin:0 5px}
@@ -332,7 +334,13 @@
   .selbar{position:sticky;top:0;z-index:10;background:var(--bg);padding:10px 0 8px;margin-bottom:4px}
   .selbar .row{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none} .selbar .row::-webkit-scrollbar{display:none}
   .seltag{flex:none;background:var(--brass);color:#1a130b;font-size:12px;font-weight:600;padding:6px 10px;border-radius:100px;display:flex;gap:6px;align-items:center;cursor:pointer}
-  .clearall{background:transparent;border:1px solid var(--line);color:var(--muted);font-size:11px;padding:6px 12px;border-radius:100px;cursor:pointer;flex:none}
+  /* Every "undo my selections" control now reads the same: a brass text link, no
+     button chrome. Reset to house bar is the odd one out -- it discards your shelf
+     rather than emptying it -- so it takes the Era colour to mark it as different. */
+  .linkbtn{background:none;border:none;color:var(--brass);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;padding:0;white-space:nowrap}
+  .linkbtn:active{opacity:.6}
+  .linkbtn.alt{color:var(--short)}
+  .clearall{background:none;border:none;color:var(--brass);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;padding:0;flex:none;white-space:nowrap}
   .scrim{position:fixed;inset:0;background:rgba(10,7,6,.72);z-index:40;opacity:0;pointer-events:none;transition:.24s;backdrop-filter:blur(3px)}
   .scrim.show{opacity:1;pointer-events:auto}
   .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;padding:8px 22px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto}
@@ -422,7 +430,7 @@
     </div>
     <div id="activeChips" class="activechips"></div>
     <div id="filterPanel" class="fpanel" style="display:none">
-      <button class="clearall-btn" id="clearAllBtn" onclick="clearAllFilters()">Clear all filters</button>
+      <div class="fclear"><button class="linkbtn" id="clearAllBtn" onclick="clearAllFilters()">Clear all</button></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Spirit</span><span class="fh-a" id="fa_base"></span><span class="chev">▸</span></div><div class="frow" id="fBase"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Style</span><span class="fh-a" id="fa_style"></span><span class="chev">▸</span></div><div class="frow" id="fStyle"></div></div>
       <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
@@ -670,7 +678,7 @@ function surprise(){
 function renderBarToggle(){
   const t=document.getElementById('barToggle'); t.innerHTML='';
   t.appendChild(chip('✓ Only what I can make',onlyHave,()=>{onlyHave=!onlyHave;renderBar();},'var(--have)'));
-  const b=document.createElement('button'); b.className='clearall'; b.textContent='Reset selection'; b.onclick=()=>{sel.clear();renderBar();};
+  const b=document.createElement('button'); b.className='clearall'; b.textContent='Clear all'; b.onclick=()=>{sel.clear();renderBar();};
   t.appendChild(b);
 }
 function barMatches(){
@@ -758,8 +766,8 @@ function renderShelf(){
   const {use,byCat}=shelfIngredients(); const H=HAVE_SET();
   const ready=C.filter(d=>[...d._stock].every(n=>H.has(n))).length;
   let html=`<div class="shelfhead"><span class="cnt">${H.size} INGREDIENTS · ${ready} DRINKS READY</span>`
-    + `<button onclick="clearShelf()">Clear all</button>`
-    + (MY_BAR?`<button onclick="resetShelf()">Reset to house bar</button>`:'')+`</div>`
+    + `<button class="linkbtn" onclick="clearShelf()">Clear all</button>`
+    + (MY_BAR?`<button class="linkbtn alt" onclick="resetShelf()">Reset to house bar</button>`:'')+`</div>`
     + `<p class="shelfnote">${MY_BAR?'This is your shelf. It is stored on this device only.'
         :'Showing the house bar. Tick anything to start your own — it stays on this device and never touches the collection.'}</p>`;
   /* Alphabetical, and collapsed by default with the same head/chevron as Build --
@@ -1006,7 +1014,7 @@ function renderSheet(){
         <select onchange="setUnit(this.value)">${UNITS.map(u=>`<option ${u===normU?'selected':''}>${u}</option>`).join('')}</select>
       </div>
       <div class="brow"><label>Batch to</label>
-        <input class="qty" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)">
+        <div class="stepper"><button onclick="bumpQty(-1)">−</button><input class="qty multin" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)"><button onclick="bumpQty(1)">+</button></div>
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
         <span style="font-family:var(--mono);font-size:9px;line-height:1.35;color:var(--faint);max-width:11em">optional · scales the right column</span>
       </div>
@@ -1030,6 +1038,19 @@ window.setUnit=function(u){ normU=u; updateRows(); };
    "1000" rebuilt the DOM after the "1", the input lost focus, and the rest of the
    number went nowhere. The dilution row now always exists and is shown or hidden in
    place, so the field you are typing into is never replaced. */
+/* Step sizes are per unit, because 100 is sensible in grams and absurd in litres.
+   From blank the first + jumps to a realistic starting batch rather than one step:
+   500 g/ml, 1 kg/l, 32 fl oz (a quart). Stepping below the floor returns to blank. */
+const BATCH_STEP={'g':100,'ml':100,'kg':0.5,'l':0.5,'fl oz':8,'oz':8};
+const BATCH_START={'g':500,'ml':500,'kg':1,'l':1,'fl oz':32,'oz':32};
+window.bumpQty=function(dir){
+  const step=BATCH_STEP[batchU]||100, start=BATCH_START[batchU]||500;
+  let v=parseFloat(batchQty);
+  if(isNaN(v)||batchQty===''){ batchQty = dir>0 ? String(start) : ''; }
+  else { v=Math.round((v+dir*step)*100)/100; batchQty = v<=0 ? '' : String(v); }
+  const inp=document.querySelector('.brow .qty'); if(inp) inp.value=batchQty;
+  updateRows();
+};
 function isBatching(){ return batchQty!=='' && !isNaN(parseFloat(batchQty)) && parseFloat(batchQty)>0; }
 function syncBatchUI(){
   const row=document.getElementById('dilRow');
