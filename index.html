@@ -35,7 +35,7 @@
      hover/focus, which is the only hint that it does anything. */
   /* hit target: sized to the art but 14px shorter so it can never cover the
      "Add your own recipe" button that sits just below. */
-  .ha-hit{position:absolute;right:0;top:8px;width:130px;height:108px;z-index:3;
+  .ha-hit{position:absolute;right:-10px;top:6px;width:150px;height:127px;z-index:3;
     border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
   .ha-hit:focus{outline:none}
   .ha-hit:focus-visible{outline:1px solid var(--line);outline-offset:4px;border-radius:4px}
@@ -49,7 +49,7 @@
      is why it stopped filling. overflow-y makes the whole thing scrollable now that
      it is taller than a phone; overscroll-behavior stops the page behind it moving. */
   .starwrap{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;
-    justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+    justify-content:flex-start;scrollbar-gutter:stable both-edges;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
     padding:24px 20px calc(56px + env(safe-area-inset-bottom));
     opacity:0;pointer-events:none;transition:opacity .3s ease}
   .starwrap.show{opacity:1;pointer-events:auto}
@@ -57,9 +57,14 @@
      asterism placement inside it. aspect-ratio 1143/1077 = 1.0613.
      flex:none is load-bearing -- as a flex item it would otherwise shrink to fit the
      viewport height and the aspect-ratio would drag the width down with it. */
-  .starfig{position:relative;flex:none;width:min(92vw,620px);aspect-ratio:1.0613;margin-top:auto;
-    transform:scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
-  .starwrap.show .starfig{transform:scale(1)}
+/* The figure is FIXED and centred, so it behaves as a backdrop the story scrolls
+     over rather than a block that scrolls away. left/top 50% plus a translate keeps
+     it centred on any viewport; the scale is the open animation. */
+  .starfig{position:fixed;left:50%;top:50%;width:min(92vw,620px);aspect-ratio:1.0613;z-index:0;
+    transform:translate(-50%,-50%) scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
+  /* pushes the story below the fold so the figure is what you see first */
+  .starspacer{flex:none;height:88vh;width:1px}
+  .starwrap.show .starfig{transform:translate(-50%,-50%) scale(1)}
   .starfig img{position:absolute;inset:0;width:100%;height:100%;opacity:.72}
   .starfig svg{position:absolute;left:2.655%;top:15.030%;width:82.422%;height:76.519%;color:#f2d79a;opacity:.95}
   /* One SVG serves both. Label type is sized here because the standalone file's
@@ -76,7 +81,11 @@
   /* Watermark keeps the Greek letters only -- at 130px the full names would render
      at 4.4px, which is noise rather than type. */
   .header-art .name{display:none}
-    .starstory{flex:none;width:100%;max-width:620px;margin:18px auto auto;text-align:left}
+  /* Sits above the figure with a fade-in backdrop, so the first lines read over the
+     art and the rest reads over solid colour. */
+  .starstory{position:relative;z-index:1;flex:none;width:100%;max-width:620px;margin:0 auto;text-align:left;
+    padding:70px 20px 30px;border-radius:20px;
+    background:linear-gradient(180deg,rgba(23,17,15,0) 0%,rgba(23,17,15,.90) 16%,var(--bg) 34%)}
   .starstory h3{font-family:var(--display);font-size:20px;font-weight:600;color:var(--ink);margin:0 0 2px;letter-spacing:-.01em}
   .starstory .sub{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--brass);margin:0 0 12px}
   .starstory h4{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:15px 0 5px;font-weight:400}
@@ -113,7 +122,7 @@
      and the melt stages have different puddle extents, so their bounding boxes do
      not correspond and a bbox fit inherits a translation error. Matching the upper
      body instead gives IoU .80 and puts the two donkeys on the eyes. */
-  .header-art{position:absolute;right:0;top:8px;width:130px;height:122px;z-index:0;pointer-events:none}
+  .header-art{position:absolute;right:-10px;top:6px;width:150px;height:141px;z-index:0;pointer-events:none}
   .header-art .ha-crab,.header-art .ha-stars{pointer-events:none}
   /* The melt stages are taller than the old single crab: the shared frame is
      957x1030 (aspect .9291) against the old 966x930 (1.0387), because the puddle
@@ -141,8 +150,8 @@
   /* padding-right reserves the constellation's column so the ::after hairline
      stops before it instead of striking through the stars. Keep in step with
      .header-art width (130 + 2 inset + 12 breathing room). */
-  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px;padding-right:142px}
-  @media(max-width:620px){.header-art{width:104px;height:98px;right:0;top:6px}.ha-hit{width:104px;height:86px;top:6px}.header-art .ha-crab{opacity:.42}.eyebrow{padding-right:114px}}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:9px;padding-right:150px}
+  @media(max-width:620px){.header-art{width:118px;height:111px;right:-8px;top:6px}.ha-hit{width:118px;height:97px;right:-8px;top:6px}.header-art .ha-crab{opacity:.42}.eyebrow{padding-right:118px}}
   .eyebrow::after{content:"";height:1px;flex:1;background:var(--line)}
   h1{font-family:var(--display);font-weight:900;font-size:40px;line-height:.98;letter-spacing:-.015em;margin:8px 0 2px}
   h1 em{font-style:italic;font-weight:400;color:var(--brass)}
@@ -152,7 +161,9 @@
   .shelfhead .cnt{font-family:var(--mono);font-size:11px;color:var(--faint);flex:1}
   .shelfhead button{background:none;border:none;color:var(--brass);font-family:var(--sans);font-size:12px;cursor:pointer;padding:0}
   .shelfnote{font-size:11.5px;color:var(--faint);line-height:1.5;margin:0 0 12px}
-  .shelfcat{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+  .barhead.shelfhead-c{margin:10px 0 0}
+  .barhead.shelfhead-c .n{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto}
+  .shelfbox{margin-bottom:2px}
   .shelfrow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer}
   .shelfrow .bx{width:16px;height:16px;border-radius:5px;border:1px solid var(--brass-dim);flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent}
   .shelfrow.on .bx{background:var(--have);border-color:var(--have);color:#17110f}
@@ -201,7 +212,7 @@
   /* The three mark filters select in their own colour so the chip matches the mark
      it filters for. --on-tint is set per chip; the dark text works on all three. */
   .chip.on.tint{background:var(--on-tint);border-color:var(--on-tint)}
-  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pip{color:#1a130b}
+  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pstar,.chip.on.tint .pip{color:#1a130b}
   .chip.st{padding-left:11px}
   .chip .pip{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
   .toolbar{display:flex;gap:9px;align-items:stretch;margin:6px 0 12px}
@@ -416,7 +427,7 @@
   </div>
 
   <div id="barView" style="display:none">
-    <div class="barhint">Tap what you're working with. <span style="color:var(--have)">●</span> on your shelf · <span style="color:var(--nothave)">●</span> not stocked. It narrows the drinks and hides ingredients that won't combine.</div>
+    <div class="barhint">Tap what you have. <span style="color:var(--have)">●</span> stocked · <span style="color:var(--nothave)">●</span> not.</div>
     <div class="bartoggle" id="barToggle"></div>
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
@@ -434,6 +445,7 @@
     <svg viewBox="0 0 1086 950" aria-hidden="true" focusable="false"><g><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="8.58" opacity=".44" stroke-linecap="round" /><circle cx="458.7" cy="417.5" r="60.2" fill="currentColor" opacity=".09" /><circle cx="452.1" cy="429.2" r="3.84" fill="currentColor" opacity="0.72" /><circle cx="436.5" cy="412.9" r="2.39" fill="currentColor" opacity="0.85" /><circle cx="482.7" cy="422.7" r="2.42" fill="currentColor" opacity="0.73" /><circle cx="428.2" cy="431.5" r="2.55" fill="currentColor" opacity="0.77" /><circle cx="433.2" cy="393.8" r="3.66" fill="currentColor" opacity="0.82" /><circle cx="466.7" cy="416.4" r="4.35" fill="currentColor" opacity="0.79" /><circle cx="466.6" cy="426.6" r="3.00" fill="currentColor" opacity="0.94" /><circle cx="470.7" cy="440.9" r="3.81" fill="currentColor" opacity="0.81" /><circle cx="449.7" cy="415.0" r="2.39" fill="currentColor" opacity="0.76" /><circle cx="448.2" cy="397.4" r="3.02" fill="currentColor" opacity="0.88" /><circle cx="439.0" cy="422.8" r="4.20" fill="currentColor" opacity="0.91" /><circle cx="459.7" cy="443.1" r="3.54" fill="currentColor" opacity="0.96" /><circle cx="456.1" cy="399.4" r="4.65" fill="currentColor" opacity="0.74" /><circle cx="430.2" cy="431.9" r="2.62" fill="currentColor" opacity="0.85" /><circle cx="488.5" cy="424.2" r="4.12" fill="currentColor" opacity="0.87" /><circle cx="473.6" cy="404.1" r="3.95" fill="currentColor" opacity="0.88" /><circle cx="436.4" cy="406.5" r="4.31" fill="currentColor" opacity="0.98" /><circle cx="428.4" cy="421.9" r="2.40" fill="currentColor" opacity="0.91" /><circle cx="436.1" cy="390.5" r="4.26" fill="currentColor" opacity="0.79" /><circle cx="435.5" cy="435.7" r="2.30" fill="currentColor" opacity="0.84" /><circle cx="465.0" cy="427.5" r="2.39" fill="currentColor" opacity="0.93" /><circle cx="471.5" cy="429.7" r="3.21" fill="currentColor" opacity="0.96" /><circle cx="55.7" cy="272.1" r="27.9" fill="currentColor" opacity=".09" /><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor" /><circle cx="378.3" cy="413.5" r="18.9" fill="currentColor" opacity=".09" /><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor" /><circle cx="508.2" cy="507.4" r="29.0" fill="currentColor" opacity=".09" /><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor" /><circle cx="691.5" cy="794.1" r="24.5" fill="currentColor" opacity=".09" /><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor" /><circle cx="1040.9" cy="445.3" r="34.8" fill="currentColor" opacity=".09" /><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor" /><g class="ast-labels"><g transform="translate(-37.152,-181.491) scale(1.667)"><text class="glyph" x="73" y="244" text-anchor="middle">ι</text><text class="name" x="90" y="244" text-anchor="start">Cnc</text></g><g transform="translate(-252.326,-275.805) scale(1.667) translate(22,-8)"><text class="glyph" x="320" y="440" text-anchor="middle">γ</text><text class="name" x="303" y="442" text-anchor="end">Asellus Borealis</text></g><g transform="translate(-338.969,-338.436) scale(1.667)"><text class="glyph" x="473" y="541" text-anchor="middle">δ</text><text class="name" x="456" y="537.74377" text-anchor="end">Asellus Australis</text></g><g transform="translate(-461.231,-529.665) scale(1.667)"><text class="glyph" x="714" y="839" text-anchor="middle">α</text><text class="name" x="731" y="839" text-anchor="start">Acubens</text></g><g transform="translate(-694.280,-297.015) scale(1.667) translate(0,-8)"><text class="glyph" x="1038" y="428" text-anchor="middle">β</text><text class="name" x="1020" y="426" text-anchor="end">Al Tarf</text></g><g transform="translate(-305.953,-278.473) scale(1.667) translate(23.607541,-28.491859)"><text class="glyph" x="499" y="428" text-anchor="middle">M44</text><text class="name" x="533" y="428" text-anchor="start">Beehive</text></g></g></g></svg>
   </div>
   <button class="starclose" type="button" onclick="closeStars()" aria-label="Close">×</button>
+  <div class="starspacer"></div>
   <div class="starstory">
     <h3>Why a melting crab?</h3>
     <p class="sub">The Crabby Melter</p>
@@ -540,7 +552,7 @@ function chip(label,active,onclick,pip,star,tint){
 }
 function renderFilters(){
   const fb=document.getElementById('fBase'); fb.innerHTML='';
-  BASES.forEach(b=>fb.appendChild(chip(b,fBase===b,()=>{fBase=fBase===b?null:b;renderBrowse();}, HAVE.has(b)?'var(--have)':'var(--nothave)')));
+  BASES.forEach(b=>fb.appendChild(chip(b,fBase===b,()=>{fBase=fBase===b?null:b;renderBrowse();}, HAVE_SET().has(b)?'var(--have)':'var(--nothave)')));
   const fst=document.getElementById('fStyle'); fst.innerHTML='';
   STYLES.forEach(s=>fst.appendChild(chip(s,fStyle===s,()=>{fStyle=fStyle===s?null:s;renderBrowse();})));
   const fsv=document.getElementById('fServed'); fsv.innerHTML='';
@@ -702,6 +714,7 @@ function renderNextBottle(){
    rather than empty. The first tick forks a copy of the published set; Reset deletes
    it and hands control back. Ingredients are ordered by how many drinks use them,
    because the useful ones should be reachable without scrolling. */
+const shelfOpen=new Set();
 function shelfIngredients(){
   const use={};
   C.forEach(d=>d.i.forEach(it=>{ if(!UNTRACKED_CATS.has(it[3])) use[it[0]]=(use[it[0]]||0)+1; }));
@@ -714,6 +727,7 @@ window.toggleShelf=function(n){
   MY_BAR.has(n)?MY_BAR.delete(n):MY_BAR.add(n);
   persistBar(); _nbData=null; rebuild(); renderShelf();
 };
+window.toggleShelfCat=function(c){ shelfOpen.has(c)?shelfOpen.delete(c):shelfOpen.add(c); renderShelf(); };
 window.resetShelf=function(){ MY_BAR=null; persistBar(); _nbData=null; rebuild(); renderShelf(); };
 function renderShelf(){
   const el=document.getElementById('shelfView'); if(!el) return;
@@ -723,12 +737,20 @@ function renderShelf(){
     + (MY_BAR?`<button onclick="resetShelf()">Reset to the house bar</button>`:'')+`</div>`
     + `<p class="shelfnote">${MY_BAR?'This is your shelf. It is stored on this device only.'
         :'Showing the house bar. Tick anything to start your own — it stays on this device and never touches the collection.'}</p>`;
+  /* Alphabetical, and collapsed by default with the same head/chevron as Build --
+     seven groups of a hundred-odd ingredients is unusable as one flat list. Sorting
+     by use count read as arbitrary once you were hunting for a specific bottle. */
   CAT_ORDER.forEach(cat=>{
     if(UNTRACKED_CATS.has(cat)||!byCat[cat]) return;
-    const list=[...byCat[cat]].sort((a,b)=>(use[b]||0)-(use[a]||0)||(a<b?-1:1));
-    html+=`<div class="shelfcat">${cat} · ${list.length}</div>`;
-    html+=list.map(n=>`<div class="shelfrow${H.has(n)?' on':''}" onclick="toggleShelf('${n.replace(/'/g,"\\'")}')">`
-      +`<span class="bx">\u2714</span><span class="lb">${n}</span><span class="use">${use[n]}</span></div>`).join('');
+    const list=[...byCat[cat]].sort((a,b)=>a.localeCompare(b));
+    const open=shelfOpen.has(cat);
+    const ticked=list.filter(n=>H.has(n)).length;
+    html+=`<div class="barhead shelfhead-c${open?' open':''}" onclick="toggleShelfCat('${cat}')">`
+      +`<span class="chev">\u25b8</span>${cat} <span class="n">${ticked}/${list.length}</span></div>`
+      +`<div class="shelfbox" style="display:${open?'':'none'}">`
+      +list.map(n=>`<div class="shelfrow${H.has(n)?' on':''}" onclick="toggleShelf('${n.replace(/'/g,"\\'")}')">`
+        +`<span class="bx">\u2714</span><span class="lb">${n}</span><span class="use">${use[n]}</span></div>`).join('')
+      +`</div>`;
   });
   el.innerHTML=html;
 }
@@ -774,7 +796,7 @@ function renderBar(){
     h.innerHTML=`<span class="chev">▸</span>${cat} <span class="n">${items.length}</span>`;
     const box=document.createElement('div');box.className='ings';box.style.display=open?'':'none';
     items.forEach(name=>{
-      const on=sel.has(name), have=HAVE.has(name);
+      const on=sel.has(name), have=HAVE_SET().has(name);
       const el=document.createElement('div');
       el.className='ic '+(have?'have':'miss')+(on?' on':'');
       el.innerHTML=`<span class="dot"></span>${name}`;
@@ -960,7 +982,7 @@ function renderSheet(){
       <div class="brow"><label>Batch to</label>
         <input class="qty" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)">
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
-        <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">optional · fills right column by weight</span>
+        <span style="font-family:var(--mono);font-size:9px;line-height:1.35;color:var(--faint);max-width:11em">optional · scales the right column</span>
       </div>
       <div class="brow dilrow" id="dilRow" style="margin-bottom:0;flex-wrap:wrap;display:${isBatching()?'flex':'none'}">
         <label>Dilution</label>
@@ -1027,10 +1049,24 @@ function _hideStars(){ document.getElementById('starScrim').classList.remove('sh
      return Math.min(7, Math.max(1, Math.floor((h<12?h+24:h)-15)+1));
    Nothing else in the app knows or cares which stage is showing. */
 var CRAB_STAGES=7;
-function crabStage(){ return 1+Math.floor(Math.random()*CRAB_STAGES); }
+/* Advance one stage per load and wrap, rather than picking at random. Random meant
+   you could get the same crab three times running, or jump from a puddle back to a
+   clean shell -- which reads as a glitch, not a melt. The counter lives in
+   localStorage so it survives a reload. */
+function crabStage(){
+  var n=1;
+  try{ n=(parseInt(localStorage.getItem('codex_crab')||'0',10)%CRAB_STAGES)+1;
+       localStorage.setItem('codex_crab', String(n)); }
+  catch(e){ n=1; }
+  return n;
+}
 var CRAB_N=crabStage();
 (function(){ var c=document.getElementById('crabArt');
-  if(c) c.src='crab-melt-'+CRAB_N+'.png?v=5'; })();
+  if(!c) return;
+  // if a stage file is missing, fall back to the unmelted crab rather than a broken image
+  c.onerror=function(){ if(CRAB_N!==1){ CRAB_N=1; c.src='crab-melt-1.png?v=5'; } };
+  c.src='crab-melt-'+CRAB_N+'.png?v=5';
+})();
 
 window.openStars=function(){
   var i=document.getElementById('starImg');
