@@ -216,8 +216,10 @@
   /* The three mark filters select in their own colour so the chip matches the mark
      it filters for. --on-tint is set per chip; the dark text works on all three. */
   .chip.on.tint{background:var(--on-tint);border-color:var(--on-tint)}
-    /* 14px, not 13: a star reads optically smaller than a check at the same size. */
-  .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;width:auto;height:auto;margin-right:6px}
+    /* 14px because a star reads optically smaller than a check at the same size, and
+     9px because the star glyph has almost no right side bearing where the check has
+     plenty -- equal margins therefore look unequal. */
+  .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;width:auto;height:auto;margin-right:9px}
   /* An inline style beats a stylesheet rule, so the star's colour has to arrive as a
      custom property for the selected state to be able to override it. */
   .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pip.pipstar,.chip.on.tint .pip{color:#1a130b}
@@ -271,7 +273,13 @@
     .card .kick{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:4px 0 0;line-height:1.5}
   .card .kick b{color:var(--brass);font-weight:400}
   .card .kick i{color:var(--short);font-style:normal}
-  .card .kick .sep{color:var(--line);margin:0 5px}
+  .card .kick .sep{margin:0 5px}
+  /* HAIRLINE VARIANT. To swap the chevrons for thin rules, uncomment this block --
+     the inline colour set in cardEl becomes the rule's colour via currentColor, so
+     the per-segment colouring survives either way and nothing in the JS changes.
+  .card .kick .sep{display:inline-block;width:1px;height:8px;background:currentColor;
+    margin:0 8px;vertical-align:-1px;overflow:hidden;text-indent:-99px}
+  */
   .tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface2);border:1px solid var(--line);padding:3px 8px;border-radius:6px}
   .tag.base{color:var(--brass)}
   /* Marks ride with the NAME now, not the corner. They describe the drink -- you made
@@ -364,7 +372,13 @@
   .stepper span{min-width:38px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700}
   .stepper input.multin{width:52px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;background:transparent;border:0;color:var(--ink);outline:none;-moz-appearance:textfield}
   .stepper input.multin::-webkit-outer-spin-button,.stepper input.multin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  select,.qty{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;padding:7px 10px;border-radius:9px;outline:none}
+  select,/* The batch field used to carry .qty AND .multin: .qty brought its own border,
+     padding and background into a container that already has them, which is what
+     clipped the +/- and squeezed the input. It is a .multin like Scale now, just
+     wider, because batch totals run to four digits. */
+  .multin.wide{width:64px}
+  .bhint{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--faint);line-height:1.5;margin:-2px 0 2px}
+  .qty{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:13px;padding:7px 10px;border-radius:9px;outline:none}
   .qty{width:72px}
   .recipe-row{display:flex;align-items:baseline;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
   /* FIXED width, not min-width. The amount column used to grow with its content,
@@ -627,8 +641,13 @@ function cardEl(d,extra){
      different visual language, and it degrades. 516 of 920 drinks have no family and
      864 have no era, so the fully-populated card is the exception -- a breadcrumb
      just collapses to one word instead of leaving holes in a pill row. */
-  const crumb=[d.s?`<span>${d.s}</span>`:'', d.fam?`<b>${d.fam}</b>`:'', d.era?`<i>${d.era}</i>`:'']
-    .filter(Boolean).join('<span class="sep">\u203a</span>');
+  /* Each separator wears the colour of the segment it introduces, so the line reads
+     as three coloured objects rather than grey text with grey punctuation in it. */
+  const cparts=[];
+  if(d.s)   cparts.push({h:`<span>${d.s}</span>`,        c:'var(--muted)'});
+  if(d.fam) cparts.push({h:`<b>${d.fam}</b>`,            c:'var(--brass)'});
+  if(d.era) cparts.push({h:`<i>${d.era}</i>`,            c:'var(--short)'});
+  const crumb=cparts.map((p,i)=>(i?`<span class="sep" style="color:${p.c}">\u203a</span>`:'')+p.h).join('');
   c.innerHTML=`${status}<h3>${d.n}${marksHTML(d)}</h3>`
     + (crumb?`<p class="kick">${crumb}</p>`:'')
     + `<div class="ing">${ingLine(d)}</div>`
@@ -1014,10 +1033,11 @@ function renderSheet(){
         <select onchange="setUnit(this.value)">${UNITS.map(u=>`<option ${u===normU?'selected':''}>${u}</option>`).join('')}</select>
       </div>
       <div class="brow"><label>Batch to</label>
-        <div class="stepper"><button onclick="bumpQty(-1)">−</button><input class="qty multin" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)"><button onclick="bumpQty(1)">+</button></div>
+        <div class="stepper"><button onclick="bumpQty(-1)">−</button><input class="multin wide" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)"><button onclick="bumpQty(1)">+</button></div>
+        <label style="width:auto">In</label>
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
-        <span style="font-family:var(--mono);font-size:9px;line-height:1.35;color:var(--faint);max-width:11em">optional · scales the right column</span>
       </div>
+      <div class="bhint">Optional. Scales the right column to a total batch weight or volume.</div>
       <div class="brow dilrow" id="dilRow" style="margin-bottom:0;flex-wrap:wrap;display:${isBatching()?'flex':'none'}">
         <label>Dilution</label>
         <div class="stepper"><button onclick="bumpDil(-1)">−</button><input class="multin" id="dilIn" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onclick="bumpDil(1)">+</button></div>
@@ -1048,7 +1068,7 @@ window.bumpQty=function(dir){
   let v=parseFloat(batchQty);
   if(isNaN(v)||batchQty===''){ batchQty = dir>0 ? String(start) : ''; }
   else { v=Math.round((v+dir*step)*100)/100; batchQty = v<=0 ? '' : String(v); }
-  const inp=document.querySelector('.brow .qty'); if(inp) inp.value=batchQty;
+  const inp=document.querySelector('.brow .multin.wide'); if(inp) inp.value=batchQty;
   updateRows();
 };
 function isBatching(){ return batchQty!=='' && !isNaN(parseFloat(batchQty)) && parseFloat(batchQty)>0; }
