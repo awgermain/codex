@@ -219,10 +219,15 @@
     /* 14px because a star reads optically smaller than a check at the same size, and
      9px because the star glyph has almost no right side bearing where the check has
      plenty -- equal margins therefore look unequal. */
-  .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;width:auto;height:auto;margin-right:9px}
+  /* Must out-specify `.chip .pip` below, which is (0,2,0) and comes later in the
+     sheet -- equal specificity plus later position meant it kept winning and resetting
+     margin-right to 6px. `.chip .pip.pipstar` is (0,3,0) and wins regardless of order.
+     10px because the star glyph has almost no right side bearing where a dot does. */
+  .chip .pip.pipstar{background:none;color:var(--pip-color);font-size:14px;line-height:1;
+    width:auto;height:auto;margin-right:10px}
   /* An inline style beats a stylesheet rule, so the star's colour has to arrive as a
      custom property for the selected state to be able to override it. */
-  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .pip.pipstar,.chip.on.tint .pip{color:#1a130b}
+  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .chip .pip.pipstar,.chip.on.tint .pip.pipstar,.chip.on.tint .pip{color:#1a130b}
     /* was 11px: the star needs the same left padding as a chip whose glyph sits in
      the label, otherwise it crowds the edge */
   .chip.st{padding-left:13px}
@@ -393,9 +398,11 @@
   /* proportion bar + footer */
   .propbar{display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden;margin:12px 0 0}
   .propbar i{display:block;height:100%}
-  .rfoot{display:flex;align-items:baseline;gap:12px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
-  .rfoot .tv{width:13ch;flex:none;color:var(--muted)}
-  .rfoot .rt{margin-left:auto;color:var(--brass)}
+  .rfoot{display:flex;align-items:baseline;gap:10px;margin-top:9px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--faint)}
+  .rfoot .tv{width:13ch;flex:none;color:var(--muted)}   /* same width as .amt */
+  .rfoot .lbl{flex:none}
+  .rfoot .rt{flex:1;text-align:center;color:var(--brass)}
+  .rfoot .gt{flex:none;color:var(--muted);text-align:right}
   /* water is not part of the drink: winter blue, and left out of both the
      percentages and the proportion bar. No divider -- the colour carries it. */
   .recipe-row.water .amt,.recipe-row.water .nm{color:var(--winter)}
@@ -942,9 +949,15 @@ function computeRows(d){
   }
   const grand = batching ? parseFloat(batchQty)*(1+(dilution>0?dilution/100:0)) : tot;
   const gu = batching ? batchU : normU;
-  if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(grand*10)/10)} ${gu}</span>`
-    + `<span>TOTAL${batching&&dilution>0?' WITH WATER':''}</span>`
-    + (ratio?`<span class="rt">${ratio}</span>`:'')+`</div>`;
+  /* Each total sits under its own column: the recipe total in normU on the left where
+     the per-drink amounts are, the batch total in batchU on the right where the batch
+     weights are. Putting a gram figure in the fl oz column was the bug. */
+  const totL = tot*(batching&&dilution>0 ? 1+dilution/100 : 1);
+  const totR = batching ? parseFloat(batchQty)*(dilution>0?1+dilution/100:1) : null;
+  if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(totL*100)/100)} ${normU}</span>`
+    + `<span class="lbl">TOTAL</span>`
+    + `<span class="rt">${ratio||''}</span>`
+    + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}</span></div>`;
   return html;
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); syncBatchUI(); }
@@ -980,8 +993,10 @@ function taxoKicker(d){
   if(d.fam) segs.push(['tk-2',d.fam]);
   if(d.era) segs.push(['tk-3',d.era]);
   if(!segs.length) segs.push(['tk-1','Cocktail']);
+  /* Separator takes the colour of the segment it introduces, matching the card. */
+  const COL={'tk-1':'var(--muted)','tk-2':'var(--brass)','tk-3':'var(--short)'};
   return '<div class="taxo-k">'+segs.map((x,i)=>
-    (i?'<span class="tk-sep">\u203a</span>':'')+`<span class="${x[0]}">${x[1]}</span>`
+    (i?`<span class="tk-sep" style="color:${COL[x[0]]}">\u203a</span>`:'')+`<span class="${x[0]}">${x[1]}</span>`
   ).join('')+'</div>';
 }
 
