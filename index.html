@@ -60,7 +60,7 @@
 /* The figure is FIXED and centred, so it behaves as a backdrop the story scrolls
      over rather than a block that scrolls away. left/top 50% plus a translate keeps
      it centred on any viewport; the scale is the open animation. */
-  .starfig{position:fixed;left:50%;top:50%;width:min(92vw,620px);aspect-ratio:1.0613;z-index:0;
+  .starfig{position:fixed;left:50%;top:50%;width:min(92vw,620px);max-height:76dvh;aspect-ratio:1.0613;z-index:0;
     transform:translate(-42.7%,-50%) scale(.96);transition:transform .3s cubic-bezier(.32,.72,0,1)}
   /* -42.7% rather than -50%: the crab's mass sits about 7% left of the frame centre,
      because the right of the shared frame is reserved for the widest stage's puddle.
@@ -370,7 +370,13 @@
      on iOS besides. Every previous fix here was fighting that instead of removing it.
      Now the shell animates and owns the corners with overflow:hidden, the bar is a
      plain static header, and a separate .sbody does the scrolling. */
-  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;overflow:hidden;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;overflow:hidden;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;max-height:90dvh}
+  /* 90vh then 90dvh: on mobile Safari `vh` is the viewport with the browser chrome
+     HIDDEN, so 90vh is taller than what you can actually see while the URL bar is up.
+     The sheet is anchored bottom:0, so once content grew past the visible area the top
+     -- the back bar -- went off screen. That is why it only appeared after the
+     dilution field showed up. `dvh` tracks the real viewport; the plain vh line stays
+     as a fallback for anything that does not support it. */
   .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 22px calc(34px + env(safe-area-inset-bottom))}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
@@ -639,11 +645,13 @@ const SHEET_KEY='codex_sheet';
         alert('Edit links are ON.\\n\\nDocument: '+v.slice(0,12)+'\\u2026'
           +'\\nCocktails tab: '+(g.c!=null?g.c:'NOT PUBLISHED \\u2014 run publishCodexData')
           +'\\nAmounts tab: '+(g.rc!=null?g.rc:'NOT PUBLISHED \\u2014 run publishCodexData')
+          +'\\n\\nExample link:\\n'+sheetUrl(41,'c')
           +'\\n\\nOpen any recipe: "Edit \\u2197" is in the top bar, and each ingredient gets a small \\u2197.');
       },300);
     }
   }catch(e){}
 })();
+try{ localStorage.removeItem(SHEET_KEY+'_gid'); }catch(e){}   // retired: gids now come from the payload
 function sheetId(){ try{ return localStorage.getItem(SHEET_KEY)||''; }catch(e){ return ''; } }
 /* Gids come from the published payload -- DB.gid.c is Cocktails, DB.gid.rc is the
    amounts tab. A row number is ambiguous without one: row 41 exists on every tab, so
@@ -652,17 +660,22 @@ function sheetId(){ try{ return localStorage.getItem(SHEET_KEY)||''; }catch(e){ 
 function sheetGid(which){
   try{
     const g=(DB&&DB.gid)||{};
-    if(which==='rc'  && g.rc!=null) return String(g.rc);
-    if(which==='c'   && g.c!=null)  return String(g.c);
+    if(which==='rc' && g.rc!=null) return String(g.rc);
+    if(which==='c'  && g.c!=null)  return String(g.c);
   }catch(e){}
-  try{ return localStorage.getItem(SHEET_KEY+'_gid')||''; }catch(e){ return ''; }
+  return '';   // no legacy fallback: one stored gid cannot serve two tabs, and a row
+               // number aimed at the wrong tab is what produced "sheet doesn't exist"
 }
+/* Mirrors the URL Google Sheets itself produces -- gid in BOTH the query string and
+   the fragment, then range. The fragment-only form is what the app was emitting and
+   it is the less reliable of the two. Without a gid we link to the document only,
+   because a range with no tab resolves against whatever happens to open. */
 function sheetUrl(row,which){
   const id=sheetId(); if(!id) return '';
   const g=sheetGid(which||'c');
-  let u='https://docs.google.com/spreadsheets/d/'+id+'/edit';
-  if(g||row) u+='#'+(g?('gid='+g):'')+(g&&row?'&':'')+(row?('range=A'+row):'');
-  return u;
+  const base='https://docs.google.com/spreadsheets/d/'+id+'/edit';
+  if(!g) return base;
+  return base+'?gid='+g+'#gid='+g+(row?('&range=A'+row):'');
 }
 
 const BAR_KEY='codex_bar';
