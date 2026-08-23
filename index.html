@@ -363,18 +363,20 @@
   .clearall{background:none;border:none;color:var(--brass);font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;padding:0;flex:none;white-space:nowrap}
   .scrim{position:fixed;inset:0;background:rgba(10,7,6,.72);z-index:40;opacity:0;pointer-events:none;transition:.24s;backdrop-filter:blur(3px)}
   .scrim.show{opacity:1;pointer-events:auto}
-  /* padding-top is 0, not 8px: the sticky .sbar pins to top:0 of the SCROLL BOX, so an
-     8px pad above it left a band where content slid past in front of nothing -- the
-     overlap. The bar carries that space as its own padding instead.
-     overscroll-behavior:contain stops the scroll chaining into the page behind once
-     you reach either end, which is why the list kept moving under the open card. */
-  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;padding:0 22px calc(34px + env(safe-area-inset-bottom));transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;overflow-y:auto;overscroll-behavior:contain}
+  /* .sheet was doing three jobs at once: it animated (transform), it had rounded
+     corners, AND it was the scroll container. A scroll container clips its content to
+     its own border-radius, so anything scrolling past the top got cut by the corner
+     curve -- and a position:sticky child inside a transformed scroller is unreliable
+     on iOS besides. Every previous fix here was fighting that instead of removing it.
+     Now the shell animates and owns the corners with overflow:hidden, the bar is a
+     plain static header, and a separate .sbody does the scrolling. */
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;overflow:hidden;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh}
+  .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:0 22px calc(34px + env(safe-area-inset-bottom))}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
-  /* border-radius matches .sheet: the bar bleeds full width via the negative margin
-     into a container with 22px rounded corners and overflow:auto, so without it the
-     corners clip the bar's top edge. */
-  .sbar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:8px;background:var(--surface);margin:0 -22px 10px;padding:14px 16px 8px;border-radius:22px 22px 0 0;box-shadow:0 6px 10px -8px rgba(0,0,0,.8)}
+  /* Plain static header now -- no sticky, no negative margins, no radius of its own.
+     It sits outside the scroll box, so nothing can pass under or over it. */
+  .sbar{flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 8px;box-shadow:0 6px 10px -8px rgba(0,0,0,.55)}
   .sbar .grip{margin:8px auto}
   .sspacer{width:34px;flex:none}
   .sback{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:50%;cursor:pointer;padding:0}
@@ -610,22 +612,55 @@ const SHEET_KEY='codex_sheet';
   try{
     const q=new URLSearchParams(location.search);
     if(q.has('sheet')){
-      const v=(q.get('sheet')||'').trim();
-      v ? localStorage.setItem(SHEET_KEY,v) : localStorage.removeItem(SHEET_KEY);
+      /* Accept a pasted full sheet URL as well as a bare id -- pasting the whole
+         address is the obvious thing to do and it should not silently store junk. */
+      let v=(q.get('sheet')||'').trim();
+      const m=v.match(/\/d\/([A-Za-z0-9_-]{20,})/);
+      if(m) v=m[1];
+      /* An empty ?sheet= used to CLEAR the setting, which is a footgun: the obvious
+         typo and the destructive action were the same gesture. Turning it off now
+         takes an explicit word, and an empty value does nothing but explain itself. */
+      const OFF = /^(off|none|clear|remove)$/i.test(v);
+      if(OFF) localStorage.removeItem(SHEET_KEY);
+      else if(v) localStorage.setItem(SHEET_KEY,v);
       if(q.has('gid')) localStorage.setItem(SHEET_KEY+'_gid',(q.get('gid')||'').trim());
       history.replaceState(null,'',location.pathname);   // keep the id out of the address bar
       // say so out loud -- silent setup left no way to tell whether it took
-      setTimeout(function(){ alert(v ? 'Edit links are on.\\n\\nOpen any recipe: "Edit \\u2197" sits in the top bar, and each ingredient gets a small \\u2197 that opens its amount cell.'
-                                     : 'Edit links are off.'); },300);
+      setTimeout(function(){
+        if(OFF){ alert('Edit links turned OFF.'); return; }
+        if(!v){
+          alert('Nothing changed \\u2014 no id was supplied.\\n\\n'
+            +'Turn on:  ?sheet=<spreadsheet id, or paste the whole sheet URL>\\n'
+            +'Turn off: ?sheet=off\\n\\n'
+            +'Currently '+(sheetId()?('ON, document '+sheetId().slice(0,12)+'\\u2026'):'OFF')+'.');
+          return;
+        }
+        const g=(window.DB&&DB.gid)||{};
+        alert('Edit links are ON.\\n\\nDocument: '+v.slice(0,12)+'\\u2026'
+          +'\\nCocktails tab: '+(g.c!=null?g.c:'NOT PUBLISHED \\u2014 run publishCodexData')
+          +'\\nAmounts tab: '+(g.rc!=null?g.rc:'NOT PUBLISHED \\u2014 run publishCodexData')
+          +'\\n\\nOpen any recipe: "Edit \\u2197" is in the top bar, and each ingredient gets a small \\u2197.');
+      },300);
     }
   }catch(e){}
 })();
 function sheetId(){ try{ return localStorage.getItem(SHEET_KEY)||''; }catch(e){ return ''; } }
-function sheetGid(){ try{ return localStorage.getItem(SHEET_KEY+'_gid')||''; }catch(e){ return ''; } }
-function sheetUrl(row,gid){
+/* Gids come from the published payload -- DB.gid.c is Cocktails, DB.gid.rc is the
+   amounts tab. A row number is ambiguous without one: row 41 exists on every tab, so
+   pairing a Cocktails row with the amounts gid lands you somewhere meaningless, which
+   is what a single stored gid was doing. Falls back to anything set by hand. */
+function sheetGid(which){
+  try{
+    const g=(DB&&DB.gid)||{};
+    if(which==='rc'  && g.rc!=null) return String(g.rc);
+    if(which==='c'   && g.c!=null)  return String(g.c);
+  }catch(e){}
+  try{ return localStorage.getItem(SHEET_KEY+'_gid')||''; }catch(e){ return ''; }
+}
+function sheetUrl(row,which){
   const id=sheetId(); if(!id) return '';
+  const g=sheetGid(which||'c');
   let u='https://docs.google.com/spreadsheets/d/'+id+'/edit';
-  const g=gid||sheetGid();
   if(g||row) u+='#'+(g?('gid='+g):'')+(g&&row?'&':'')+(row?('range=A'+row):'');
   return u;
 }
@@ -1002,7 +1037,7 @@ function computeRows(d){
     const tracked=!UNTRACKED_CATS.has(it[3]);
     const stocked=tracked&&HAVE_SET().has(it[0]);
     // it[4], when published, is the row on RC - AmountIndex -- link straight to it
-    const eu = it[4] ? sheetUrl(it[4], sheetGid()) : '';
+    const eu = it[4] ? sheetUrl(it[4],'rc') : '';
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
          + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}`
          + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
@@ -1136,8 +1171,8 @@ function srcCredit(d){
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
-  const _eu=sheetUrl(d.r);
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div>${taxoKicker(d)}<h2>${d.n}</h2>
+  const _eu=sheetUrl(d.r,'c');
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div><div class="sbody">${taxoKicker(d)}<h2>${d.n}</h2>
     <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
@@ -1161,7 +1196,7 @@ function renderSheet(){
     <div id="recipeRows">${computeRows(d)}</div>
     <div class="serve"><div><div class="lbl">Served</div><div class="val">${d.g||'—'}</div></div><div><div class="lbl">Garnish</div><div class="val">${d.ga||'—'}</div></div></div>
     ${st.length?`<div class="statusline">${st.join('')}</div>`:''}
-    ${srcCredit(d)}`;
+    ${srcCredit(d)}</div>`;
 }
 window.bumpMult=function(delta){ mult=Math.max(0.25, Math.round((mult+delta)*4)/4); const inp=document.querySelector('.multin'); if(inp)inp.value=mult; updateRows(); };
 window.setMultVal=function(v){ const n=parseFloat(v); if(!isNaN(n)&&n>0){ mult=n; updateRows(); } };
@@ -1267,7 +1302,7 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb)_sb.scrollTop=0; _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
 
 document.getElementById('q').addEventListener('input',e=>{query=e.target.value; if(mode==='browse')renderBrowse();});
