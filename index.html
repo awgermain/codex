@@ -580,21 +580,31 @@ const CAT_COLOR={'Spirit':'#4FA3B8','Modifier':'#7FB84F','Acid':'#F1C232','Sweet
    are slightly off the rhythm it reads as the app misbehaving rather than as you
    mistiming. Holding is a gesture you are choosing to make, so it can't surprise you. */
 var _hold=null;
+/* A tap acts on RELEASE, not on press. Firing on pointerdown meant a hold gave you an
+   immediate step AND the ramp -- a short click and a hold in one gesture. Now the two
+   are exclusive: release before 450ms and you get exactly one step; hold past it and
+   the repeat takes over and no separate tap is counted. */
 window.startHold=function(fn,dir,ev){
   if(ev && ev.button > 0) return;
-  window.stopHold();
-  fn(dir,1);
+  window.cancelHold();
   const t0=Date.now();
-  _hold={};
+  _hold={fn:fn, dir:dir, repeating:false};
   _hold.t=setTimeout(function rep(){
+    _hold.repeating=true;
     const held=Date.now()-t0;
     fn(dir, held>2000 ? 10 : (held>1000 ? 5 : 1));
     _hold.t=setTimeout(rep,110);
   },450);
 };
-window.stopHold=function(){ if(_hold){ clearTimeout(_hold.t); _hold=null; } };
-window.addEventListener('pointerup',function(){ window.stopHold(); });
-window.addEventListener('pointercancel',function(){ window.stopHold(); });
+window.endHold=function(){
+  if(!_hold) return;
+  clearTimeout(_hold.t);
+  const h=_hold; _hold=null;
+  if(!h.repeating) h.fn(h.dir,1);        // it was a tap
+};
+window.cancelHold=function(){ if(_hold){ clearTimeout(_hold.t); _hold=null; } };
+window.addEventListener('pointerup',function(){ window.cancelHold(); });
+window.addEventListener('pointercancel',function(){ window.cancelHold(); });
 
 /* ---------- OWNER EDIT LINKS ----------
    The app never writes to the sheet -- that was a design decision at the start and it
@@ -1189,19 +1199,19 @@ function renderSheet(){
     <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
-        <div class="stepper"><button onpointerdown="startHold(bumpMult,-0.5,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">−</button><input class="multin" type="number" step="0.5" min="0.25" value="${mult}" oninput="setMultVal(this.value)"><button onpointerdown="startHold(bumpMult,0.5,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">+</button></div>
+        <div class="stepper"><button onpointerdown="startHold(bumpMult,-0.5,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">−</button><input class="multin" type="number" step="0.5" min="0.25" value="${mult}" oninput="setMultVal(this.value)"><button onpointerdown="startHold(bumpMult,0.5,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">+</button></div>
         <label style="width:auto">In</label>
         <select onchange="setUnit(this.value)">${UNITS.map(u=>`<option ${u===normU?'selected':''}>${u}</option>`).join('')}</select>
       </div>
       <div class="brow"><label>Batch to</label>
-        <div class="stepper"><button onpointerdown="startHold(bumpQty,-1,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">−</button><input class="multin wide" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)"><button onpointerdown="startHold(bumpQty,1,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">+</button></div>
+        <div class="stepper"><button onpointerdown="startHold(bumpQty,-1,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">−</button><input class="multin wide" type="number" inputmode="decimal" placeholder="total" value="${batchQty}" oninput="setQty(this.value)"><button onpointerdown="startHold(bumpQty,1,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">+</button></div>
         <label style="width:auto">In</label>
         <select onchange="setBatchU(this.value)">${['g','kg','ml','l','fl oz','oz'].map(u=>`<option ${u===batchU?'selected':''}>${u}</option>`).join('')}</select>
       </div>
       <div class="bhint">Optional. Scales the right column to a total batch weight or volume.</div>
       <div class="brow dilrow" id="dilRow" style="margin-bottom:0;flex-wrap:wrap;display:${isBatching()?'flex':'none'}">
         <label>Dilution</label>
-        <div class="stepper"><button onpointerdown="startHold(bumpDil,-1,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">−</button><input class="multin" id="dilIn" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onpointerdown="startHold(bumpDil,1,event)" onpointerup="stopHold()" onpointerleave="stopHold()" oncontextmenu="return false">+</button></div>
+        <div class="stepper"><button onpointerdown="startHold(bumpDil,-1,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">−</button><input class="multin" id="dilIn" type="number" step="1" min="0" max="60" value="${dilution}" oninput="setDil(this.value)"><button onpointerdown="startHold(bumpDil,1,event)" onpointerup="endHold()" onpointerleave="cancelHold()" oncontextmenu="return false">+</button></div>
         <span style="font-family:var(--mono);font-size:10px;color:var(--faint)">%</span>
         <div class="hint" id="dilHint" style="flex-basis:100%"></div>
       </div>
