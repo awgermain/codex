@@ -262,7 +262,7 @@
   .card.away{border-left-color:var(--brass)}
   .card.short{border-left-color:rgba(177,72,58,.55)}
   .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05}
-  .card.has-status h3{padding-right:142px}
+  .card .meta{clear:both}
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
   .card .meta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
@@ -334,7 +334,11 @@
      the heading colour and went white. .mk-made and .mk-short are unscoped, which is
      why only the star broke. */
   .marks .pstar{color:var(--fav)}
-    .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:132px;text-align:right;line-height:1.35}
+  /* FLOATED, not absolute. Absolute meant the title had to reserve 142px of padding on
+     EVERY line, so a long name ran out of room and pushed the marks onto a line of
+     their own. A float only displaces the lines it actually sits beside, so the title
+     wraps around it and gets the full card width back underneath. */
+  .status{float:right;margin:0 0 4px 12px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:132px;text-align:right;line-height:1.35}
   .status .k{display:block;font-size:8.5px;letter-spacing:.12em;opacity:.8}
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
