@@ -251,10 +251,15 @@
   .dice{background:rgba(123,166,201,.10);border:1px solid rgba(123,166,201,.38);color:#b9d0e0;font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
   .dice:hover{background:rgba(123,166,201,.16);border-color:rgba(123,166,201,.55)}
   .dice:active{transform:scale(.96)}
-  .card{background:linear-gradient(180deg,var(--surface),var(--surface) 60%,#1d1611);border:1px solid var(--line);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;transition:transform .12s,border-color .2s;position:relative;overflow:hidden}
+  /* The first gradient is a neutral highlight from the top-left -- identical on every
+     tile, carrying no meaning. It gives the card a surface. Readiness is carried
+     entirely by the left stripe, so the two never get confused for each other. */
+  .card{background:linear-gradient(160deg,rgba(255,244,225,.045),rgba(255,244,225,0) 46%),linear-gradient(180deg,var(--surface),var(--surface) 60%,#1d1611);border:1px solid var(--line);border-left:3px solid transparent;border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;transition:transform .12s,border-color .2s;position:relative;overflow:hidden}
   .card:active{transform:scale(.985)}
-  .card.makeable{border-color:rgba(159,191,134,.4)}
-  .card.away{border-color:rgba(199,154,75,.3)}
+  /* three tiers: ready, one away, two or more */
+  .card.makeable{border-left-color:var(--have)}
+  .card.away{border-left-color:var(--brass)}
+  .card.short{border-left-color:rgba(177,72,58,.55)}
   .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05}
   .card.has-status h3{padding-right:100px}
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
@@ -309,7 +314,17 @@
      `color` property, which is why the favourite star turned white. Forcing the sans
      stack and text presentation puts --fav back in charge. */
   .marks{display:inline-flex;gap:5px;align-items:center;margin-left:7px;vertical-align:2px;font-family:var(--sans);font-variant-emoji:text}
-  .marks .mk-made,.marks .mk-short,.marks .pstar{font-size:13px;line-height:1}
+  /* Every mark shares ONE font-size and line-height, so the flex row centres four
+     identical boxes and nothing can drift. Optical size is corrected with transform
+     instead, which scales about the element's own centre and therefore cannot shift
+     the baseline -- the mistake was setting the four-point star to 15px while the
+     check sat at 13px, which centres the boxes but not the ink inside them.
+     A star carries less ink than a check at the same size, and a four-point star less
+     again, so each gets a nudge up rather than a different size. */
+  .marks > span{font-size:13px;line-height:1;font-weight:700;display:inline-block}
+  .marks .pstar{transform:scale(1.08)}
+  .marks .pog{transform:scale(1.18)}
+  .marks .pog{color:var(--winter)}
   .pips .p{width:9px;height:9px;border-radius:50%}
   .mk-made{color:var(--made);font-size:13px;font-weight:700;line-height:1}
   .mk-short{color:var(--short);font-size:13px;font-weight:700;line-height:1}
@@ -317,7 +332,7 @@
      renamed to .marks and this rule silently stopped matching, so the star inherited
      the heading colour and went white. .mk-made and .mk-short are unscoped, which is
      why only the star broke. */
-  .marks .pstar{color:var(--fav);font-size:13px;line-height:1}
+  .marks .pstar{color:var(--fav)}
   .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:92px;text-align:right;line-height:1.35}
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
@@ -400,6 +415,7 @@
   .sback svg{width:18px;height:18px}
   .sback:active{background:var(--raised)}
   .sheet .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--brass)}
+  .sheet h2 .marks{vertical-align:4px}
   .sheet h2{font-family:var(--display);font-weight:900;font-size:30px;letter-spacing:-.015em;line-height:1;margin:6px 0 12px}
   .spec-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
   .batch{background:var(--surface2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:16px}
@@ -830,17 +846,31 @@ function matchB(d){
   if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
   return true;
 }
+/* An "Original" needs no new column: your Source already says Original or Dad, and
+   that ships as `sn`. Matched exactly, not loosely -- a substring rule on "me" would
+   catch "Domesticate Me" and "A Grateful Meal". Add a credit here to extend it. */
+const ORIGINAL_SOURCES=new Set(['original','dad']);
+const ORIGINAL_GLYPH='\u2726';   // four-point star; swap for \u25c6 (diamond) if you prefer
+function isOriginal(d){ return ORIGINAL_SOURCES.has(String(d.sn||'').trim().toLowerCase()); }
 function marksHTML(d){
   // \uFE0E is the text-presentation selector: it tells the browser these are type,
   // not emoji, so they keep taking their colour from CSS.
   let h=''; if(d.md)h+=`<span class="mk-made" title="Made">\u2714\uFE0E</span>`;
   if(d.ts)h+=`<span class="mk-short" title="Shortlist">\u2714\uFE0E</span>`;
   if(d.fv)h+=`<span class="pstar" title="Favorite">\u2605\uFE0E</span>`;
+  if(isOriginal(d))h+=`<span class="pog" title="Original">${ORIGINAL_GLYPH}</span>`;
   return h?`<span class="marks">${h}</span>`:'';
 }
 function cardEl(d,extra){
-  const status=extra&&extra.badge?extra.badge:'';
-  const c=document.createElement('div'); c.className='card'+(extra?' '+extra.cls:'')+(status?' has-status':''); c.onclick=()=>openSheet(d);
+  /* Readiness is computed HERE rather than passed in, so Browse and Build render
+     identically. Build used to supply it and Browse showed nothing, which is why the
+     right edge of a Browse tile was empty. */
+  const miss=[...d._stock].filter(n=>!HAVE_SET().has(n));
+  const cls = miss.length===0 ? 'makeable' : (miss.length===1 ? 'away' : 'short');
+  const status = miss.length===0 ? `<span class="status ok">Ready</span>`
+               : (miss.length===1 ? `<span class="status one">Need ${miss[0]}</span>`
+                                  : `<span class="status one">Need ${miss.length}</span>`);
+  const c=document.createElement('div'); c.className='card '+cls+' has-status'; c.onclick=()=>openSheet(d);
   /* Classification reads as a breadcrumb subtitle under the name; the pills below
      carry spirit and mood. Two reasons over six mixed pills: it matches the kicker
      already on the recipe card, so opening a drink does not reclassify it in a
@@ -1038,7 +1068,7 @@ function renderBar(){
       const badge=canMake?`<span class="status ok">Ready</span>`
         :(miss.length===1?`<span class="status one">Need ${miss[0]}</span>`
                          :`<span class="status one">Need ${miss.length}</span>`);
-      rc.appendChild(cardEl(d,{cls:canMake?'makeable':(miss.length===1?'away':''),badge}));
+      rc.appendChild(cardEl(d));
     });
     if(!rows.length) rc.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>No match</b>Try removing an ingredient from your selection.</div>`;
   }
@@ -1096,9 +1126,17 @@ function defaultDilution(d){ return DIL_BY_STYLE.hasOwnProperty(d&&d.s) ? DIL_BY
 function convFactor(from,to){ if(from===to)return 1; if(NOCONV.has(from)||NOCONV.has(to))return null; if(CONV[from]&&CONV[from][to]!=null)return CONV[from][to]; return null; }
 function computeRows(d){
   const BARE=new Set(['each','whole','-','']);
+  /* Count units now carry a raw volume via COUNT_ML, so they count toward the total,
+     the percentages and the proportion bar. Without it a 1000 g batch of Vieux Carre
+     actually produced 1049 g -- the bitters were added on top of a split that already
+     summed to the target. isCount keeps the DISPLAY as a count; only the maths changes. */
   const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'\u2014',raw:null};
     if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
-    const f=convFactor(u,normU); if(f==null){ const q=a*mult; return{disp:`${fmt(q)} ${unitLabel(q,u)}`,raw:null}; }
+    const f=convFactor(u,normU);
+    if(f==null){
+      const q=a*mult, ml=COUNT_ML[unitBase(u)], mf=convFactor('ml',normU);
+      return {disp:`${fmt(q)} ${unitLabel(q,u)}`, raw:(ml!=null&&mf!=null)?q*ml*mf:null, isCount:true};
+    }
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
   const batching = isBatching();
@@ -1118,13 +1156,16 @@ function computeRows(d){
        else; they just cannot be expressed as a share of a volume total. The scaled
        count comes first because that is the recipe, and the approximate volume sits
        under it in the SAME unit as the rest of the column so it can be measured. */
-    if(batching && bmult && cc.raw==null && it[1]!=null){
-      const n=it[1]*mult*bmult;
-      const ml=COUNT_ML[unitBase(it[2])];
-      const approx = ml!=null ? (ml*n)*(convFactor('ml',batchU)||0) : null;
-      const nr=Math.round(n*10)/10;
+    /* Count rows show the scaled count, with the measurable amount underneath -- the
+       same figure every other row shows, since their volume is now in the total. */
+    if(batching && bmult && cc.isCount && it[1]!=null){
+      const n=it[1]*mult*bmult, nr=Math.round(n*10)/10;
+      const w = (cc.raw!=null&&tot) ? cc.raw/tot*parseFloat(batchQty) : null;
       right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim()
-            + (approx ? `<span class="approx">\u2248${fmt(Math.round(approx*10)/10)} ${batchU}</span>` : '');
+            + (w!=null ? `<span class="approx">\u2248${fmt(Math.round(w*10)/10)} ${batchU}</span>` : '');
+    } else if(batching && bmult && cc.raw==null && it[1]!=null){
+      const n=it[1]*mult*bmult, nr=Math.round(n*10)/10;
+      right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim();   // whole / leaves: no honest volume
     }
     /* Green/red only for categories actually tracked in My Bar. "Other" matched
        just 8% of the time (11 of 145), so its dot was permanently red -- worse
@@ -1268,9 +1309,8 @@ function srcCredit(d){
 
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
-  const st=[]; if(d.md)st.push('<span class="on-made">✓ Made</span>'); if(d.ts)st.push('<span class="on-short">✓ Shortlist</span>'); if(d.fv)st.push('<span class="on-fav">★ Favorite</span>');
   const _eu=sheetUrl(d.r,'c');
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div><div class="sbody">${taxoKicker(d)}<h2>${d.n}</h2>
+  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div><div class="sbody">${taxoKicker(d)}<h2>${d.n}${marksHTML(d)}</h2>
     <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
@@ -1293,7 +1333,6 @@ function renderSheet(){
     </div>
     <div id="recipeRows">${computeRows(d)}</div>
     <div class="serve"><div><div class="lbl">Served</div><div class="val">${d.g||'—'}</div></div><div><div class="lbl">Garnish</div><div class="val">${d.ga||'—'}</div></div></div>
-    ${st.length?`<div class="statusline">${st.join('')}</div>`:''}
     ${srcCredit(d)}</div>`;
 }
 window.bumpMult=function(delta){ mult=Math.max(0.25, Math.round((mult+delta)*4)/4); const inp=document.querySelector('.multin'); if(inp)inp.value=mult; updateRows(); };
