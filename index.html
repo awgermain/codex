@@ -228,7 +228,8 @@
   .chipstar{color:var(--pip-color);font-size:14px;font-weight:700;line-height:1;margin-right:5px}
   /* An inline style beats a stylesheet rule, so the star's colour has to arrive as a
      custom property for the selected state to be able to override it. */
-  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .chipstar,.chip.on.tint .pip{color:#1a130b}
+  .chipog{color:var(--winter);font-size:13px;font-weight:700;line-height:1;margin-right:6px}
+  .chip.on.tint .mk-made,.chip.on.tint .mk-short,.chip.on.tint .chipstar,.chip.on.tint .chipog,.chip.on.tint .pip{color:#1a130b}
     /* was 11px: the star needs the same left padding as a chip whose glyph sits in
      the label, otherwise it crowds the edge */
   .chip.st{padding-left:13px}
@@ -261,7 +262,7 @@
   .card.away{border-left-color:var(--brass)}
   .card.short{border-left-color:rgba(177,72,58,.55)}
   .card h3{font-family:var(--display);font-weight:600;font-size:21px;letter-spacing:-.01em;line-height:1.05}
-  .card.has-status h3{padding-right:100px}
+  .card.has-status h3{padding-right:142px}
   .card .ing{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
   .card .meta{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 .taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
@@ -323,7 +324,7 @@
      again, so each gets a nudge up rather than a different size. */
   .marks > span{font-size:13px;line-height:1;font-weight:700;display:inline-block}
   .marks .pstar{transform:scale(1.08)}
-  .marks .pog{transform:scale(1.18)}
+  .marks .pog{transform:scale(1.10)}
   .marks .pog{color:var(--winter)}
   .pips .p{width:9px;height:9px;border-radius:50%}
   .mk-made{color:var(--made);font-size:13px;font-weight:700;line-height:1}
@@ -333,7 +334,8 @@
      the heading colour and went white. .mk-made and .mk-short are unscoped, which is
      why only the star broke. */
   .marks .pstar{color:var(--fav)}
-  .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:92px;text-align:right;line-height:1.35}
+    .status{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;max-width:132px;text-align:right;line-height:1.35}
+  .status .k{display:block;font-size:8.5px;letter-spacing:.12em;opacity:.8}
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
   .empty b{color:var(--muted);font-family:var(--display);font-size:19px;display:block;margin-bottom:6px;font-weight:600}
@@ -452,6 +454,7 @@
   .recipe-row .nm{font-size:14.5px;flex:1}
   .recipe-row .pct{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:44px;text-align:right}
   .recipe-row .pct .approx{display:block;color:var(--brass);opacity:.75;font-size:10px;margin-top:2px;white-space:nowrap}
+  .recipe-row .pct .perdrink{color:var(--winter);font-size:10px;white-space:nowrap}
   /* proportion bar + footer */
   .propbar{display:flex;gap:1px;height:4px;border-radius:2px;overflow:hidden;margin:12px 0 0}
   .propbar i{display:block;height:100%}
@@ -593,6 +596,11 @@ const NOCONV=new Set(['barspoon','dashes','drops','pinch','parts']);
    actually get batched: nobody dashes 68 times, they measure.
    MEASURE YOUR OWN and change these: count 20 dashes into a jigger and divide. */
 const COUNT_ML={'dash':1,'drop':0.05,'barspoon':5,'pinch':0.3};
+/* Things that go in per drink rather than into the batch. Egg white will not hold in
+   a bottle -- it separates and stops emulsifying -- so the honest batch instruction is
+   "add one per drink and shake", not "15 egg whites". Showing a scaled count here
+   would be arithmetically right and practically wrong. */
+const PER_DRINK=/\begg\b/i;
 /* Count units are stored in the sheet however they read at their written quantity --
    "1 dash", "2 dashes" -- which is correct there and wrong the moment you scale, since
    the unit is a literal string and 1 dash x 10 would print "10 dash". Pluralising in
@@ -823,13 +831,14 @@ function renderFilters(){
   fs.appendChild(chip('<span class="mk-made" style="margin-right:5px">\u2714\uFE0E</span>Made',fStatus==='md',()=>{fStatus=fStatus==='md'?null:'md';renderBrowse();},null,null,'var(--made)'));
   fs.appendChild(chip('<span class="mk-short" style="margin-right:5px">\u2714\uFE0E</span>Shortlist',fStatus==='ts',()=>{fStatus=fStatus==='ts'?null:'ts';renderBrowse();},null,null,'var(--short)'));
   fs.appendChild(chip('Favorite',fStatus==='fv',()=>{fStatus=fStatus==='fv'?null:'fv';renderBrowse();},null,'var(--fav)','var(--fav)'));
+  fs.appendChild(chip(`<span class="chipog">${ORIGINAL_GLYPH}</span>Original`,fStatus==='og',()=>{fStatus=fStatus==='og'?null:'og';renderBrowse();},null,null,'var(--winter)'));
   setFA('fa_base',fBase); setFA('fa_style',fStyle); setFA('fa_served',fServed); setFA('fa_mood',fMood);
   const ff=document.getElementById('fFam'); if(ff){ ff.innerHTML=''; FAMILIES.forEach(x=>ff.appendChild(chip(x,fFam===x,()=>{fFam=fFam===x?null:x;renderBrowse();}))); }
   const fe=document.getElementById('fEra'); if(fe){ fe.innerHTML=''; ERAS.forEach(x=>fe.appendChild(chip(x,fEra===x,()=>{fEra=fEra===x?null:x;renderBrowse();}))); }
   const fgg=document.getElementById('famgroup'); if(fgg) fgg.style.display=FAMILIES.length?'':'none';
   const egg=document.getElementById('eragroup'); if(egg) egg.style.display=ERAS.length?'':'none';
   setFA('fa_season',fSeason); setFA('fa_holiday',fHoliday); setFA('fa_fam',fFam); setFA('fa_era',fEra);
-  setFA('fa_status', fStatus?({md:'Made',ts:'Shortlist',fv:'Favorite'})[fStatus]:'');
+  setFA('fa_status', fStatus?({md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'})[fStatus]:'');
 }
 function setFA(id,val){ const e=document.getElementById(id); if(e) e.textContent=val?('· '+val):''; }
 window.toggleFGroup=function(h){ h.parentElement.classList.toggle('collapsed'); };
@@ -842,7 +851,8 @@ function matchB(d){
   if(fHoliday&&d.ho!==fHoliday)return false;
   if(fFam&&d.fam!==fFam)return false;
   if(fEra&&d.era!==fEra)return false;
-  if(fStatus&&!d[fStatus])return false;
+  if(fStatus==='og'){ if(!isOriginal(d)) return false; }   // og is derived from Source, not a column
+  else if(fStatus&&!d[fStatus])return false;
   if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
   return true;
 }
@@ -867,8 +877,13 @@ function cardEl(d,extra){
      right edge of a Browse tile was empty. */
   const miss=[...d._stock].filter(n=>!HAVE_SET().has(n));
   const cls = miss.length===0 ? 'makeable' : (miss.length===1 ? 'away' : 'short');
+  /* The named case stacks: NEED on its own line as a small label, the ingredient
+     beneath it with the full 132px. Two lines by design rather than by wrapping, so
+     nothing truncates and nothing collides with the title. Median name length is 17
+     characters against the 16 the old 92px box allowed, which is why almost every one
+     of them was wrapping. Same colour throughout -- only the size and tracking. */
   const status = miss.length===0 ? `<span class="status ok">Ready</span>`
-               : (miss.length===1 ? `<span class="status one">Need ${miss[0]}</span>`
+               : (miss.length===1 ? `<span class="status one"><span class="k">Need</span>${miss[0]}</span>`
                                   : `<span class="status one">Need ${miss.length}</span>`);
   const c=document.createElement('div'); c.className='card '+cls+' has-status'; c.onclick=()=>openSheet(d);
   /* Classification reads as a breadcrumb subtitle under the name; the pills below
@@ -900,7 +915,7 @@ function activeFilters(){
   if(fHoliday)a.push(['Holiday',()=>fHoliday=null,fHoliday]);
   if(fFam)a.push(['Family',()=>fFam=null,fFam]);
   if(fEra)a.push(['Era',()=>fEra=null,fEra]);
-  if(fStatus)a.push(['Marks',()=>fStatus=null,{md:'Made',ts:'Shortlist',fv:'Favorite'}[fStatus]]);
+  if(fStatus)a.push(['Marks',()=>fStatus=null,{md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'}[fStatus]]);
   return a;
 }
 window.toggleFilters=function(){ filtersOpen=!filtersOpen; document.getElementById('filterPanel').style.display=filtersOpen?'':'none'; document.getElementById('filterToggle').classList.toggle('act',filtersOpen); };
@@ -1156,9 +1171,12 @@ function computeRows(d){
        else; they just cannot be expressed as a share of a volume total. The scaled
        count comes first because that is the recipe, and the approximate volume sits
        under it in the SAME unit as the rest of the column so it can be measured. */
+    if(batching && PER_DRINK.test(it[0])){
+      right = `<span class="perdrink">per drink</span>`;
+    }
     /* Count rows show the scaled count, with the measurable amount underneath -- the
        same figure every other row shows, since their volume is now in the total. */
-    if(batching && bmult && cc.isCount && it[1]!=null){
+    else if(batching && bmult && cc.isCount && it[1]!=null){
       const n=it[1]*mult*bmult, nr=Math.round(n*10)/10;
       const w = (cc.raw!=null&&tot) ? cc.raw/tot*parseFloat(batchQty) : null;
       right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim()
@@ -1223,10 +1241,16 @@ function computeRows(d){
   /* Each total sits under its own column: the recipe total in normU on the left where
      the per-drink amounts are, the batch total in batchU on the right where the batch
      weights are. Putting a gram figure in the fl oz column was the bug. */
-  const totL = tot*(batching&&dilution>0 ? 1+dilution/100 : 1);
+  /* The LEFT total is liquid only. One dash of orange bitters genuinely adds 0.034
+     fl oz, so including it turned Crimson Art's 3.25 into "3.284" -- true, and it
+     reads like a typo. Counts stay in the percentages, the proportion bar and the
+     batch maths, where the precision earns its keep; they come out of the one place
+     where a human is reading a jigger measurement. */
+  const totVol = conv.reduce((s,x)=>s+((x.raw&&!x.isCount)?x.raw:0),0);
+  const totL = totVol*(batching&&dilution>0 ? 1+dilution/100 : 1);
   const totR = batching ? parseFloat(batchQty)*(dilution>0?1+dilution/100:1) : null;
   if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(totL*100)/100)} ${normU}</span>`
-    + `<span class="lbl">TOTAL</span>`
+    + `<span class="lbl">TOTAL${(batching&&bmult)?` \u00b7 \u2248${fmt(Math.round(bmult))} DRINKS`:''}</span>`
     + `<span class="rt">${ratio||''}</span>`
     + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}</span></div>`;
   return html;
