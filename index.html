@@ -184,6 +184,8 @@
   .exprow .bar i{display:block;height:100%;background:var(--have)}
   .exprow .c{font-family:var(--mono);font-size:10px;color:var(--faint);width:66px;text-align:right;flex:none}
   .exprow .ch{color:var(--muted);font-size:11px}
+  .seadot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:0}
+  .expbox .nbmore{padding-left:2px}
   /* equal height: fixed min-height and one line of context, so the three read as peers */
   .expcards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:2px}
   .expbig{display:flex;flex-direction:column;justify-content:flex-start;gap:5px;min-height:82px;background:var(--surface);
@@ -610,6 +612,9 @@ const C0 = DB.cocktails, HAVE = new Set(DB.have), UNITS = DB.units, CONV = DB.co
 const CAT_ORDER=["Spirit","Modifier","Acid","Sweetener","Seasoning","Top / Mix","Other"];
 const SEASON_COLOR={Spring:'var(--spring)',Summer:'var(--summer)',Autumn:'var(--autumn)',Winter:'var(--winter)'};
 const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',"New Year's":'🎉',"Valentine's":'💘',"St. Patrick's":'🍀'};
+/* Only the servings whose glass or ice has an obvious symbol. Down and Ice Shell get
+   none rather than a vague one -- an icon nobody can decode is worse than a label. */
+const SERVED_ICON={'Up':'🍸','Rocks':'🥃','Big Rock':'🧊','Crushed/Pebble':'❄️','Frozen/Blended':'🍧','Hot':'☕'};
 // 'tsp' removed — the Conversion Table DOES carry tsp factors (tsp->fl oz = 0.166667),
 // so listing it here was silently blocking a conversion that works fine. The rest have
 // no row in the table and genuinely can't be converted.
@@ -1113,18 +1118,35 @@ window.expJump=function(kind,val){
   else if(kind==='fv'){ fReady=true; fStatus='fv'; }
   setMode('browse'); window.scrollTo({top:0,behavior:'smooth'});
 };
-function expGroup(key,label,pairs,note){
+const expMore=new Set();
+window.toggleExpMore=function(e,k){ e.stopPropagation(); expMore.has(k)?expMore.delete(k):expMore.add(k); renderExplore(); };
+/* Identity travels with the LABEL -- an emoji for mood, holiday and serving, a colour
+   dot for season. The bar is left to mean readiness alone, so no channel carries two
+   things at once. */
+function expLabel(key,val){
+  if(key==='mood'&&MOOD_ICON[val]) return MOOD_ICON[val]+' '+val;
+  if(key==='holiday'&&HOLIDAY_ICON[val]) return HOLIDAY_ICON[val]+' '+val;
+  if(key==='served'&&SERVED_ICON[val]) return SERVED_ICON[val]+' '+val;
+  if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val;
+  return val;
+}
+function expGroup(key,label,pairs,note,cap){
   const open=expOpen.has(key);
+  if(cap && !expMore.has(key)) pairs=pairs.slice(0,cap);
   let h=`<div class="barhead exph${open?' open':''}" onclick="toggleExp('${key}')"><span class="chev">\u25b8</span>${label}`
        +`<span class="n">${note}</span></div><div class="expbox" style="display:${open?'':'none'}">`;
   h+=pairs.map(p=>{
     if(p.head) return `<div class="exphead2">${p.head}<span>${p.ready}/${p.total}</span></div>`;
     const pct = p.total ? Math.round(p.ready/p.total*100) : 0;
+    /* Same three tiers as the card stripes -- green mostly stocked, brass patchy, red
+       mostly blocked -- so a colour means the same thing wherever you meet it. */
+    const col = pct>=67?'var(--have)':(pct>=34?'var(--brass)':'var(--nothave)');
     return `<div class="exprow" onclick="expJump('${p.kind}','${String(p.val).replace(/'/g,"\\'")}')">`
-      +`<span class="n">${p.val}</span>`
-      +`<span class="bar"><i style="width:${pct}%"></i></span>`
+      +`<span class="n">${expLabel(key,p.val)}</span>`
+      +`<span class="bar"><i style="width:${pct}%;background:${col}"></i></span>`
       +`<span class="c">${p.ready}/${p.total}</span><span class="ch">\u203a</span></div>`;
   }).join('');
+  if(cap && pairs.length>cap) h+=`<button class="nbmore" onclick="toggleExpMore(event,'${key}')">${expMore.has(key)?'Show top '+cap:'Show all '+pairs.length}</button>`;
   return h+`</div>`;
 }
 function renderExplore(){
@@ -1174,7 +1196,14 @@ function renderExplore(){
   };
   const cov=l=>l.reduce((s,x)=>s+x.total,0)+' of '+C.length+' classified';
 
-  const served=tally(d=>d.g), hols=tally(d=>d.ho), srcs=tally(d=>String(d.sn||'').trim());
+  const served=tally(d=>d.g), hols=tally(d=>d.ho);
+  /* Creators are picked by size but LISTED alphabetically. Ranking 95 names by count
+     makes the long tail unfindable, and sorting all 95 A-Z buries the thirteen who
+     account for 765 of the 920 drinks. Taking the top 15 and then alphabetising keeps
+     the shortlist meaningful and the order stable when you expand. */
+  const srcsAll=tally(d=>String(d.sn||'').trim());
+  const srcsTop=srcsAll.slice(0,15).sort((a,b)=>a.val.localeCompare(b.val));
+  const srcs=srcsAll.slice().sort((a,b)=>a.val.localeCompare(b.val));
   /* Mood and Season are arrays -- a drink can be both Citrusy and Smoky -- so they
      tally per value, and the coverage line counts DRINKS rather than the sum of rows,
      which would otherwise exceed the collection. */
@@ -1203,7 +1232,8 @@ function renderExplore(){
     + expGroup('mood','Mood', mk('mood',moods), moods.length+' \u00b7 '+covN(moods._drinks))
     + expGroup('season','Season', mk('season',seasons), seasons.length+' \u00b7 '+covN(seasons._drinks))
     + expGroup('holiday','Holiday', mk('holiday',hols), hols.length+' \u00b7 '+cov(hols))
-    + expGroup('src','Creator', mk('src',srcs), srcs.length+' \u00b7 '+cov(srcs));
+    + expGroup('src','Creator', mk('src', expMore.has('src')?srcs:srcsTop),
+        srcsAll.length+' \u00b7 '+cov(srcsAll), 15);
 }
 
 function renderShelf(){
