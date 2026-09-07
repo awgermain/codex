@@ -168,6 +168,30 @@
   .barhead.shelfhead-c{margin:10px 0 0}
   .barhead.shelfhead-c .n{font-family:var(--mono);font-size:10px;color:var(--faint);margin-left:auto}
   .shelfbox{margin-bottom:2px}
+  /* ---- Explore ---- */
+  .barhead.exph{margin:10px 0 0}
+  .barhead.exph .n{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:none;color:var(--faint);margin-left:auto}
+  .expbox{margin-bottom:2px}
+  .exphead2{display:flex;align-items:baseline;font-family:var(--mono);font-size:9px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--brass);padding:10px 2px 3px;border-bottom:1px solid var(--line)}
+  .exphead2 span{margin-left:auto;color:var(--faint);letter-spacing:.04em}
+  .exphead2 + .exprow{border-top:none}
+  .expbox .exphead2 ~ .exprow .n{padding-left:10px}
+  .exprow{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .exprow:last-child{border-bottom:none}
+  .exprow .n{flex:1;font-size:13.5px;color:var(--ink)}
+  .exprow .bar{width:70px;height:4px;background:rgba(199,154,75,.14);border-radius:2px;overflow:hidden;flex:none}
+  .exprow .bar i{display:block;height:100%;background:var(--have)}
+  .exprow .c{font-family:var(--mono);font-size:10px;color:var(--faint);width:66px;text-align:right;flex:none}
+  .exprow .ch{color:var(--muted);font-size:11px}
+  /* equal height: fixed min-height and one line of context, so the three read as peers */
+  .expcards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:2px}
+  .expbig{display:flex;flex-direction:column;justify-content:flex-start;gap:5px;min-height:82px;background:var(--surface);
+    border:1px solid var(--line);border-top:3px solid var(--have);border-radius:14px;padding:11px 11px 10px;cursor:pointer}
+  .expbig .num{font-family:var(--mono);font-size:22px;color:var(--have);line-height:1}
+  .expbig .t{font-size:11.5px;color:var(--muted);line-height:1.3}
+  .expbig.b{border-top-color:var(--short)} .expbig.b .num{color:var(--short)}
+  .expbig.c{border-top-color:var(--fav)}   .expbig.c .num{color:var(--fav)}
   .shelfrow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer}
   .shelfrow .bx{width:16px;height:16px;border-radius:5px;border:1px solid var(--brass-dim);flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent}
   .shelfrow.on .bx{background:var(--have);border-color:var(--have);color:#17110f}
@@ -286,15 +310,21 @@
      linked ones -- just non-interactive, so the card never changes shape. */
   .srcbtn.nolink{color:var(--muted);cursor:default;border-style:dashed}
   .srcbtn.nolink b{color:var(--brass);font-weight:600}
-  .rdot{width:6px;height:6px;border-radius:50%;flex:none;background:var(--faint);opacity:.5}
-  .recipe-row.have .rdot{background:var(--have);opacity:1}
-  .recipe-row.miss .rdot{background:var(--nothave);opacity:.75}
+/* One mark, two facts. Colour is the CATEGORY, matching the proportion bar, so the
+     bar needs no legend -- the ingredient row is the key. Fill is STOCK: solid means
+     you have it, hollow means you do not. Adding a second dot for category would have
+     put two marks on every row to say what one can. */
+  .rdot{width:8px;height:8px;border-radius:2px;flex:none;background:transparent;
+    border:1.5px solid var(--cat,var(--faint));box-sizing:border-box}
+  .recipe-row.have .rdot{background:var(--cat,var(--have))}
+  .recipe-row.miss .rdot{background:transparent;opacity:.85}
   /* untracked categories: dot in EXACTLY the ingredient's own text colour. No
      opacity -- currentColor was already right, the .45 fade was what made it
      look grey. */
-  .recipe-row.untracked .rdot{background:currentColor;opacity:1}
+  .recipe-row.untracked .rdot{background:var(--cat,currentColor);border-color:transparent;opacity:.55}
     .card .kick{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:4px 0 0;line-height:1.5}
   .card .kick b{color:var(--brass);font-weight:400}
+  .card .kick .famjump{cursor:pointer;border-bottom:1px solid currentColor;opacity:.95;padding-bottom:1px}
   .card .kick i{color:var(--short);font-style:normal}
   .card .kick .sep{margin:0 5px}
   /* HAIRLINE VARIANT. To swap the chevrons for thin rules, uncomment this block --
@@ -363,6 +393,7 @@
   .nbu{font-family:var(--mono);font-size:12.5px;color:var(--have);flex:none}
   .nbs{font-size:10.5px;color:var(--faint);margin:2px 0 0 24px;line-height:1.45}
   .nbf{font-family:var(--mono);font-size:10px;color:var(--faint);padding:9px 0 1px;letter-spacing:.04em}
+  .nbmore{display:block;width:100%;background:none;border:none;border-top:1px solid var(--line);color:var(--brass);font-family:var(--sans);font-size:12px;font-weight:600;padding:9px 0 2px;cursor:pointer;text-align:left}
   .bartoggle{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
   .barhead{font-family:var(--display);font-size:14px;color:var(--muted);font-weight:600;margin:12px 0 6px;letter-spacing:.01em;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface2)}
   .barhead:hover{color:var(--ink);border-color:var(--brass-dim)}
@@ -508,6 +539,7 @@
   <div class="modes">
     <button id="mBrowse" class="on" onclick="setMode('browse')">Browse</button>
     <button id="mBar" onclick="setMode('bar')">Build</button>
+    <button id="mExplore" onclick="setMode('explore')">Explore</button>
     <button id="mShelf" onclick="setMode('shelf')">My Bar</button>
   </div>
 
@@ -534,14 +566,14 @@
   </div>
 
   <div id="barView" style="display:none">
-    <div class="barhint">Tap what you have. <span style="color:var(--have)">●</span> stocked · <span style="color:var(--nothave)">●</span> not.</div>
+    <div class="barhint">Tap what you have. <span style="color:var(--have)">●</span> stocked · <span style="color:var(--nothave)">●</span> not stocked.</div>
     <div class="bartoggle" id="barToggle"></div>
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
-    <div class="nbx" id="nextBottle"></div>
     <div id="barGrid"></div>
     <div id="barResults" style="margin-top:8px"></div>
   </div>
+  <div id="exploreView" style="display:none"></div>
   <div id="shelfView" style="display:none"></div>
 </div>
 
@@ -789,7 +821,7 @@ window.reshuffleHome=function(){ shuffledC=shuffle_(C.slice()); renderBrowse(); 
 rebuild();
 
 
-let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,filtersOpen=false;
+let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,fSrc=null,fReady=false,fUntried=false,filtersOpen=false;
 const sel=new Set(); let onlyHave=false; const barOpen=new Set();
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
@@ -855,6 +887,11 @@ function matchB(d){
   if(fHoliday&&d.ho!==fHoliday)return false;
   if(fFam&&d.fam!==fFam)return false;
   if(fEra&&d.era!==fEra)return false;
+  if(fSrc&&String(d.sn||'').trim()!==fSrc)return false;
+  /* Set only from Explore's Tonight shortcuts. fReady is "everything on my shelf";
+     fUntried is "and I have never made it". */
+  if(fReady&&![...d._stock].every(n=>HAVE_SET().has(n)))return false;
+  if(fUntried&&d.md)return false;
   if(fStatus==='og'){ if(!isOriginal(d)) return false; }   // og is derived from Source, not a column
   else if(fStatus&&!d[fStatus])return false;
   if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
@@ -899,9 +936,9 @@ function cardEl(d,extra){
   /* Each separator wears the colour of the segment it introduces, so the line reads
      as three coloured objects rather than grey text with grey punctuation in it. */
   const cparts=[];
-  if(d.s)   cparts.push({h:`<span>${d.s}</span>`,        c:'var(--muted)'});
-  if(d.fam) cparts.push({h:`<b>${d.fam}</b>`,            c:'var(--brass)'});
-  if(d.era) cparts.push({h:`<i>${d.era}</i>`,            c:'var(--short)'});
+  if(d.s)   cparts.push({h:`<span class="famjump" onclick="jumpTax(event,'style','${String(d.s).replace(/'/g,"\\'")}')">${d.s}</span>`, c:'var(--muted)'});
+  if(d.fam) cparts.push({h:`<b class="famjump" onclick="jumpFamily(event,'${String(d.fam).replace(/'/g,"\\'")}')">${d.fam}</b>`, c:'var(--brass)'});
+  if(d.era) cparts.push({h:`<i class="famjump" onclick="jumpTax(event,'era','${String(d.era).replace(/'/g,"\\'")}')">${d.era}</i>`, c:'var(--short)'});
   const crumb=cparts.map((p,i)=>(i?`<span class="sep" style="color:${p.c}">\u203a</span>`:'')+p.h).join('');
   c.innerHTML=`${status}<h3>${d.n}${marksHTML(d)}</h3>`
     + (crumb?`<p class="kick">${crumb}</p>`:'')
@@ -919,6 +956,7 @@ function activeFilters(){
   if(fHoliday)a.push(['Holiday',()=>fHoliday=null,fHoliday]);
   if(fFam)a.push(['Family',()=>fFam=null,fFam]);
   if(fEra)a.push(['Era',()=>fEra=null,fEra]);
+  if(fSrc)a.push(['Source',()=>fSrc=null,fSrc]);
   if(fStatus)a.push(['Marks',()=>fStatus=null,{md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'}[fStatus]]);
   return a;
 }
@@ -971,7 +1009,7 @@ function renderSelBar(){
    Those differ: Cachaca appears in 16 recipes but unlocks 6, because its drinks tend
    to be missing something else too. Recipe count would quietly mislead a purchase.
    Everything here comes from data already in codexdata.js -- no new published keys. */
-var nbOpen=false, _nbData=null;
+var nbOpen=false, nbAll=false, _nbData=null;
 function nextBottleData(){
   if(_nbData) return _nbData;
   const unlock={}, uses={}, near={};
@@ -985,18 +1023,21 @@ function nextBottleData(){
   });
   const list=Object.keys(unlock)
     .map(n=>({n:n, unlock:unlock[n], uses:uses[n]||0, near:near[n]||0}))
-    .sort((a,b)=> b.unlock-a.unlock || b.near-a.near || (a.n<b.n?-1:1))
-    .slice(0,8);
+    .sort((a,b)=> b.unlock-a.unlock || b.near-a.near || (a.n<b.n?-1:1));
+  /* Keep the full ranking; the render decides how much of it to show. Slicing here
+     would mean recomputing just to expand. */
   _nbData={list:list, ready:ready, one:one, total:C.length};
   return _nbData;
 }
-window.toggleNextBottle=function(){ nbOpen=!nbOpen; renderNextBottle(); };
+window.toggleNextBottle=function(){ nbOpen=!nbOpen; if(!nbOpen) nbAll=false; renderNextBottle(); };
+window.toggleNextAll=function(e){ if(e) e.stopPropagation(); nbAll=!nbAll; renderNextBottle(); };
 function renderNextBottle(){
   const el=document.getElementById('nextBottle'); if(!el) return;
   const D=nextBottleData();
   if(!D.list.length){ el.innerHTML=''; return; }
   const top=D.list[0];
-  const rows=D.list.map((r,i)=>
+  const shown = nbAll ? D.list : D.list.slice(0,8);
+  const rows=shown.map((r,i)=>
       `<div class="nbr"><div class="nbrt"><span class="nbk">${String(i+1).padStart(2,'0')}</span>`
     + `<span class="nbi">${r.n}</span><span class="nbu">+${r.unlock}</span></div>`
     + `<div class="nbs">in ${r.uses} recipe${r.uses===1?'':'s'}`
@@ -1004,9 +1045,11 @@ function renderNextBottle(){
   el.innerHTML=`<div class="nb${nbOpen?' open':''}">`
     + `<div class="nbh" onclick="toggleNextBottle()">`
     + `<span class="nbt">Next bottle</span>`
-    + `<span class="nbp">${nbOpen?(D.list.length+' shown'):(top.n+' +'+top.unlock)}</span>`
+    + `<span class="nbp">${nbOpen?(shown.length+' of '+D.list.length):(top.n+' +'+top.unlock)}</span>`
     + `<span class="nbc">\u25be</span></div>`
-    + (nbOpen?`<div class="nbb">${rows}<div class="nbf">${D.ready} of ${D.total} ready now \u00b7 ${D.one} one bottle away</div></div>`:'')
+    + (nbOpen?`<div class="nbb">${rows}`
+        + (D.list.length>8?`<button class="nbmore" onclick="toggleNextAll(event)">${nbAll?'Show top 8':'Show all '+D.list.length}</button>`:'')
+        + `<div class="nbf">${D.ready} of ${D.total} ready now \u00b7 ${D.one} one bottle away</div></div>`:'')
     + `</div>`;
 }
 
@@ -1035,6 +1078,134 @@ window.resetShelf=function(){ MY_BAR=null; persistBar(); _nbData=null; rebuild()
 /* Clear is not Reset. Clear hands you an EMPTY shelf to tick up from scratch; Reset
    throws your shelf away and goes back to the published one. */
 window.clearShelf=function(){ MY_BAR=new Set(); persistBar(); _nbData=null; rebuild(); renderShelf(); };
+/* ---------- EXPLORE ----------
+   Complementary views for the filters Browse already has, plus the three lists that
+   answer "what tonight". Every section is collapsible because Family alone is 23 rows
+   and Base spirit adds more -- open by default it would be a wall.
+   Nothing here is new filtering: each row sets an existing filter and jumps to Browse. */
+const expOpen=new Set();
+/* Base Spirit is the one axis where ranking by count reads badly: it puts Bourbon 4th,
+   Rye 5th, Scotch 8th and Irish 10th, so the whiskeys never appear together -- and
+   likewise Rum 1st with Rhum Agricole 11th and Cachaca 12th. Grouping by family keeps
+   relatives adjacent and sweeps twelve one-drink oddities into Other instead of
+   padding the list. Families are ordered by total, members by count within. */
+const SPIRIT_FAMILY={
+  'Rum':'Rum','Rhum Agricole':'Rum','Cacha\u00e7a':'Rum','Charanda':'Rum','Pineapple Rum':'Rum','Coconut Rum':'Rum',
+  'Bourbon':'Whiskey','Rye Whiskey':'Whiskey','Scotch':'Whiskey','Irish Whiskey':'Whiskey','White Rye Whiskey':'Whiskey',
+  'Tequila':'Agave','Mezcal':'Agave','Sotol':'Agave',
+  'Gin':'Gin','Genever':'Gin','Sloe Gin':'Gin',
+  'Cognac':'Brandy','Apple Brandy':'Brandy','Pisco':'Brandy','Brandy':'Brandy','Grappa':'Brandy'
+};
+window.toggleExp=function(k){ expOpen.has(k)?expOpen.delete(k):expOpen.add(k); renderExplore(); };
+function expClearFilters(){
+  fBase=fStyle=fServed=fMood=fSeason=fHoliday=fFam=fEra=fStatus=fSrc=null;
+  fReady=fUntried=false; query=''; const q=document.getElementById('q'); if(q) q.value='';
+}
+window.expJump=function(kind,val){
+  expClearFilters();
+  if(kind==='style') fStyle=val; else if(kind==='fam') fFam=val;
+  else if(kind==='era') fEra=val; else if(kind==='base') fBase=val;
+  else if(kind==='served') fServed=val; else if(kind==='mood') fMood=val;
+  else if(kind==='season') fSeason=val; else if(kind==='holiday') fHoliday=val;
+  else if(kind==='src') fSrc=val;
+  else if(kind==='untried'){ fReady=true; fUntried=true; }
+  else if(kind==='ts'){ fReady=true; fStatus='ts'; }
+  else if(kind==='fv'){ fReady=true; fStatus='fv'; }
+  setMode('browse'); window.scrollTo({top:0,behavior:'smooth'});
+};
+function expGroup(key,label,pairs,note){
+  const open=expOpen.has(key);
+  let h=`<div class="barhead exph${open?' open':''}" onclick="toggleExp('${key}')"><span class="chev">\u25b8</span>${label}`
+       +`<span class="n">${note}</span></div><div class="expbox" style="display:${open?'':'none'}">`;
+  h+=pairs.map(p=>{
+    if(p.head) return `<div class="exphead2">${p.head}<span>${p.ready}/${p.total}</span></div>`;
+    const pct = p.total ? Math.round(p.ready/p.total*100) : 0;
+    return `<div class="exprow" onclick="expJump('${p.kind}','${String(p.val).replace(/'/g,"\\'")}')">`
+      +`<span class="n">${p.val}</span>`
+      +`<span class="bar"><i style="width:${pct}%"></i></span>`
+      +`<span class="c">${p.ready}/${p.total}</span><span class="ch">\u203a</span></div>`;
+  }).join('');
+  return h+`</div>`;
+}
+function renderExplore(){
+  const el=document.getElementById('exploreView'); if(!el) return;
+  const H=HAVE_SET();
+  const rdy=d=>[...d._stock].every(n=>H.has(n));
+  const ready=C.filter(rdy);
+  const untried=ready.filter(d=>!d.md).length;
+  const tsR=C.filter(d=>d.ts&&rdy(d)).length, tsA=C.filter(d=>d.ts).length;
+  const fvR=C.filter(d=>d.fv&&rdy(d)).length, fvA=C.filter(d=>d.fv).length;
+
+  /* Three cards, one shape: number, name, one line of context. Equal height because
+     they are peers -- a taller card would imply a more important list. */
+  /* Three across, no group header. They are the answer to one question, so they read
+     as a single row of figures rather than a section you have to open. Side by side
+     there is no room for a context line, and the totals live in each section below
+     anyway -- the number and what it counts is the whole message. */
+  const tonight='<div class="expcards">'+[
+    ['untried','Ready &amp; untried', untried, 'a'],
+    ['ts','Shortlist ready', tsR, 'b'],
+    ['fv','Favourites ready', fvR, 'c'],
+  ].map(([k,title,num,cls])=>
+    `<div class="expbig ${cls}" onclick="expJump('${k}')"><span class="num">${num}</span>`
+    +`<span class="t">${title}</span></div>`).join('')+'</div>';
+
+  const tally=(keyfn)=>{
+    const m={};
+    C.forEach(d=>{ const k=keyfn(d); if(!k) return; (m[k]=m[k]||{t:0,r:0}); m[k].t++; if(rdy(d)) m[k].r++; });
+    return Object.keys(m).sort((a,b)=>m[b].t-m[a].t).map(k=>({val:k,total:m[k].t,ready:m[k].r}));
+  };
+  const mk=(kind,list)=>list.map(x=>Object.assign({kind:kind},x));
+  const styles=tally(d=>d.s), fams=tally(d=>d.fam), eras=tally(d=>d.era), bases=tally(d=>d.b);
+  /* fold the flat base-spirit tally into family blocks, each preceded by a divider */
+  const groupBases=(list)=>{
+    const g={};
+    list.forEach(x=>{ const f=SPIRIT_FAMILY[x.val]||'Other'; (g[f]=g[f]||[]).push(x); });
+    const order=Object.keys(g).sort((a,b)=>{
+      if(a==='Other') return 1; if(b==='Other') return -1;
+      return g[b].reduce((s,x)=>s+x.total,0)-g[a].reduce((s,x)=>s+x.total,0);
+    });
+    const out=[];
+    order.forEach(f=>{
+      out.push({head:f, total:g[f].reduce((s,x)=>s+x.total,0), ready:g[f].reduce((s,x)=>s+x.ready,0)});
+      g[f].forEach(x=>out.push(Object.assign({kind:'base'},x)));
+    });
+    return out;
+  };
+  const cov=l=>l.reduce((s,x)=>s+x.total,0)+' of '+C.length+' classified';
+
+  const served=tally(d=>d.g), hols=tally(d=>d.ho), srcs=tally(d=>String(d.sn||'').trim());
+  /* Mood and Season are arrays -- a drink can be both Citrusy and Smoky -- so they
+     tally per value, and the coverage line counts DRINKS rather than the sum of rows,
+     which would otherwise exceed the collection. */
+  const tallyArr=(f)=>{
+    const m={}; let n=0;
+    C.forEach(d=>{ const a=f(d)||[]; if(a.length) n++; a.forEach(k=>{ (m[k]=m[k]||{t:0,r:0}); m[k].t++; if(rdy(d)) m[k].r++; }); });
+    const list=Object.keys(m).sort((a,b)=>m[b].t-m[a].t).map(k=>({val:k,total:m[k].t,ready:m[k].r}));
+    list._drinks=n; return list;
+  };
+  const moods=tallyArr(d=>d.mo), seasons=tallyArr(d=>d.se);
+  const covN=(n)=>n+' of '+C.length+' classified';
+
+  /* Ordered by the KIND of question, not alphabetically and not by coverage.
+       what it is        Base Spirit, Style, Family, Era
+       when you'd drink it   Served, Mood, Season, Holiday
+       where it came from    Creator
+     Within each band, broadest first. Alphabetical would make this a reference index,
+     which is the wrong shape for something you open to decide what to drink; sorting
+     by coverage would rank the sections by how far along your tagging is. */
+  el.innerHTML= tonight
+    + expGroup('base','Base Spirit', groupBases(bases), bases.length+' \u00b7 '+cov(bases))
+    + expGroup('style','Style', mk('style',styles), styles.length+' \u00b7 '+cov(styles))
+    + expGroup('fam','Family', mk('fam',fams), fams.length+' \u00b7 '+cov(fams))
+    + expGroup('era','Era', mk('era',eras), eras.length+' \u00b7 '+cov(eras))
+    + expGroup('served','Served', mk('served',served), served.length+' \u00b7 '+cov(served))
+    + expGroup('mood','Mood', mk('mood',moods), moods.length+' \u00b7 '+covN(moods._drinks))
+    + expGroup('season','Season', mk('season',seasons), seasons.length+' \u00b7 '+covN(seasons._drinks))
+    + expGroup('holiday','Holiday', mk('holiday',hols), hols.length+' \u00b7 '+cov(hols))
+    + expGroup('src','Creator', mk('src',srcs), srcs.length+' \u00b7 '+cov(srcs));
+}
+
 function renderShelf(){
   const el=document.getElementById('shelfView'); if(!el) return;
   const {use,byCat}=shelfIngredients(); const H=HAVE_SET();
@@ -1043,7 +1214,8 @@ function renderShelf(){
     + `<button class="linkbtn" onclick="clearShelf()">Clear all</button>`
     + (MY_BAR?`<button class="linkbtn alt" onclick="resetShelf()">Reset to house bar</button>`:'')+`</div>`
     + `<p class="shelfnote">${MY_BAR?'This is your shelf. It is stored on this device only.'
-        :'Showing the house bar. Tick anything to start your own — it stays on this device and never touches the collection.'}</p>`;
+        :'Showing the house bar. Tick anything to start your own — it stays on this device and never touches the collection.'}</p>`
+    + `<div class="nbx" id="nextBottle"></div>`;
   /* Alphabetical, and collapsed by default with the same head/chevron as Build --
      seven groups of a hundred-odd ingredients is unusable as one flat list. Sorting
      by use count read as arbitrary once you were hunting for a specific bottle. */
@@ -1060,8 +1232,14 @@ function renderShelf(){
       +`</div>`;
   });
   el.innerHTML=html;
+  renderNextBottle();   // the drawer lives inside the shelf markup, so it must follow the write
 }
 
+/* Tapping a family filters Browse to it. The filter panel already does this, so it is
+   a shortcut to existing machinery rather than a new path -- and stopPropagation keeps
+   the tap off the card, which would otherwise open the recipe. */
+window.jumpTax=function(e,kind,val){ e.stopPropagation(); expJump(kind,val); };
+window.jumpFamily=function(e,fam){ e.stopPropagation(); expJump('fam',fam); };
 window.toggleSel=function(n){ sel.has(n)?sel.delete(n):sel.add(n); renderBar(); };
 function renderBar(){
   renderBarToggle(); renderSelBar(); renderNextBottle();
@@ -1121,10 +1299,13 @@ function setMode(m){
   document.getElementById('mBrowse').classList.toggle('on',m==='browse');
   document.getElementById('mBar').classList.toggle('on',m==='bar');
   document.getElementById('mShelf').classList.toggle('on',m==='shelf');
+  document.getElementById('mExplore').classList.toggle('on',m==='explore');
   document.getElementById('browseView').style.display=m==='browse'?'':'none';
   document.getElementById('barView').style.display=m==='bar'?'':'none';
   document.getElementById('shelfView').style.display=m==='shelf'?'':'none';
-  if(m==='bar')renderBar(); else if(m==='shelf')renderShelf(); else renderBrowse();
+  document.getElementById('exploreView').style.display=m==='explore'?'':'none';
+  if(m==='bar')renderBar(); else if(m==='shelf')renderShelf();
+  else if(m==='explore')renderExplore(); else renderBrowse();
 }
 
 /* ---------- RECIPE SHEET + BATCH ---------- */
@@ -1199,7 +1380,7 @@ function computeRows(d){
     // it[5], when published, is the cell note -- the specificity the value omits
     const note = it[5] ? noteHTML(it[5]) : '';
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
-         + `<span class="nm"><i class="rdot" aria-hidden="true"></i>${it[0]}`
+         + `<span class="nm"><i class="rdot" aria-hidden="true" style="--cat:${CAT_COLOR[it[3]]||'var(--faint)'}"></i>${it[0]}`
          + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
          + (note?`<span class="ingnote">${note}</span>`:'')
          + `</span>`
