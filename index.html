@@ -277,6 +277,20 @@
      for the Winter season tag, so this introduces no new hue to the palette. */
   .dice{background:rgba(123,166,201,.10);border:1px solid rgba(123,166,201,.38);color:#b9d0e0;font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
   .dice:hover{background:rgba(123,166,201,.16);border-color:rgba(123,166,201,.55)}
+  .dbtn{background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:15px;
+    padding:0 13px;border-radius:100px;cursor:pointer;line-height:1;flex:none}
+  .dbtn.on{background:var(--brass);border-color:var(--brass);color:#1a130b}
+  /* ---- compact rows ---- */
+  .dense .card{display:flex;align-items:baseline;gap:10px;background:none;border:0;
+    border-left:3px solid transparent;border-bottom:1px solid var(--line);border-radius:0;
+    padding:9px 0 9px 9px;margin:0;overflow:hidden}
+  .dense .card h3{font-size:15px;flex:none;padding:0;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dense .card .kick,.dense .card .meta{display:none}
+  .dense .card .ing{flex:1;min-width:0;font-size:11px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dense .card .status{position:static;float:none;flex:none;margin:0;max-width:none}
+  .dense .card .status .k{display:inline;font-size:9.5px;letter-spacing:.05em}
+  .dense .card .status .k::after{content:' '}
+  .dense .card .marks{margin-left:5px}
   .dice:active{transform:scale(.96)}
   /* The first gradient is a neutral highlight from the top-left -- identical on every
      tile, carrying no meaning. It gives the card a surface. Readiness is carried
@@ -549,6 +563,7 @@
     <div class="toolbar">
       <button class="fbtn" id="filterToggle" onclick="toggleFilters()">☰ Filters<span id="fcount"></span></button>
       <button class="dice" onclick="surprise()">🎲 Surprise me</button>
+      <button class="dbtn" id="denseBtn" onclick="toggleDense()" title="Compact list" aria-label="Compact list">▤</button>
     </div>
     <div id="activeChips" class="activechips"></div>
     <div id="filterPanel" class="fpanel" style="display:none">
@@ -557,6 +572,7 @@
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Style</span><span class="fh-a" id="fa_style"></span><span class="chev">▸</span></div><div class="frow" id="fStyle"></div></div>
       <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
       <div class="fgroup collapsed" id="eragroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Era</span><span class="fh-a" id="fa_era"></span><span class="chev">▸</span></div><div class="frow" id="fEra"></div></div>
+      <div class="fgroup collapsed" id="srcgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Creator</span><span class="fh-a" id="fa_src"></span><span class="chev">▸</span></div><div class="frow" id="fSrcRow"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Served</span><span class="fh-a" id="fa_served"></span><span class="chev">▸</span></div><div class="frow" id="fServed"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Mood</span><span class="fh-a" id="fa_mood"></span><span class="chev">▸</span></div><div class="frow" id="fMood"></div></div>
       <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Season</span><span class="fh-a" id="fa_season"></span><span class="chev">▸</span></div><div class="frow" id="fSeason"></div></div>
@@ -614,7 +630,10 @@ const SEASON_COLOR={Spring:'var(--spring)',Summer:'var(--summer)',Autumn:'var(--
 const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',"New Year's":'🎉',"Valentine's":'💘',"St. Patrick's":'🍀'};
 /* Only the servings whose glass or ice has an obvious symbol. Down and Ice Shell get
    none rather than a vague one -- an icon nobody can decode is worse than a label. */
-const SERVED_ICON={'Up':'🍸','Rocks':'🥃','Big Rock':'🧊','Crushed/Pebble':'❄️','Frozen/Blended':'🍧','Hot':'☕'};
+const SERVED_ICON={'Up':'🍸','Rocks':'🥃','Big Rock':'🧊','Crushed/Pebble':'🍹','Frozen/Blended':'❄️','Hot':'☕'};
+/* Season icons sit AFTER the name, where the coloured dot sits before it -- colour and
+   symbol saying the same thing from either end of the label. */
+const SEASON_ICON={'Spring':'🌸','Summer':'☀️','Autumn':'🍂','Winter':'❄️'};
 // 'tsp' removed — the Conversion Table DOES carry tsp factors (tsp->fl oz = 0.166667),
 // so listing it here was silently blocking a conversion that works fine. The rest have
 // no row in the table and genuinely can't be converted.
@@ -795,7 +814,7 @@ function persistBar(){ try{ MY_BAR?localStorage.setItem(BAR_KEY,JSON.stringify([
 let MY_BAR = loadBar();
 function HAVE_SET(){ return MY_BAR || HAVE; }
 
-let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, FAMILIES, ERAS, ingByCat, shuffledC;
+let C, BASES, STYLES, SERVED, MOODS, SEASONS, HOLIDAYS, FAMILIES, ERAS, SOURCES, ingByCat, shuffledC;
 function shuffle_(a){ for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;const t=a[i];a[i]=a[j];a[j]=t;} return a; }
 function rebuild(){
   C = C0;
@@ -819,6 +838,10 @@ function rebuild(){
   HOLIDAYS=[...new Set(C.map(d=>d.ho).filter(Boolean))].sort();
   FAMILIES=[...new Set(C.map(d=>d.fam).filter(Boolean))].sort();
   ERAS=['Classic','Modern Classic','Contemporary','Original'].filter(e=>C.some(d=>d.era===e));
+  /* Creators ranked by how many drinks they account for, so the filter panel shows the
+     ones worth filtering by. 95 names exist; the panel takes the top 20. */
+  SOURCES=Object.entries(C.reduce((m,d)=>{const k=String(d.sn||'').trim(); if(k)m[k]=(m[k]||0)+1; return m;},{}))
+    .sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
   ingByCat={}; C.forEach(d=>d.i.forEach(i=>{(ingByCat[i[3]]=ingByCat[i[3]]||new Set()).add(i[0]);}));
   shuffledC = shuffle_(C.slice());
 }
@@ -876,9 +899,19 @@ function renderFilters(){
   setFA('fa_base',fBase); setFA('fa_style',fStyle); setFA('fa_served',fServed); setFA('fa_mood',fMood);
   const ff=document.getElementById('fFam'); if(ff){ ff.innerHTML=''; FAMILIES.forEach(x=>ff.appendChild(chip(x,fFam===x,()=>{fFam=fFam===x?null:x;renderBrowse();}))); }
   const fe=document.getElementById('fEra'); if(fe){ fe.innerHTML=''; ERAS.forEach(x=>fe.appendChild(chip(x,fEra===x,()=>{fEra=fEra===x?null:x;renderBrowse();}))); }
+  /* Creator had no group at all, so a filter set from Explore could only be undone
+     from its chip. Capped at the 20 biggest -- 95 chips would swamp the panel -- with
+     whatever is currently selected forced in so it is always clearable from here. */
+  const fs2=document.getElementById('fSrcRow');
+  if(fs2){ fs2.innerHTML='';
+    let names=SOURCES.slice(0,20);
+    if(fSrc && names.indexOf(fSrc)<0) names=[fSrc].concat(names);
+    names.forEach(x=>fs2.appendChild(chip(x,fSrc===x,()=>{fSrc=fSrc===x?null:x;renderBrowse();})));
+  }
   const fgg=document.getElementById('famgroup'); if(fgg) fgg.style.display=FAMILIES.length?'':'none';
   const egg=document.getElementById('eragroup'); if(egg) egg.style.display=ERAS.length?'':'none';
-  setFA('fa_season',fSeason); setFA('fa_holiday',fHoliday); setFA('fa_fam',fFam); setFA('fa_era',fEra);
+  const sgg=document.getElementById('srcgroup'); if(sgg) sgg.style.display=SOURCES.length?'':'none';
+  setFA('fa_season',fSeason); setFA('fa_holiday',fHoliday); setFA('fa_fam',fFam); setFA('fa_era',fEra); setFA('fa_src',fSrc);
   setFA('fa_status', fStatus?({md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'})[fStatus]:'');
 }
 function setFA(id,val){ const e=document.getElementById(id); if(e) e.textContent=val?('· '+val):''; }
@@ -984,8 +1017,20 @@ function renderBrowse(){
   document.getElementById('countLine').innerHTML=`<b>${rows.length}</b> ${rows.length===1?'recipe':'recipes'}`+(noFilters?` <button class="shufbtn" onclick="reshuffleHome()">\u{1F3B2} shuffle</button>`:'');
   if(!rows.length){list.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>Nothing matches</b>Loosen a filter and try again.</div>`;return;}
   rows.slice(0,300).forEach(d=>list.appendChild(cardEl(d)));
+  applyDense();
   if(rows.length>300){const m=document.createElement('div');m.className='barhint';m.style.textAlign='center';m.textContent=noFilters?`A random 300 of ${rows.length} — tap \u{1F3B2} to reshuffle, or search/filter for a specific drink.`:`Showing first 300 of ${rows.length} — refine to see more.`;list.appendChild(m);}
 }
+/* A density switch, not a redesign. Same markup and the same cardEl -- CSS hides the
+   breadcrumb and pills and reflows the rest onto one line, so five drinks take the
+   height one card used to. At 920 entries that is the difference between browsing and
+   scrolling. Stored per device. */
+let dense=false;
+try{ dense = localStorage.getItem('codex_dense')==='1'; }catch(e){}
+function applyDense(){
+  ['list','barResults'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('dense',dense); });
+  const b=document.getElementById('denseBtn'); if(b) b.classList.toggle('on',dense);
+}
+window.toggleDense=function(){ dense=!dense; try{ localStorage.setItem('codex_dense',dense?'1':'0'); }catch(e){} applyDense(); };
 function surprise(){
   const rows=C.filter(matchB); if(!rows.length)return;
   openSheet(rows[Math.floor(Math.random()*rows.length)]);
@@ -1127,7 +1172,7 @@ function expLabel(key,val){
   if(key==='mood'&&MOOD_ICON[val]) return MOOD_ICON[val]+' '+val;
   if(key==='holiday'&&HOLIDAY_ICON[val]) return HOLIDAY_ICON[val]+' '+val;
   if(key==='served'&&SERVED_ICON[val]) return SERVED_ICON[val]+' '+val;
-  if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val;
+  if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val+(SEASON_ICON[val]?' '+SEASON_ICON[val]:'');
   return val;
 }
 function expGroup(key,label,pairs,note,cap){
@@ -1297,6 +1342,7 @@ function renderBar(){
                          :`<span class="status one">Need ${miss.length}</span>`);
       rc.appendChild(cardEl(d));
     });
+    applyDense();
     if(!rows.length) rc.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>No match</b>Try removing an ingredient from your selection.</div>`;
   }
   // palette
