@@ -26,7 +26,10 @@
     --display:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'Space Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
+  /* No overscroll-behavior here. Setting it on html to protect the sheet's swipe
+     gesture disabled pull-to-refresh across the whole app -- far too blunt. The sheet
+     protects itself: overscroll-behavior on .sbody, touch-action:none on .sbar. */
+  html{-webkit-text-size-adjust:100%}
   body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:40px;overflow-x:hidden}
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 80% at 100% 0%,rgba(199,154,75,.07),transparent 60%),radial-gradient(80% 60% at 0% 100%,rgba(177,72,58,.06),transparent 60%)}
   .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:0 18px}
@@ -474,13 +477,14 @@
      shadow, which marks where content disappears under the bar as you scroll. It is
      lighter now; delete the box-shadow line entirely if you would rather the header
      and card be visually seamless. */
-  /* Watermark moved off .sbody and onto the shell as a pseudo-element. As a background
-     image it could not be dimmed -- background-image takes no opacity -- and it scrolled
-     with the content, which is what put it over the batch panel. Here it is fixed,
-     clipped by the shell's overflow, and behind everything. */
-  .sheet::after{content:'';position:absolute;top:44px;right:8px;width:112px;height:112px;
-    background:var(--crabwm,none) no-repeat center/contain;opacity:.09;pointer-events:none;z-index:0}
+  /* The asterism, not the crab. Line art holds its shape as it fades; the painted crab
+     had to stay bright enough to read as a crab, and bright was what put it in the way.
+     Fixed to the shell rather than the scroll box, so it cannot drift over the batch
+     panel, and behind the content. */
+  .swm{position:absolute;top:46px;right:10px;width:104px;height:92px;
+    color:var(--brass);opacity:.11;pointer-events:none;z-index:0}
   .sheet > *{position:relative;z-index:1}
+  .swm{z-index:0}
   .sbar{touch-action:none;flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 6px;box-shadow:0 5px 8px -9px rgba(0,0,0,.45)}
   .sbar .grip{margin:8px auto}
   .sspacer{width:34px;flex:none}
@@ -1623,7 +1627,7 @@ function srcCredit(d){
 function renderSheet(){
   const d=cur; const s=document.getElementById('sheet');
   const _eu=sheetUrl(d.r,'c');
-  s.innerHTML=`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div><div class="sbody">${taxoKicker(d)}<h2>${d.n}${marksHTML(d)}</h2>
+  s.innerHTML=`<svg class="swm" viewBox="0 0 1086 950" aria-hidden="true"><line x1="55.7" y1="272.1" x2="378.3" y2="413.5" stroke="currentColor" stroke-width="11" opacity="1" stroke-linecap="round" /><line x1="378.3" y1="413.5" x2="508.2" y2="507.4" stroke="currentColor" stroke-width="11" opacity="1" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="691.5" y2="794.1" stroke="currentColor" stroke-width="11" opacity="1" stroke-linecap="round" /><line x1="508.2" y1="507.4" x2="1040.9" y2="445.3" stroke="currentColor" stroke-width="11" opacity="1" stroke-linecap="round" /><circle cx="55.7" cy="272.1" r="9.31" fill="currentColor" /><circle cx="378.3" cy="413.5" r="6.30" fill="currentColor" /><circle cx="508.2" cy="507.4" r="9.68" fill="currentColor" /><circle cx="691.5" cy="794.1" r="8.18" fill="currentColor" /><circle cx="1040.9" cy="445.3" r="11.61" fill="currentColor" /></svg>`+`<div class="sbar"><button class="sback" onclick="closeSheet()" aria-label="Back">${BACK_SVG}</button><div class="grip"></div><span class="sspacer"></span>${_eu?`<a class="ownedit" href="${_eu}" target="_blank" rel="noopener">Edit \u2197</a>`:''}</div><div class="sbody">${taxoKicker(d)}<h2>${d.n}${marksHTML(d)}</h2>
     <div class="spec-tags">${d.b?`<span class="tag base">${spiritLabel(d)}</span>`:''}${(d.se&&d.se.length)?d.se.map(x=>`<span class="tag" style="color:${SEASON_COLOR[x]||'var(--brass)'}">${x}</span>`).join(''):''}${d.ho?`<span class="tag" style="color:var(--short)">${(HOLIDAY_ICON[d.ho]?HOLIDAY_ICON[d.ho]+' ':'')+d.ho}</span>`:''}${d.mo.map(m=>`<span class="tag">${m}</span>`).join('')}</div>
     <div class="batch">
       <div class="brow"><label>Scale</label>
@@ -1752,8 +1756,7 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb) _sb.scrollTop=0;
-  document.getElementById('sheet').style.setProperty('--crabwm',"url('crab-melt-"+CRAB_N+".png?v=5')"); _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb) _sb.scrollTop=0; _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
 /* Drag the top bar down to dismiss. Bound to .sbar, which sits outside the scroll box,
    so it can never fight the body's own scrolling. */
