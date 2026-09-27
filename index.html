@@ -21,7 +21,7 @@
     --brass:#c79a4b; --brass-dim:#8a6d38;
     --have:#9fbf86; --nothave:#b1483a;
     --fav:#e8c65a; --made:#9fbf86; --short:#d08a3e;
-    --spring:#8ec06a; --summer:#e8794f; --autumn:#d0853a; --winter:#7ba6c9;
+    --spring:#8ec06a; --summer:#e3bb46; --autumn:#c85f38; --winter:#7ba6c9;
     --line:rgba(199,154,75,.16);
     --display:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'Space Mono',ui-monospace,monospace;
   }
@@ -185,6 +185,7 @@
   .exprow .c{font-family:var(--mono);font-size:10px;color:var(--faint);width:66px;text-align:right;flex:none}
   .exprow .ch{color:var(--muted);font-size:11px}
   .seadot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:0}
+  .seaic{margin-left:5px}
   .expbox .nbmore{padding-left:2px}
   /* equal height: fixed min-height and one line of context, so the three read as peers */
   .expcards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:2px}
@@ -630,10 +631,13 @@ const SEASON_COLOR={Spring:'var(--spring)',Summer:'var(--summer)',Autumn:'var(--
 const HOLIDAY_ICON={'Christmas':'🎄','Halloween':'🎃','Thanksgiving':'🦃',"New Year's":'🎉',"Valentine's":'💘',"St. Patrick's":'🍀'};
 /* Only the servings whose glass or ice has an obvious symbol. Down and Ice Shell get
    none rather than a vague one -- an icon nobody can decode is worse than a label. */
-const SERVED_ICON={'Up':'🍸','Rocks':'🥃','Big Rock':'🧊','Crushed/Pebble':'🍹','Frozen/Blended':'❄️','Hot':'☕'};
+const SERVED_ICON={'Up':'🍸','Rocks':'🥃','Big Rock':'🧊','Crushed/Pebble':'🍹',
+  'Frozen/Blended':'🍦','Hot':'🍵','Down':'⬇️','Ice Shell':'🍧'};
 /* Season icons sit AFTER the name, where the coloured dot sits before it -- colour and
    symbol saying the same thing from either end of the label. */
-const SEASON_ICON={'Spring':'🌸','Summer':'☀️','Autumn':'🍂','Winter':'❄️'};
+/* ❄️ moved off Frozen so Winter can have it without the two competing; 🍦 reads
+   frozen dessert, which is what a blended drink is. */
+const SEASON_ICON={'Spring':'🌷','Summer':'☀️','Autumn':'🍂','Winter':'❄️'};
 // 'tsp' removed — the Conversion Table DOES carry tsp factors (tsp->fl oz = 0.166667),
 // so listing it here was silently blocking a conversion that works fine. The rest have
 // no row in the table and genuinely can't be converted.
@@ -1172,7 +1176,7 @@ function expLabel(key,val){
   if(key==='mood'&&MOOD_ICON[val]) return MOOD_ICON[val]+' '+val;
   if(key==='holiday'&&HOLIDAY_ICON[val]) return HOLIDAY_ICON[val]+' '+val;
   if(key==='served'&&SERVED_ICON[val]) return SERVED_ICON[val]+' '+val;
-  if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val+(SEASON_ICON[val]?' '+SEASON_ICON[val]:'');
+  if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val+(SEASON_ICON[val]?`<span class="seaic">${SEASON_ICON[val]}</span>`:'');
   return val;
 }
 function expGroup(key,label,pairs,note,cap){
