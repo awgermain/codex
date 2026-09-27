@@ -26,7 +26,7 @@
     --display:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif; --mono:'Space Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{-webkit-text-size-adjust:100%}
+  html{-webkit-text-size-adjust:100%;overscroll-behavior-y:contain}
   body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:40px;overflow-x:hidden}
   body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(120% 80% at 100% 0%,rgba(199,154,75,.07),transparent 60%),radial-gradient(80% 60% at 0% 100%,rgba(177,72,58,.06),transparent 60%)}
   .wrap{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:0 18px}
@@ -465,9 +465,7 @@
      had none, so the breadcrumb sat almost against it. */
   /* The top right of the card is dead space. A faint crab fills it, reusing the stage
      already loaded for the header watermark so nothing extra is fetched. */
-  .sbody{background-image:var(--crabwm,none);background-repeat:no-repeat;
-    background-position:right -20px top 4px;background-size:130px auto;
-    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 22px calc(34px + env(safe-area-inset-bottom))}
+  .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 22px calc(34px + env(safe-area-inset-bottom))}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
   /* Plain static header now -- no sticky, no negative margins, no radius of its own.
@@ -476,7 +474,14 @@
      shadow, which marks where content disappears under the bar as you scroll. It is
      lighter now; delete the box-shadow line entirely if you would rather the header
      and card be visually seamless. */
-  .sbar{flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 6px;box-shadow:0 5px 8px -9px rgba(0,0,0,.45)}
+  /* Watermark moved off .sbody and onto the shell as a pseudo-element. As a background
+     image it could not be dimmed -- background-image takes no opacity -- and it scrolled
+     with the content, which is what put it over the batch panel. Here it is fixed,
+     clipped by the shell's overflow, and behind everything. */
+  .sheet::after{content:'';position:absolute;top:44px;right:8px;width:112px;height:112px;
+    background:var(--crabwm,none) no-repeat center/contain;opacity:.09;pointer-events:none;z-index:0}
+  .sheet > *{position:relative;z-index:1}
+  .sbar{touch-action:none;flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 6px;box-shadow:0 5px 8px -9px rgba(0,0,0,.45)}
   .sbar .grip{margin:8px auto}
   .sspacer{width:34px;flex:none}
   .sback{flex:none;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:50%;cursor:pointer;padding:0}
@@ -901,11 +906,11 @@ function renderFilters(){
   const fst=document.getElementById('fStyle'); fst.innerHTML='';
   STYLES.forEach(s=>fst.appendChild(chip(s,fStyle===s,()=>{fStyle=fStyle===s?null:s;renderBrowse();})));
   const fsv=document.getElementById('fServed'); fsv.innerHTML='';
-  SERVED.forEach(s=>fsv.appendChild(chip(s,fServed===s,()=>{fServed=fServed===s?null:s;renderBrowse();})));
+  SERVED.forEach(s=>fsv.appendChild(chip((SERVED_ICON[s]?SERVED_ICON[s]+' ':'')+s,fServed===s,()=>{fServed=fServed===s?null:s;renderBrowse();})));
   const fm=document.getElementById('fMood'); fm.innerHTML='';
   MOODS.forEach(m=>fm.appendChild(chip(moodLbl(m),fMood===m,()=>{fMood=fMood===m?null:m;renderBrowse();})));
   const fse=document.getElementById('fSeason'); fse.innerHTML='';
-  SEASONS.forEach(s=>fse.appendChild(chip(s,fSeason===s,()=>{fSeason=fSeason===s?null:s;renderBrowse();},SEASON_COLOR[s])));
+  SEASONS.forEach(s=>fse.appendChild(chip(s+(SEASON_ICON[s]?' '+SEASON_ICON[s]:''),fSeason===s,()=>{fSeason=fSeason===s?null:s;renderBrowse();},SEASON_COLOR[s])));
   const hg=document.getElementById('hgroup'); hg.style.display=HOLIDAYS.length?'':'none';
   const fh=document.getElementById('fHoliday'); fh.innerHTML='';
   HOLIDAYS.forEach(h=>fh.appendChild(chip((HOLIDAY_ICON[h]?HOLIDAY_ICON[h]+' ':'')+h,fHoliday===h,()=>{fHoliday=fHoliday===h?null:h;renderBrowse();})));
@@ -1747,7 +1752,8 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb){ _sb.scrollTop=0; _sb.style.setProperty('--crabwm',"url('crab-melt-"+CRAB_N+".png?v=5')"); } _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb) _sb.scrollTop=0;
+  document.getElementById('sheet').style.setProperty('--crabwm',"url('crab-melt-"+CRAB_N+".png?v=5')"); _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
 /* Drag the top bar down to dismiss. Bound to .sbar, which sits outside the scroll box,
    so it can never fight the body's own scrolling. */
@@ -1758,6 +1764,10 @@ function closeSheet(){ _closeNav(); }
     if(e.target.closest('button,a')) return;
     el=document.getElementById('sheet'); if(!el) return;
     y0=e.clientY; el.style.transition='none';
+    /* Capture, so a fast drag that leaves the bar still reports moves here. Without it
+       the gesture was being dropped mid-swipe. touch-action:none on .sbar stops the
+       browser claiming it as a pull-to-refresh first. */
+    try{ e.target.setPointerCapture(e.pointerId); }catch(err){}
   });
   var dy=0;
   document.addEventListener('pointermove',function(e){
