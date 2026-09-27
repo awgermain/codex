@@ -481,10 +481,13 @@
      had to stay bright enough to read as a crab, and bright was what put it in the way.
      Fixed to the shell rather than the scroll box, so it cannot drift over the batch
      panel, and behind the content. */
-  .swm{position:absolute;top:46px;right:10px;width:104px;height:92px;
-    color:var(--brass);opacity:.11;pointer-events:none;z-index:0}
   .sheet > *{position:relative;z-index:1}
-  .swm{z-index:0}
+  /* .sheet > .swm, not .swm: the rule above is also (0,1,0) and comes later, so a plain
+     .swm selector lost the tie and the watermark was laid out IN the flow -- a 92px
+     block at the top of the card, pushing the recipe down and hiding itself behind the
+     bar. Raising specificity keeps it out of the flow where it belongs. */
+  .sheet > .swm{position:absolute;top:46px;right:10px;width:104px;height:92px;
+    color:var(--brass);opacity:.11;pointer-events:none;z-index:0}
   .sbar{touch-action:none;flex:none;display:flex;align-items:center;gap:8px;background:var(--surface);padding:14px 16px 6px;box-shadow:0 5px 8px -9px rgba(0,0,0,.45)}
   .sbar .grip{margin:8px auto}
   .sspacer{width:34px;flex:none}
