@@ -281,14 +281,23 @@
   .dbtn{background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:15px;
     padding:0 13px;border-radius:100px;cursor:pointer;line-height:1;flex:none}
   .dbtn.on{background:var(--brass);border-color:var(--brass);color:#1a130b}
-  /* ---- compact rows ---- */
-  .dense .card{display:flex;align-items:baseline;gap:10px;background:none;border:0;
+  /* ---- compact rows (option E) ----
+     Two lines, laid out as a grid rather than one flex row. The single-line version
+     had the name, the ingredients and the badge competing for the same width, so the
+     name truncated at about half the row and Need had to collapse to a count. Giving
+     the ingredients their own line means the name never truncates and the badge can
+     name the missing bottle again. Still roughly twice the density of a card. */
+  .dense .card{display:grid;grid-template-columns:1fr auto;align-items:baseline;
+    column-gap:9px;row-gap:1px;background:none;border:0;
     border-left:3px solid transparent;border-bottom:1px solid var(--line);border-radius:0;
-    padding:9px 0 9px 9px;margin:0;overflow:hidden}
-  .dense .card h3{font-size:15px;flex:none;padding:0;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    padding:8px 0 8px 9px;margin:0;overflow:hidden}
+  .dense .card h3{grid-column:1;grid-row:1;font-size:15px;padding:0;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dense .card .status{grid-column:2;grid-row:1;position:static;float:none;margin:0;max-width:none;white-space:nowrap}
+  .dense .card .ing{grid-column:1 / -1;grid-row:2;min-width:0;font-size:10.5px;margin:0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .dense .card .kick,.dense .card .meta{display:none}
-  .dense .card .ing{flex:1;min-width:0;font-size:11px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .dense .card .status{position:static;float:none;flex:none;margin:0;max-width:none}
+  /* the stacked NEED label would make line one two lines tall, so it goes inline here */
   .dense .card .status .k{display:inline;font-size:9.5px;letter-spacing:.05em}
   .dense .card .status .k::after{content:' '}
   .dense .card .marks{margin-left:5px}
@@ -317,6 +326,7 @@
   .taxo-k .tk-1{color:var(--muted)}
   .taxo-k .tk-2{color:var(--brass)}
   .taxo-k .tk-3{color:var(--short)}
+  .taxo-k .taxjump{cursor:pointer;border-bottom:1px solid currentColor;padding-bottom:1px}
   .recipe-row .nm{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
   /* The note from the sheet cell, e.g. which rum a "Rum" actually is. flex-basis:100%
      drops it to its own line under the name; the row is align-items:baseline so the
@@ -444,7 +454,7 @@
      on iOS besides. Every previous fix here was fighting that instead of removing it.
      Now the shell animates and owns the corners with overflow:hidden, the bar is a
      plain static header, and a separate .sbody does the scrolling. */
-  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;overflow:hidden;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;max-height:90dvh}
+  .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:520px;margin:0 auto;background:var(--surface);border-radius:22px 22px 0 0;border:1px solid var(--line);border-bottom:0;overflow:hidden;display:flex;flex-direction:column;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:100vh;max-height:100dvh;height:100dvh}
   /* 90vh then 90dvh: on mobile Safari `vh` is the viewport with the browser chrome
      HIDDEN, so 90vh is taller than what you can actually see while the URL bar is up.
      The sheet is anchored bottom:0, so once content grew past the visible area the top
@@ -453,7 +463,11 @@
      as a fallback for anything that does not support it. */
   /* padding-top:12px -- the bar only had 8px of its own bottom padding and the body
      had none, so the breadcrumb sat almost against it. */
-  .sbody{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 22px calc(34px + env(safe-area-inset-bottom))}
+  /* The top right of the card is dead space. A faint crab fills it, reusing the stage
+     already loaded for the header watermark so nothing extra is fetched. */
+  .sbody{background-image:var(--crabwm,none);background-repeat:no-repeat;
+    background-position:right -20px top 4px;background-size:130px auto;
+    flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:12px 22px calc(34px + env(safe-area-inset-bottom))}
   .sheet.show{transform:translateY(0)}
   .grip{width:38px;height:4px;background:var(--faint);border-radius:2px;margin:8px auto 16px;opacity:.5}
   /* Plain static header now -- no sticky, no negative margins, no radius of its own.
@@ -1318,6 +1332,7 @@ function renderShelf(){
    a shortcut to existing machinery rather than a new path -- and stopPropagation keeps
    the tap off the card, which would otherwise open the recipe. */
 window.jumpTax=function(e,kind,val){ e.stopPropagation(); expJump(kind,val); };
+window.jumpFromSheet=function(e,kind,val){ e.stopPropagation(); closeSheet(); setTimeout(function(){ expJump(kind,val); },180); };
 window.jumpFamily=function(e,fam){ e.stopPropagation(); expJump('fam',fam); };
 window.toggleSel=function(n){ sel.has(n)?sel.delete(n):sel.add(n); renderBar(); };
 function renderBar(){
@@ -1555,8 +1570,12 @@ function taxoKicker(d){
   if(!segs.length) segs.push(['tk-1','Cocktail']);
   /* Separator takes the colour of the segment it introduces, matching the card. */
   const COL={'tk-1':'var(--muted)','tk-2':'var(--brass)','tk-3':'var(--short)'};
+  const KIND={'tk-1':'style','tk-2':'fam','tk-3':'era'};
+  /* Tappable here as well as on the tile. It was wired on the tile only, so the same
+     word behaved differently depending on which view you met it in. */
   return '<div class="taxo-k">'+segs.map((x,i)=>
-    (i?`<span class="tk-sep" style="color:${COL[x[0]]}">\u203a</span>`:'')+`<span class="${x[0]}">${x[1]}</span>`
+    (i?`<span class="tk-sep" style="color:${COL[x[0]]}">\u203a</span>`:'')
+    +`<span class="${x[0]} taxjump" onclick="jumpFromSheet(event,'${KIND[x[0]]}','${String(x[1]).replace(/'/g,"\\'")}')">${x[1]}</span>`
   ).join('')+'</div>';
 }
 
@@ -1728,8 +1747,33 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb)_sb.scrollTop=0; _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb){ _sb.scrollTop=0; _sb.style.setProperty('--crabwm',"url('crab-melt-"+CRAB_N+".png?v=5')"); } _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
+/* Drag the top bar down to dismiss. Bound to .sbar, which sits outside the scroll box,
+   so it can never fight the body's own scrolling. */
+(function(){
+  var y0=null, el=null;
+  document.addEventListener('pointerdown',function(e){
+    if(!e.target.closest || !e.target.closest('.sbar')) return;
+    if(e.target.closest('button,a')) return;
+    el=document.getElementById('sheet'); if(!el) return;
+    y0=e.clientY; el.style.transition='none';
+  });
+  var dy=0;
+  document.addEventListener('pointermove',function(e){
+    if(y0===null||!el) return;
+    dy=Math.max(0,e.clientY-y0);
+    el.style.transform='translateY('+dy+'px)';
+  });
+  function endDrag(){
+    if(y0===null||!el) return;
+    el.style.transition=''; el.style.transform=''; y0=null; el=null;
+    if(dy>90) closeSheet();
+    dy=0;
+  }
+  document.addEventListener('pointerup',endDrag);
+  document.addEventListener('pointercancel',endDrag);
+})();
 
 document.getElementById('q').addEventListener('input',e=>{query=e.target.value; if(mode==='browse')renderBrowse();});
 renderBrowse();
