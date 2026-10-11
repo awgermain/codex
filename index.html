@@ -406,6 +406,28 @@
   .status.ok{color:var(--have)} .status.one{color:var(--brass)}
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
   .empty b{color:var(--muted);font-family:var(--display);font-size:19px;display:block;margin-bottom:6px;font-weight:600}
+  /* ---- Build: category shelf + pairings ---- */
+  .cshelf{display:flex;gap:6px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none}
+  .cshelf::-webkit-scrollbar{display:none}
+  .cat{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--surface);
+    border:1px solid var(--line);border-top:3px solid;border-radius:10px;padding:7px 11px 8px;min-width:84px;cursor:pointer}
+  .cat .t{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .cat .m{font-family:var(--mono);font-size:13px;color:var(--ink)}
+  .cat.on{background:rgba(255,244,225,.06)}
+  .cat.on .t{color:var(--ink)}
+  .pairhd{display:flex;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--muted);margin:11px 0 3px}
+  .pairhd span{margin-left:auto;color:var(--faint);letter-spacing:.04em}
+  .pair{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .pair:last-child{border-bottom:none}
+  .pair .sw{width:8px;height:8px;border-radius:2px;flex:none}
+  .pair.nothave .sw{background:transparent !important;border:1.5px solid var(--line);box-sizing:border-box}
+  .pair .n{flex:1;min-width:0;font-size:13.5px;color:var(--ink)}
+  .pair .n small{display:block;font-size:10.5px;color:var(--faint)}
+  .pair .bar{width:48px;height:4px;background:rgba(199,154,75,.14);border-radius:2px;flex:none;overflow:hidden}
+  .pair .bar i{display:block;height:100%;background:var(--have)}
+  .pair .c{font-family:var(--mono);font-size:10px;color:var(--brass);width:34px;text-align:right;flex:none}
+  .pairnone{font-size:12px;color:var(--faint);padding:10px 2px}
   .barhint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;margin:2px 0 12px;line-height:1.5}
   /* Next bottle drawer. Sits under the count line because that line is already a
      statement about your bar -- "62 matches, 41 fully stocked" -- and "what to buy
@@ -893,7 +915,8 @@ rebuild();
 
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,fSrc=null,fReady=false,fUntried=false,filtersOpen=false;
-const sel=new Set(); let onlyHave=false; const barOpen=new Set();
+const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit';
+window.setBarCat=function(c){ barCat=c; renderBar(); };
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
 /* Notes are rendered verbatim -- "Recommend Punt e Mes" reads exactly as typed -- with
@@ -1395,28 +1418,61 @@ function renderBar(){
     applyDense();
     if(!rows.length) rc.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>No match</b>Try removing an ingredient from your selection.</div>`;
   }
-  // palette
+  /* ---- category shelf + ranked pairings ----
+     The old palette listed all 224 ingredients alphabetically under collapsible
+     headings: everything equally prominent, which is the same as nothing being
+     prominent. Two parts now do two jobs. The shelf carries NAVIGATION -- six
+     categories in CODEX_ING_GROUPS order, coloured from CAT_COLOR so Build and the
+     recipe card finally mean the same thing by a colour, with a count of how many
+     ingredients in that category still lead somewhere. The list carries RANKING --
+     within the chosen category, ordered by how many of the matching drinks each
+     ingredient would open, so the next tap is always a good one.
+     The bar beside each is how many of those you can make tonight, which is the
+     difference between a suggestion and a usable one. */
   const g=document.getElementById('barGrid'); g.innerHTML='';
+  const pool = sel.size ? rows : C;
+  const freq={};
+  pool.forEach(d=>d.i.forEach(it=>{
+    const nm=it[0], cat=it[3];
+    if(sel.has(nm)) return;
+    if(!ingByCat[cat] || !ingByCat[cat].has(nm)) return;
+    const f=(freq[nm]=freq[nm]||{n:0,r:0,cat:cat});
+    f.n++; if([...d._stock].every(x=>HAVE_SET().has(x))) f.r++;
+  }));
+  const byCat={};
+  Object.keys(freq).forEach(nm=>{ const c=freq[nm].cat; (byCat[c]=byCat[c]||[]).push(nm); });
+  if(!CAT_ORDER.some(c=>c===barCat) || !byCat[barCat]){
+    barCat = CAT_ORDER.filter(c=>byCat[c] && byCat[c].length)[0] || 'Spirit';
+  }
+  let shelf='<div class="cshelf">';
   CAT_ORDER.forEach(cat=>{
-    if(!ingByCat[cat])return;
-    const items=[...ingByCat[cat]].sort().filter(name=> !sel.size || compat.has(name) || sel.has(name));
-    if(!items.length)return;
-    const anySel=[...items].some(n=>sel.has(n));
-    const open=barOpen.has(cat)||anySel;   // auto-open a group if it holds a selected ingredient
-    const h=document.createElement('div');h.className='barhead'+(open?' open':'');
-    h.innerHTML=`<span class="chev">▸</span>${cat} <span class="n">${items.length}</span>`;
-    const box=document.createElement('div');box.className='ings';box.style.display=open?'':'none';
-    items.forEach(name=>{
-      const on=sel.has(name), have=HAVE_SET().has(name);
-      const el=document.createElement('div');
-      el.className='ic '+(have?'have':'miss')+(on?' on':'');
-      el.innerHTML=`<span class="dot"></span>${name}`;
-      el.onclick=(ev)=>{ev.stopPropagation();toggleSel(name);};
-      box.appendChild(el);
-    });
-    h.onclick=()=>{ const nowOpen=!(box.style.display!=='none'); box.style.display=nowOpen?'':'none'; h.classList.toggle('open',nowOpen); if(nowOpen)barOpen.add(cat); else barOpen.delete(cat); };
-    g.appendChild(h);g.appendChild(box);
+    const items=byCat[cat]||[];
+    if(!items.length && cat!==barCat) return;
+    shelf += `<div class="cat${cat===barCat?' on':''}" style="border-top-color:${CAT_COLOR[cat]||'var(--faint)'}"`
+          +  ` onclick="setBarCat('${cat.replace(/'/g,"\\'")}')">`
+          +  `<span class="t">${cat}</span><span class="m">${items.length}</span></div>`;
   });
+  g.insertAdjacentHTML('beforeend', shelf+'</div>');
+
+  const list=(byCat[barCat]||[]).sort((a,b)=> freq[b].n-freq[a].n || (a<b?-1:1));
+  const top=list.length?freq[list[0]].n:1;
+  g.insertAdjacentHTML('beforeend',
+    `<div class="pairhd">${sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase()}`
+    +`<span>${sel.size?rows.length+' drinks match':C.length+' drinks'}</span></div>`);
+  const box=document.createElement('div');
+  list.forEach(nm=>{
+    const f=freq[nm], have=HAVE_SET().has(nm);
+    const el=document.createElement('div');
+    el.className='pair'+(have?'':' nothave');
+    el.innerHTML=`<i class="sw" style="background:${CAT_COLOR[f.cat]||'var(--faint)'}"></i>`
+      +`<span class="n">${nm}<small>${f.n} drink${f.n===1?'':'s'} \u00b7 ${f.r} you can make</small></span>`
+      +`<span class="bar"><i style="width:${Math.round(f.r/Math.max(f.n,1)*100)}%"></i></span>`
+      +`<span class="c">${sel.size?'+':''}${f.n}</span>`;
+    el.onclick=()=>toggleSel(nm);
+    box.appendChild(el);
+  });
+  if(!list.length) box.innerHTML='<div class="pairnone">Nothing left in this category.</div>';
+  g.appendChild(box);
 }
 
 /* ---------- MODES ---------- */
