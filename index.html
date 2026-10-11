@@ -415,19 +415,31 @@
   .cat .m{font-family:var(--mono);font-size:13px;color:var(--ink)}
   .cat.on{background:rgba(255,244,225,.06)}
   .cat.on .t{color:var(--ink)}
-  .pairhd{display:flex;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
-    color:var(--muted);margin:11px 0 3px}
-  .pairhd span{margin-left:auto;color:var(--faint);letter-spacing:.04em}
+  .pairhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--muted);margin:11px 0 3px;cursor:pointer}
+  .pairhd .chev{display:inline-block;transition:transform .18s;color:var(--brass);font-size:10px}
+  .pairhd.open .chev{transform:rotate(90deg)}
+  .pairhd .cnt{color:var(--faint);letter-spacing:.04em}
+  .sortbtn{margin-left:auto;background:none;border:1px solid var(--line);color:var(--brass);
+    font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 8px;border-radius:100px;cursor:pointer}
   .pair{display:flex;align-items:center;gap:9px;padding:8px 2px;border-bottom:1px solid var(--line);cursor:pointer}
   .pair:last-child{border-bottom:none}
-  .pair .sw{width:8px;height:8px;border-radius:2px;flex:none}
-  .pair.nothave .sw{background:transparent !important;border:1.5px solid var(--line);box-sizing:border-box}
+  /* Colour is the CATEGORY, fill is STOCK -- the same two-facts-one-mark rule the
+     recipe card uses. Passing the colour as --c rather than as a background lets the
+     hollow state keep the border in that colour instead of falling back to grey. */
+  .pair .sw{width:9px;height:9px;border-radius:2px;flex:none;box-sizing:border-box;
+    background:var(--c,var(--faint));border:1.5px solid var(--c,var(--faint))}
+  .pair.nothave .sw{background:transparent}
   .pair .n{flex:1;min-width:0;font-size:13.5px;color:var(--ink)}
   .pair .n small{display:block;font-size:10.5px;color:var(--faint)}
   .pair .bar{width:48px;height:4px;background:rgba(199,154,75,.14);border-radius:2px;flex:none;overflow:hidden}
   .pair .bar i{display:block;height:100%;background:var(--have)}
   .pair .c{font-family:var(--mono);font-size:10px;color:var(--brass);width:34px;text-align:right;flex:none}
   .pairnone{font-size:12px;color:var(--faint);padding:10px 2px}
+  .swk{display:inline-block;width:9px;height:9px;border-radius:2px;box-sizing:border-box;
+    background:var(--c);border:1.5px solid var(--c);vertical-align:-1px;margin:0 1px}
+  .swk.hollow{background:transparent}
   .barhint{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.04em;margin:2px 0 12px;line-height:1.5}
   /* Next bottle drawer. Sits under the count line because that line is already a
      statement about your bar -- "62 matches, 41 fully stocked" -- and "what to buy
@@ -641,7 +653,9 @@
   </div>
 
   <div id="barView" style="display:none">
-    <div class="barhint">Tap what you have. <span style="color:var(--have)">●</span> stocked · <span style="color:var(--nothave)">●</span> not stocked.</div>
+    <div class="barhint">Tap to narrow. Swatch colour is the category &mdash;
+      <span class="swk" style="--c:var(--have)"></span> filled is stocked,
+      <span class="swk hollow" style="--c:var(--have)"></span> outlined is not.</div>
     <div class="bartoggle" id="barToggle"></div>
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
@@ -915,8 +929,10 @@ rebuild();
 
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,fSrc=null,fReady=false,fUntried=false,filtersOpen=false;
-const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit';
-window.setBarCat=function(c){ barCat=c; renderBar(); };
+const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit', barSort='freq', pairsOpen=true;
+window.setBarCat=function(c){ barCat=c; pairsOpen=true; renderBar(); };
+window.setBarSort=function(e){ if(e)e.stopPropagation(); barSort = barSort==='freq'?'az':'freq'; renderBar(); };
+window.togglePairs=function(){ pairsOpen=!pairsOpen; renderBar(); };
 
 function fmt(a){ if(a==null||a==="")return""; return (Math.round(a*100)/100).toString(); }
 /* Notes are rendered verbatim -- "Recommend Punt e Mes" reads exactly as typed -- with
@@ -1454,17 +1470,25 @@ function renderBar(){
   });
   g.insertAdjacentHTML('beforeend', shelf+'</div>');
 
-  const list=(byCat[barCat]||[]).sort((a,b)=> freq[b].n-freq[a].n || (a<b?-1:1));
+  /* Frequency answers "what should I pick"; alphabetical answers "where is the thing
+     I already have in mind". Both are real, so it is a toggle rather than a choice
+     made on your behalf. */
+  const list=(byCat[barCat]||[]).sort(barSort==='az'
+    ? (a,b)=> a.localeCompare(b)
+    : (a,b)=> freq[b].n-freq[a].n || a.localeCompare(b));
   const top=list.length?freq[list[0]].n:1;
   g.insertAdjacentHTML('beforeend',
-    `<div class="pairhd">${sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase()}`
-    +`<span>${sel.size?rows.length+' drinks match':C.length+' drinks'}</span></div>`);
+    `<div class="pairhd${pairsOpen?' open':''}" onclick="togglePairs()">`
+    +`<span class="chev">\u25b8</span>${sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase()}`
+    +`<button class="sortbtn" onclick="setBarSort(event)">${barSort==='az'?'A\u2013Z':'Most used'}</button>`
+    +`<span class="cnt">${(byCat[barCat]||[]).length}</span></div>`);
   const box=document.createElement('div');
+  box.style.display = pairsOpen ? '' : 'none';
   list.forEach(nm=>{
     const f=freq[nm], have=HAVE_SET().has(nm);
     const el=document.createElement('div');
     el.className='pair'+(have?'':' nothave');
-    el.innerHTML=`<i class="sw" style="background:${CAT_COLOR[f.cat]||'var(--faint)'}"></i>`
+    el.innerHTML=`<i class="sw" style="--c:${CAT_COLOR[f.cat]||'var(--faint)'}"></i>`
       +`<span class="n">${nm}<small>${f.n} drink${f.n===1?'':'s'} \u00b7 ${f.r} you can make</small></span>`
       +`<span class="bar"><i style="width:${Math.round(f.r/Math.max(f.n,1)*100)}%"></i></span>`
       +`<span class="c">${sel.size?'+':''}${f.n}</span>`;
