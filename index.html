@@ -415,8 +415,12 @@
   .cat .m{font-family:var(--mono);font-size:13px;color:var(--ink)}
   .cat.on{background:rgba(255,244,225,.06)}
   .cat.on .t{color:var(--ink)}
-  .pairhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;
-    text-transform:uppercase;color:var(--muted);margin:11px 0 3px;cursor:pointer}
+  /* Given a rule above and real weight: it was a faint grey line between two blocks
+     of content and read as a caption rather than a control. */
+  .pairhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);margin:14px 0 2px;padding:9px 2px 7px;cursor:pointer;
+    border-top:1px solid var(--line)}
+  .pairhd b{font-weight:400;color:var(--ink)}
   .pairhd .chev{display:inline-block;transition:transform .18s;color:var(--brass);font-size:10px}
   .pairhd.open .chev{transform:rotate(90deg)}
   .pairhd .cnt{color:var(--faint);letter-spacing:.04em}
@@ -655,7 +659,7 @@
   <div id="barView" style="display:none">
     <div class="barhint">Tap to narrow. Swatch colour is the category &mdash;
       <span class="swk" style="--c:var(--have)"></span> filled is stocked,
-      <span class="swk hollow" style="--c:var(--have)"></span> outlined is not.</div>
+      <span class="swk hollow" style="--c:var(--have)"></span> outlined is not stocked.</div>
     <div class="bartoggle" id="barToggle"></div>
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
@@ -1473,15 +1477,24 @@ function renderBar(){
   /* Frequency answers "what should I pick"; alphabetical answers "where is the thing
      I already have in mind". Both are real, so it is a toggle rather than a choice
      made on your behalf. */
-  const list=(byCat[barCat]||[]).sort(barSort==='az'
+  /* A search looks ACROSS categories -- you are hunting a specific bottle, not
+     browsing a shelf -- so it ignores the selected category rather than returning
+     nothing because you were on the wrong one. */
+  const qq=String(query||'').trim().toLowerCase();
+  let pickFrom = qq ? Object.keys(freq).filter(n=>n.toLowerCase().indexOf(qq)>-1) : (byCat[barCat]||[]);
+  /* Only what I can make should narrow the suggestions too, not just the results --
+     otherwise it offers you bottles it has already decided not to count. */
+  if(onlyHave) pickFrom = pickFrom.filter(n=>HAVE_SET().has(n));
+  const list=pickFrom.sort(barSort==='az'
     ? (a,b)=> a.localeCompare(b)
     : (a,b)=> freq[b].n-freq[a].n || a.localeCompare(b));
   const top=list.length?freq[list[0]].n:1;
   g.insertAdjacentHTML('beforeend',
     `<div class="pairhd${pairsOpen?' open':''}" onclick="togglePairs()">`
-    +`<span class="chev">\u25b8</span>${sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase()}`
+    +`<span class="chev">\u25b8</span>`
+    +`<b>${qq?'Matching \u201c'+qq+'\u201d':(sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase())}</b>`
     +`<button class="sortbtn" onclick="setBarSort(event)">${barSort==='az'?'A\u2013Z':'Most used'}</button>`
-    +`<span class="cnt">${(byCat[barCat]||[]).length}</span></div>`);
+    +`<span class="cnt">${list.length}</span></div>`);
   const box=document.createElement('div');
   box.style.display = pairsOpen ? '' : 'none';
   list.forEach(nm=>{
@@ -1510,6 +1523,13 @@ function setMode(m){
   document.getElementById('barView').style.display=m==='bar'?'':'none';
   document.getElementById('shelfView').style.display=m==='shelf'?'':'none';
   document.getElementById('exploreView').style.display=m==='explore'?'':'none';
+  /* Hidden in Explore and My Bar, where it has nothing to act on. */
+  const sw=document.querySelector('.search');
+  if(sw){
+    sw.style.display=(m==='browse'||m==='bar')?'':'none';
+    const qi=document.getElementById('q');
+    if(qi) qi.placeholder = m==='bar' ? 'Search an ingredient\u2026' : 'Search a drink or ingredient\u2026';
+  }
   if(m==='bar')renderBar(); else if(m==='shelf')renderShelf();
   else if(m==='explore')renderExplore(); else renderBrowse();
 }
@@ -1894,7 +1914,12 @@ function closeSheet(){ _closeNav(); }
   document.addEventListener('pointercancel',endDrag);
 })();
 
-document.getElementById('q').addEventListener('input',e=>{query=e.target.value; if(mode==='browse')renderBrowse();});
+document.getElementById('q').addEventListener('input',e=>{
+  query=e.target.value;
+  /* Build uses the same box rather than growing its own. A search bar that sits there
+     doing nothing in three of four tabs is worse than no search bar. */
+  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar();
+});
 renderBrowse();
 </script>
 </body>
