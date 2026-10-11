@@ -192,6 +192,9 @@
   .expbox .nbmore{padding-left:2px}
   /* equal height: fixed min-height and one line of context, so the three read as peers */
   .expcards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:2px}
+  .expstat{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--faint);
+    padding:9px 2px 2px;line-height:1.6}
+  .expstat b{color:var(--muted);font-weight:400}
   .expbig{display:flex;flex-direction:column;justify-content:flex-start;gap:5px;min-height:82px;background:var(--surface);
     border:1px solid var(--line);border-top:3px solid var(--have);border-radius:14px;padding:11px 11px 10px;cursor:pointer}
   .expbig .num{font-family:var(--mono);font-size:22px;color:var(--have);line-height:1}
@@ -691,6 +694,11 @@ const NOCONV=new Set(['barspoon','dashes','drops','pinch','parts']);
    actually get batched: nobody dashes 68 times, they measure.
    MEASURE YOUR OWN and change these: count 20 dashes into a jigger and divide. */
 const COUNT_ML={'dash':1,'drop':0.05,'barspoon':5,'pinch':0.3};
+/* Units that READ better native but still count as liquid. A teaspoon of Tajin is a
+   teaspoon, not 0.17 fl oz -- but it is genuinely 0.17 fl oz of volume, so it has to
+   keep contributing to the total, the percentages and the batch. Display and maths
+   are separated rather than one being sacrificed for the other. */
+const NATIVE_UNITS=new Set(['tsp','tbsp']);
 /* Things that go in per drink rather than into the batch. Egg white will not hold in
    a bottle -- it separates and stops emulsifying -- so the honest batch instruction is
    "add one per drink and shake", not "15 egg whites". Showing a scaled count here
@@ -702,7 +710,7 @@ const PER_DRINK=/\begg\b/i;
    the sheet only inverts the problem ("1 dashes"). So the app decides the word from
    the number it is about to print, and the sheet can hold either form.
    Measurement abbreviations are left alone: nobody writes "2 fl ozs". */
-const UNIT_PLURAL={'dash':'dashes','drop':'drops','barspoon':'barspoons','pinch':'pinches',
+const UNIT_PLURAL={'dash':'dashes','drop':'drops','barspoon':'barspoons','pinch':'pinches','chunk':'chunks',
   'leaf':'leaves','slice':'slices','sprig':'sprigs','wedge':'wedges','twist':'twists',
   'peel':'peels','cube':'cubes','wheel':'wheels','berry':'berries'};
 const UNIT_SINGULAR=Object.keys(UNIT_PLURAL).reduce(function(m,k){ m[UNIT_PLURAL[k]]=k; m[k]=k; return m; },{});
@@ -1250,7 +1258,13 @@ function renderExplore(){
     ['fv','Favourites ready', fvR, 'c'],
   ].map(([k,title,num,cls])=>
     `<div class="expbig ${cls}" onclick="expJump('${k}')"><span class="num">${num}</span>`
-    +`<span class="t">${title}</span></div>`).join('')+'</div>';
+    +`<span class="t">${title}</span></div>`).join('')+'</div>'
+    /* A standing line rather than a fourth tile: three across already sit at about
+       118px each and a fourth would squeeze the numbers. These are totals you read
+       once, not targets you tap. */
+    + `<div class="expstat"><b>${C.length}</b> drinks \u00b7 <b>${ready.length}</b> ready \u00b7 `
+    + `<b>${C.filter(d=>d.md).length}</b> made \u00b7 <b>${C.filter(d=>d.ts).length}</b> shortlisted \u00b7 `
+    + `<b>${C.filter(d=>d.fv).length}</b> favourites</div>`;
 
   const tally=(keyfn)=>{
     const m={};
@@ -1448,6 +1462,10 @@ function computeRows(d){
     if(f==null){
       const q=a*mult, ml=COUNT_ML[unitBase(u)], mf=convFactor('ml',normU);
       return {disp:`${fmt(q)} ${unitLabel(q,u)}`, raw:(ml!=null&&mf!=null)?q*ml*mf:null, isCount:true};
+    }
+    if(NATIVE_UNITS.has(unitBase(u))){
+      const q=a*mult;
+      return {disp:`${fmt(q)} ${unitLabel(q,u)}`, raw:q*f};   // shown as tsp, counted as volume
     }
     const v=a*mult*f; return{disp:`${fmt(v)} ${normU}`,raw:v}; });
   const tot=conv.reduce((s,x)=>s+(x.raw||0),0);
