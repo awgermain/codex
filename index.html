@@ -229,6 +229,10 @@
   .search input{width:100%;background:var(--surface);border:1px solid var(--line);color:var(--ink);font-family:var(--sans);font-size:16px;padding:13px 16px 13px 44px;border-radius:14px;outline:none;transition:.2s}
   .search input::placeholder{color:var(--faint)}
   .search input:focus{border-color:var(--brass-dim);background:var(--surface2)}
+  .search input{padding-right:42px}
+  .search .qx{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;
+    background:none;border:none;color:var(--muted);font-size:18px;line-height:1;padding:8px 10px;cursor:pointer}
+  .search.has .qx{display:block}
   .search svg{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--muted)}
   .modes{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px;margin-bottom:14px}
   .modes button{flex:1;background:transparent;border:0;color:var(--muted);font-family:var(--sans);font-size:13.5px;font-weight:600;padding:9px;border-radius:9px;cursor:pointer;transition:.18s}
@@ -444,7 +448,11 @@
   .pair .bar i{display:block;height:100%}
   .pair .c{font-family:var(--mono);font-size:10px;color:var(--brass);width:34px;text-align:right;flex:none}
   /* The pairings and the results ran together as one scroll. */
-  .resdiv{border-top:1px solid var(--line);margin:18px 0 0;padding-top:4px}
+  /* The results now get their own head, matching the pairings head, so the two lists
+     read as two sections rather than one scroll. The rule moved onto .reshd itself. */
+  .resdiv{margin:18px 0 0}
+  .reshd{border-top-color:var(--brass)}
+  .reshd .cap{color:var(--faint);letter-spacing:.04em;margin-left:auto;text-transform:none}
   .pairnone{font-size:12px;color:var(--faint);padding:10px 2px}
   /* Lit in place: brass edge, warmer ground, and the count column becomes a tick. */
   .pair.picked{background:rgba(199,154,75,.10);box-shadow:inset 3px 0 0 var(--brass);padding-left:8px}
@@ -639,6 +647,7 @@
   <div class="search">
     <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     <input id="q" type="text" placeholder="Search a drink or ingredient…" autocomplete="off">
+    <button class="qx" type="button" aria-label="Clear search" onclick="clearQuery(true)">&#x2715;</button>
   </div>
 
 
@@ -946,8 +955,22 @@ rebuild();
 
 
 let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,fSrc=null,fReady=false,fUntried=false,filtersOpen=false;
-const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit', barSort='freq', pairsOpen=true;
-window.setBarCat=function(c){ barCat=c; pairsOpen=true; renderBar(); };
+const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit', barSort='freq', pairsOpen=true, resOpen=true;
+/* One place that empties the search, so the box, the variable and the x button can't
+   disagree. Doesn't re-render -- callers do that once they've changed whatever else. */
+function setQuery(v){
+  query=v; const qi=document.getElementById('q'); if(qi && qi.value!==v) qi.value=v;
+  const sw=document.querySelector('.search'); if(sw) sw.classList.toggle('has', !!v);
+}
+window.clearQuery=function(refocus){
+  setQuery('');
+  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf();
+  if(refocus){ const qi=document.getElementById('q'); if(qi) qi.focus(); }
+};
+/* Tapping a category means you've stopped hunting and started browsing, so a leftover
+   search term would only hide the shelf you just asked for. */
+window.setBarCat=function(c){ barCat=c; pairsOpen=true; setQuery(''); renderBar(); };
+window.toggleRes=function(){ resOpen=!resOpen; renderBar(); };
 window.setBarSort=function(e){ if(e)e.stopPropagation(); barSort = barSort==='freq'?'az':'freq'; renderBar(); };
 window.togglePairs=function(){ pairsOpen=!pairsOpen; renderBar(); };
 
@@ -1248,7 +1271,7 @@ const SPIRIT_FAMILY={
 window.toggleExp=function(k){ expOpen.has(k)?expOpen.delete(k):expOpen.add(k); renderExplore(); };
 function expClearFilters(){
   fBase=fStyle=fServed=fMood=fSeason=fHoliday=fFam=fEra=fStatus=fSrc=null;
-  fReady=fUntried=false; query=''; const q=document.getElementById('q'); if(q) q.value='';
+  fReady=fUntried=false; setQuery('');
 }
 window.expJump=function(kind,val){
   expClearFilters();
@@ -1426,7 +1449,21 @@ function renderShelf(){
 window.jumpTax=function(e,kind,val){ e.stopPropagation(); expJump(kind,val); };
 window.jumpFromSheet=function(e,kind,val){ e.stopPropagation(); closeSheet(); setTimeout(function(){ expJump(kind,val); },180); };
 window.jumpFamily=function(e,fam){ e.stopPropagation(); expJump('fam',fam); };
-window.toggleSel=function(n){ sel.has(n)?sel.delete(n):sel.add(n); renderBar(); };
+/* A search in Build is a way to FIND a bottle, not a filter you want to keep. Once
+   you've picked it the term has done its job, and leaving it in place pinned the list
+   to that one match -- you couldn't get back to the shelf without deleting it by hand.
+   So a pick clears the search and lands you on the picked bottle's own category, where
+   it sits lit with its pairings around it. Blurring drops the mobile keyboard too. */
+window.toggleSel=function(n){
+  const adding=!sel.has(n);
+  adding?sel.add(n):sel.delete(n);
+  if(mode==='bar' && String(query||'').trim()){
+    setQuery('');
+    if(adding){ const c=CAT_ORDER.find(k=>ingByCat[k] && ingByCat[k].has(n)); if(c) barCat=c; }
+    const qi=document.getElementById('q'); if(qi) qi.blur();
+  }
+  renderBar();
+};
 function renderBar(){
   renderBarToggle(); renderSelBar(); renderNextBottle();
   const rows=barMatches();
@@ -1437,6 +1474,22 @@ function renderBar(){
   bc.innerHTML= sel.size||onlyHave ? `<b>${rows.length}</b> match${rows.length===1?'':'es'} · <b>${makeable}</b> fully stocked` : `Tap ingredients below to start`;
   // results
   const rc=document.getElementById('barResults'); rc.innerHTML='';
+  /* Results head: same component as the pairings head (chevron, title, count) so the
+     page reads as two labelled sections. Brass rule rather than the category colour,
+     because these are drinks, not ingredients of the selected category. */
+  const rd=document.getElementById('barResDiv');
+  if(sel.size||onlyHave){
+    const names=[...sel];
+    const title = !names.length ? 'Drinks you can make'
+      : names.length<=2 ? 'Drinks with '+names.join(' + ')
+      : 'Drinks with these '+names.length;
+    const CAP=60;
+    rd.innerHTML=`<div class="pairhd reshd${resOpen?' open':''}" onclick="toggleRes()">`
+      +`<span class="chev">\u25b8</span><b>${title}</b>`
+      +(rows.length>CAP?`<span class="cap">top ${CAP}</span>`:'')
+      +`<span class="cnt"${rows.length>CAP?'':' style="margin-left:auto"'}>${rows.length}</span></div>`;
+    rc.style.display = resOpen ? '' : 'none';
+  } else { rd.innerHTML=''; rc.style.display=''; }
   if(sel.size||onlyHave){
     const sorted=rows.slice().sort((a,b)=>{
       const am=[...a._stock].every(n=>HAVE_SET().has(n)), bm=[...b._stock].every(n=>HAVE_SET().has(n));
@@ -1940,7 +1993,7 @@ function closeSheet(){ _closeNav(); }
 })();
 
 document.getElementById('q').addEventListener('input',e=>{
-  query=e.target.value;
+  setQuery(e.target.value);
   /* Build uses the same box rather than growing its own. A search bar that sits there
      doing nothing in three of four tabs is worse than no search bar. */
   if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf();
