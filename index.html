@@ -419,7 +419,7 @@
      of content and read as a caption rather than a control. */
   .pairhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--ink);margin:14px 0 2px;padding:9px 2px 7px;cursor:pointer;
-    border-top:1px solid var(--line)}
+    border-top:2px solid var(--line)}
   .pairhd b{font-weight:400;color:var(--ink)}
   .pairhd .chev{display:inline-block;transition:transform .18s;color:var(--brass);font-size:10px}
   .pairhd.open .chev{transform:rotate(90deg)}
@@ -438,9 +438,18 @@
   .pair .n{flex:1;min-width:0;font-size:13.5px;color:var(--ink)}
   .pair .n small{display:block;font-size:10.5px;color:var(--faint)}
   .pair .bar{width:48px;height:4px;background:rgba(199,154,75,.14);border-radius:2px;flex:none;overflow:hidden}
-  .pair .bar i{display:block;height:100%;background:var(--have)}
+  /* Tiered the same as Explore and the card stripes, rather than always green: a
+     colour should mean the same thing wherever you meet it. Category colour would be
+     redundant here -- the swatch two columns left already says that. */
+  .pair .bar i{display:block;height:100%}
   .pair .c{font-family:var(--mono);font-size:10px;color:var(--brass);width:34px;text-align:right;flex:none}
+  /* The pairings and the results ran together as one scroll. */
+  .resdiv{border-top:1px solid var(--line);margin:18px 0 0;padding-top:4px}
   .pairnone{font-size:12px;color:var(--faint);padding:10px 2px}
+  /* Lit in place: brass edge, warmer ground, and the count column becomes a tick. */
+  .pair.picked{background:rgba(199,154,75,.10);box-shadow:inset 3px 0 0 var(--brass);padding-left:8px}
+  .pair.picked .n{color:var(--ink);font-weight:600}
+  .pair.picked .c{color:var(--brass)}
   .swk{display:inline-block;width:9px;height:9px;border-radius:2px;box-sizing:border-box;
     background:var(--c);border:1.5px solid var(--c);vertical-align:-1px;margin:0 1px}
   .swk.hollow{background:transparent}
@@ -621,16 +630,17 @@
     <h1>What'll it <em>be?</em></h1>
     <p class="tagline">Search the collection by name, spirit, or mood — or tell it what's on your shelf.</p>
   </header>
-  <div class="search">
-    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input id="q" type="text" placeholder="Search a drink or ingredient…" autocomplete="off">
-  </div>
   <div class="modes">
     <button id="mBrowse" class="on" onclick="setMode('browse')">Browse</button>
     <button id="mBar" onclick="setMode('bar')">Build</button>
     <button id="mExplore" onclick="setMode('explore')">Explore</button>
     <button id="mShelf" onclick="setMode('shelf')">My Bar</button>
   </div>
+  <div class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="q" type="text" placeholder="Search a drink or ingredient…" autocomplete="off">
+  </div>
+
 
   <div id="browseView">
     <div class="toolbar">
@@ -664,7 +674,8 @@
     <div id="selBar"></div>
     <div class="count-line" id="barCount" style="margin:4px 0 10px"></div>
     <div id="barGrid"></div>
-    <div id="barResults" style="margin-top:8px"></div>
+    <div class="resdiv" id="barResDiv"></div>
+    <div id="barResults"></div>
   </div>
   <div id="exploreView" style="display:none"></div>
   <div id="shelfView" style="display:none"></div>
@@ -767,6 +778,8 @@ function unitLabel(n,u){
    #38761D, Acid #F1C232, Sweetener #E69138, Seasoning #741B47, Top/Mix #351C75),
    lifted for a dark background -- Google's defaults are mixed for white paper and
    go to mud at 4px on #17110f. */
+const CAT_PLURAL={'Spirit':'Spirits','Modifier':'Modifiers','Acid':'Acids','Sweetener':'Sweeteners',
+                  'Seasoning':'Seasonings','Top / Mix':'Top / Mix','Muddled':'Muddled','Other':'Other'};
 const CAT_COLOR={'Spirit':'#4FA3B8','Modifier':'#7FB84F','Acid':'#F1C232','Sweetener':'#E69138',
                  'Seasoning':'#C4568C','Top / Mix':'#8577D6','Muddled':'#6f6153','Other':'#6f6153'};
 
@@ -1376,6 +1389,7 @@ function renderExplore(){
 function renderShelf(){
   const el=document.getElementById('shelfView'); if(!el) return;
   const {use,byCat}=shelfIngredients(); const H=HAVE_SET();
+  const shelfQ=String(query||'').trim().toLowerCase();
   const ready=C.filter(d=>[...d._stock].every(n=>H.has(n))).length;
   let html=`<div class="shelfhead"><span class="cnt">${H.size} INGREDIENTS · ${ready} DRINKS READY</span>`
     + `<button class="linkbtn" onclick="clearShelf()">Clear all</button>`
@@ -1388,8 +1402,12 @@ function renderShelf(){
      by use count read as arbitrary once you were hunting for a specific bottle. */
   CAT_ORDER.forEach(cat=>{
     if(UNTRACKED_CATS.has(cat)||!byCat[cat]) return;
-    const list=[...byCat[cat]].sort((a,b)=>a.localeCompare(b));
-    const open=shelfOpen.has(cat);
+    let list=[...byCat[cat]].sort((a,b)=>a.localeCompare(b));
+    /* A search opens every category that has a hit, so you never have to guess which
+       group a bottle lives in before you can find it. */
+    if(shelfQ) list=list.filter(n=>n.toLowerCase().indexOf(shelfQ)>-1);
+    if(shelfQ && !list.length) return;
+    const open=shelfQ ? true : shelfOpen.has(cat);
     const ticked=list.filter(n=>H.has(n)).length;
     html+=`<div class="barhead shelfhead-c${open?' open':''}" onclick="toggleShelfCat('${cat}')">`
       +`<span class="chev">\u25b8</span>${cat} <span class="n">${ticked}/${list.length}</span></div>`
@@ -1454,7 +1472,6 @@ function renderBar(){
   const freq={};
   pool.forEach(d=>d.i.forEach(it=>{
     const nm=it[0], cat=it[3];
-    if(sel.has(nm)) return;
     if(!ingByCat[cat] || !ingByCat[cat].has(nm)) return;
     const f=(freq[nm]=freq[nm]||{n:0,r:0,cat:cat});
     f.n++; if([...d._stock].every(x=>HAVE_SET().has(x))) f.r++;
@@ -1490,21 +1507,28 @@ function renderBar(){
     : (a,b)=> freq[b].n-freq[a].n || a.localeCompare(b));
   const top=list.length?freq[list[0]].n:1;
   g.insertAdjacentHTML('beforeend',
-    `<div class="pairhd${pairsOpen?' open':''}" onclick="togglePairs()">`
+    `<div class="pairhd${pairsOpen?' open':''}" style="border-top-color:${CAT_COLOR[barCat]||'var(--line)'}" onclick="togglePairs()">`
     +`<span class="chev">\u25b8</span>`
-    +`<b>${qq?'Matching \u201c'+qq+'\u201d':(sel.size?barCat+' that pair':'Most used '+barCat.toLowerCase())}</b>`
+    +`<b>${qq?'Matching \u201c'+qq+'\u201d'
+        :(sel.size?(CAT_PLURAL[barCat]||barCat)+' that pair'
+                  :'Most used '+(CAT_PLURAL[barCat]||barCat).toLowerCase())}</b>`
     +`<button class="sortbtn" onclick="setBarSort(event)">${barSort==='az'?'A\u2013Z':'Most used'}</button>`
     +`<span class="cnt">${list.length}</span></div>`);
   const box=document.createElement('div');
   box.style.display = pairsOpen ? '' : 'none';
   list.forEach(nm=>{
-    const f=freq[nm], have=HAVE_SET().has(nm);
+    const f=freq[nm], have=HAVE_SET().has(nm), picked=sel.has(nm);
     const el=document.createElement('div');
-    el.className='pair'+(have?'':' nothave');
+    /* Selected rows stay where they are, lit up, rather than vanishing to a pill at
+       the top. Disappearing made the list jump under your finger and hid the thing
+       you had just chosen; the pills above still exist for clearing. */
+    el.className='pair'+(have?'':' nothave')+(picked?' picked':'');
     el.innerHTML=`<i class="sw" style="--c:${CAT_COLOR[f.cat]||'var(--faint)'}"></i>`
       +`<span class="n">${nm}<small>${f.n} drink${f.n===1?'':'s'} \u00b7 ${f.r} you can make</small></span>`
-      +`<span class="bar"><i style="width:${Math.round(f.r/Math.max(f.n,1)*100)}%"></i></span>`
-      +`<span class="c">${sel.size?'+':''}${f.n}</span>`;
+      +(function(){ const p=Math.round(f.r/Math.max(f.n,1)*100);
+          const col=p>=67?'var(--have)':(p>=34?'var(--brass)':'var(--nothave)');
+          return `<span class="bar"><i style="width:${p}%;background:${col}"></i></span>`; })()
+      +`<span class="c">${picked?'\u2713':(sel.size?'+':'')+f.n}</span>`;
     el.onclick=()=>toggleSel(nm);
     box.appendChild(el);
   });
@@ -1526,9 +1550,10 @@ function setMode(m){
   /* Hidden in Explore and My Bar, where it has nothing to act on. */
   const sw=document.querySelector('.search');
   if(sw){
-    sw.style.display=(m==='browse'||m==='bar')?'':'none';
+    sw.style.display=(m==='explore')?'none':'';
     const qi=document.getElementById('q');
-    if(qi) qi.placeholder = m==='bar' ? 'Search an ingredient\u2026' : 'Search a drink or ingredient\u2026';
+    if(qi) qi.placeholder = (m==='bar'||m==='shelf') ? 'Search an ingredient\u2026'
+                                                     : 'Search a drink or ingredient\u2026';
   }
   if(m==='bar')renderBar(); else if(m==='shelf')renderShelf();
   else if(m==='explore')renderExplore(); else renderBrowse();
@@ -1918,7 +1943,7 @@ document.getElementById('q').addEventListener('input',e=>{
   query=e.target.value;
   /* Build uses the same box rather than growing its own. A search bar that sits there
      doing nothing in three of four tabs is worse than no search bar. */
-  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar();
+  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf();
 });
 renderBrowse();
 </script>
