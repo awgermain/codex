@@ -190,17 +190,27 @@
   .seadot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:0}
   .seaic{margin-left:5px}
   .expbox .nbmore{padding-left:2px}
-  /* equal height: fixed min-height and one line of context, so the three read as peers */
-  .expcards{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:2px}
-  .expstat{font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--faint);
-    padding:9px 2px 2px;line-height:1.6}
-  .expstat b{color:var(--muted);font-weight:400}
-  .expbig{display:flex;flex-direction:column;justify-content:flex-start;gap:5px;min-height:82px;background:var(--surface);
-    border:1px solid var(--line);border-top:3px solid var(--have);border-radius:14px;padding:11px 11px 10px;cursor:pointer}
-  .expbig .num{font-family:var(--mono);font-size:22px;color:var(--have);line-height:1}
-  .expbig .t{font-size:11.5px;color:var(--muted);line-height:1.3}
-  .expbig.b{border-top-color:var(--short)} .expbig.b .num{color:var(--short)}
-  .expbig.c{border-top-color:var(--fav)}   .expbig.c .num{color:var(--fav)}
+  /* Explore tiles: one wide READY tile, five peers under it. Every big number means
+     the same thing -- ready tonight -- and the faint /N beside it is the size of that
+     set, set inline in the same mono so the eye reads 99/135 as one figure.
+     The ready bar is deliberately quiet: the number is the message, the bar is context.
+     Made and Untried share the green and differ by the swatch, the same filled/hollow
+     language Build uses for stocked/not: filled = made, hollow = never made. */
+  .exphero{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);
+    border-top:3px solid var(--have);border-radius:0;padding:10px 12px;margin-bottom:6px;cursor:pointer}
+  .exphero .num{font-family:var(--mono);font-size:26px;color:var(--have);line-height:1}
+  .exphero .t{display:block;font-size:12px;color:var(--muted)}
+  .exphero .t b{font-family:var(--mono);font-weight:400;color:var(--faint)}
+  .exphero .rb{height:3px;background:rgba(240,230,214,.07);margin-top:6px}
+  .exphero .rb i{display:block;height:100%;background:rgba(159,191,134,.38)}
+  .expcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(62px,1fr));gap:6px;margin-bottom:4px}
+  .expbig{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);
+    border-top:3px solid var(--c);border-radius:0;padding:8px 7px 9px;cursor:pointer;min-width:0}
+  .expbig .num{font-family:var(--mono);font-size:16px;color:var(--c);line-height:1;white-space:nowrap}
+  .expbig .num small{font-size:10.5px;color:var(--faint);margin-left:1px}
+  .expbig .t{font-size:11px;color:var(--muted);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .expbig .t .mk-ring,.expbig .t .mk-ready{width:8px;height:8px;margin-right:4px}
+  .expbig .t .mk-made{margin-right:4px;font-size:11px}
   .shelfrow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);cursor:pointer}
   .shelfrow .bx{width:16px;height:16px;border-radius:5px;border:1px solid var(--brass-dim);flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent}
   .shelfrow.on .bx{background:var(--have);border-color:var(--have);color:#17110f}
@@ -277,7 +287,58 @@
   .fbtn #fcount{font-family:var(--mono);font-size:11px;color:var(--brass)}
   .fpanel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 4px;margin-bottom:12px}
   .activechips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
-  .achip{background:var(--brass);color:#1a130b;font-size:12px;font-weight:600;padding:6px 11px;border-radius:100px;cursor:pointer;border:0}
+  /* ---- Browse filter shelf ----
+     Five across, one line per tile, fixed height so the grid never goes ragged. Groups
+     follow the same "kind of question" split as Explore's sections:
+       what it is  (brass)  Spirit Style Family Era
+       who made it (mauve)  Creator
+       when        (blue)   Served Mood Season Holiday
+       yours       (muted)  Marks
+     Kept clear of Build's ingredient colours so teal never means two things. */
+  :root{--g-what:var(--brass);--g-when:var(--winter);--g-who:#b294bb;--g-mine:var(--muted)}
+  .fshelf{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:0 0 4px}
+  .ft{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--g);border-radius:0;
+    padding:6px 7px 6px;height:44px;box-sizing:border-box;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
+  .ft .t{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ft .m{font-family:var(--mono);font-size:11px;color:var(--faint)}
+  .ft .a{font-size:11.5px;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ft .a b{font-family:var(--mono);font-weight:400;color:var(--muted)}
+  .ft.act{background:color-mix(in srgb,var(--g) 13%,var(--surface))}
+  .ft.act .t,.ft.open .t{color:var(--ink)}
+  .ft.open{box-shadow:inset 0 -2px 0 var(--g)}
+  .fvhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink);border-top:2px solid var(--g);margin:10px 0 2px;padding:8px 2px 6px}
+  .fvhd em{font-style:normal;color:var(--faint);letter-spacing:.04em;text-transform:none}
+  .fvhd .cnt{margin-left:auto;color:var(--faint);letter-spacing:.04em}
+  .anyall{display:flex;border:1px solid var(--line);border-radius:100px;overflow:hidden;margin-left:auto}
+  .anyall button{background:none;border:0;color:var(--muted);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
+    text-transform:uppercase;padding:3px 9px;cursor:pointer}
+  .anyall button.on{background:var(--g);color:#17110f}
+  .anyall + .cnt{margin-left:6px}
+  /* Two columns that read DOWN then across, so the ranking runs top to bottom of the
+     left column before continuing on the right -- the order your eye expects. */
+  .fvals{columns:2;column-gap:14px;margin-bottom:6px}
+  .fvr{display:flex;align-items:center;gap:7px;padding:7px 2px;border-bottom:1px solid var(--line);cursor:pointer;
+    break-inside:avoid;font-size:13px;color:var(--ink);min-width:0}
+  .fvr .n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .fvr .bar{width:26px;height:3px;background:rgba(199,154,75,.14);flex:none;overflow:hidden}
+  .fvr .bar i{display:block;height:100%}
+  .fvr .c{font-family:var(--mono);font-size:10px;color:var(--faint);min-width:44px;text-align:right;flex:none}
+  .fvr.picked{background:color-mix(in srgb,var(--g) 12%,transparent);box-shadow:inset 3px 0 0 var(--g);padding-left:8px}
+  .fvr.picked .n{font-weight:600}
+  .fvr.picked .c{color:var(--g)}
+  .fvr.zero{opacity:.4}
+  .fvmore{background:none;border:0;color:var(--brass);font-family:var(--mono);font-size:10px;letter-spacing:.06em;
+    text-transform:uppercase;padding:6px 2px 10px;cursor:pointer}
+  /* Mark icons. Ready borrows Build's filled swatch (everything stocked); Untried is a
+     hollow ring (never made) -- deliberately a different shape from the swatch so it
+     doesn't read as "not stocked". */
+  .mk-ready{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--have);vertical-align:0;margin-right:6px}
+  .mk-ring{display:inline-block;width:9px;height:9px;border-radius:50%;box-sizing:border-box;border:1.5px solid var(--have);vertical-align:-1px;margin-right:6px}
+  .fvr .mk-made,.fvr .mk-short{margin-right:6px}
+  .fvr .chipstar{font-size:13px}
+  .achip{background:var(--g,var(--brass));color:#17110f;font-size:12px;font-weight:600;padding:6px 11px;border-radius:100px;cursor:pointer;border:0}
   .achip-clear{background:rgba(199,154,75,.14);color:var(--brass);border:1px solid var(--brass);font-weight:600}
     .fclear{display:flex;justify-content:flex-end;margin:0 0 8px}
   .count-line{font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;flex:1}
@@ -286,6 +347,7 @@
      what made it 2px shorter. The row is align-items:stretch so neither can drift again.
      Colour is --winter (#7ba6c9) at 10% fill / 38% border, the same blue already used
      for the Winter season tag, so this introduces no new hue to the palette. */
+  .toolbar .dice{flex:1}
   .dice{background:rgba(123,166,201,.10);border:1px solid rgba(123,166,201,.38);color:#b9d0e0;font-family:var(--sans);font-size:13px;font-weight:600;padding:9px 15px;border-radius:100px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
   .dice:hover{background:rgba(123,166,201,.16);border-color:rgba(123,166,201,.55)}
   .dbtn{background:var(--surface2);border:1px solid var(--line);color:var(--muted);font-size:15px;
@@ -411,10 +473,14 @@
   .empty{text-align:center;color:var(--faint);padding:44px 20px;font-size:14px}
   .empty b{color:var(--muted);font-family:var(--display);font-size:19px;display:block;margin-bottom:6px;font-weight:600}
   /* ---- Build: category shelf + pairings ---- */
-  .cshelf{display:flex;gap:6px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none}
-  .cshelf::-webkit-scrollbar{display:none}
-  .cat{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--surface);
-    border:1px solid var(--line);border-top:3px solid;border-radius:10px;padding:7px 11px 8px;min-width:84px;cursor:pointer}
+  /* A wrapping grid rather than a sideways scroll: as many tiles as fit the width, the
+     rest stack beneath. A scroll row hid Top / Mix and Other off the right edge on a
+     phone, and nothing said they were there. auto-fill + minmax keeps every tile the
+     same width in a row, so a short last row lines up with the columns above it. */
+  .cshelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px;padding-bottom:7px}
+  .cat{display:flex;flex-direction:column;align-items:flex-start;gap:3px;background:var(--surface);min-width:0;
+    border:1px solid var(--line);border-top:3px solid;border-radius:10px;padding:7px 11px 8px;cursor:pointer}
+  .cat .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
   .cat .t{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
   .cat .m{font-family:var(--mono);font-size:13px;color:var(--ink)}
   .cat.on{background:rgba(255,244,225,.06)}
@@ -653,30 +719,17 @@
 
   <div id="browseView">
     <div class="toolbar">
-      <button class="fbtn" id="filterToggle" onclick="toggleFilters()">☰ Filters<span id="fcount"></span></button>
       <button class="dice" onclick="surprise()">🎲 Surprise me</button>
       <button class="dbtn" id="denseBtn" onclick="toggleDense()" title="Compact list" aria-label="Compact list">▤</button>
     </div>
     <div id="activeChips" class="activechips"></div>
-    <div id="filterPanel" class="fpanel" style="display:none">
-      <div class="fclear"><button class="linkbtn" id="clearAllBtn" onclick="clearAllFilters()">Clear all</button></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Spirit</span><span class="fh-a" id="fa_base"></span><span class="chev">▸</span></div><div class="frow" id="fBase"></div></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Style</span><span class="fh-a" id="fa_style"></span><span class="chev">▸</span></div><div class="frow" id="fStyle"></div></div>
-      <div class="fgroup collapsed" id="famgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Family</span><span class="fh-a" id="fa_fam"></span><span class="chev">▸</span></div><div class="frow" id="fFam"></div></div>
-      <div class="fgroup collapsed" id="eragroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Era</span><span class="fh-a" id="fa_era"></span><span class="chev">▸</span></div><div class="frow" id="fEra"></div></div>
-      <div class="fgroup collapsed" id="srcgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Creator</span><span class="fh-a" id="fa_src"></span><span class="chev">▸</span></div><div class="frow" id="fSrcRow"></div></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Served</span><span class="fh-a" id="fa_served"></span><span class="chev">▸</span></div><div class="frow" id="fServed"></div></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Mood</span><span class="fh-a" id="fa_mood"></span><span class="chev">▸</span></div><div class="frow" id="fMood"></div></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Season</span><span class="fh-a" id="fa_season"></span><span class="chev">▸</span></div><div class="frow" id="fSeason"></div></div>
-      <div class="fgroup collapsed" id="hgroup"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Holiday</span><span class="fh-a" id="fa_holiday"></span><span class="chev">▸</span></div><div class="frow" id="fHoliday"></div></div>
-      <div class="fgroup collapsed"><div class="fhead" onclick="toggleFGroup(this)"><span class="fh-l">Marks</span><span class="fh-a" id="fa_status"></span><span class="chev">▸</span></div><div class="frow" id="fStatus"></div></div>
-    </div>
+    <div id="fShelf"></div>
     <div class="count-line" id="countLine" style="margin-bottom:12px"></div>
     <div id="list"></div>
   </div>
 
   <div id="barView" style="display:none">
-    <div class="barhint">Tap to narrow. Swatch colour is the category &mdash;
+    <div class="barhint">Tap to narrow. Swatch color is the category &mdash;
       <span class="swk" style="--c:var(--have)"></span> filled is stocked,
       <span class="swk hollow" style="--c:var(--have)"></span> outlined is not stocked.</div>
     <div class="bartoggle" id="barToggle"></div>
@@ -954,7 +1007,7 @@ window.reshuffleHome=function(){ shuffledC=shuffle_(C.slice()); renderBrowse(); 
 rebuild();
 
 
-let mode='browse',query='',fBase=null,fStyle=null,fServed=null,fMood=null,fStatus=null,fSeason=null,fHoliday=null,fFam=null,fEra=null,fSrc=null,fReady=false,fUntried=false,filtersOpen=false;
+let mode='browse',query='';
 const sel=new Set(); let onlyHave=false; const barOpen=new Set(); let barCat='Spirit', barSort='freq', pairsOpen=true, resOpen=true;
 /* One place that empties the search, so the box, the variable and the x button can't
    disagree. Doesn't re-render -- callers do that once they've changed whatever else. */
@@ -964,7 +1017,7 @@ function setQuery(v){
 }
 window.clearQuery=function(refocus){
   setQuery('');
-  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf();
+  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf(); else if(mode==='explore') renderExplore();
   if(refocus){ const qi=document.getElementById('q'); if(qi) qi.focus(); }
 };
 /* Tapping a category means you've stopped hunting and started browsing, so a leftover
@@ -999,63 +1052,111 @@ function chip(label,active,onclick,pip,star,tint){
   const ic = star?`<span class="chipstar" style="--pip-color:${star}">\u2605\uFE0E</span>`:(pip?`<span class="pip" style="background:${pip}"></span>`:'');
   b.innerHTML=ic+label; b.onclick=onclick; return b;
 }
-function renderFilters(){
-  const fb=document.getElementById('fBase'); fb.innerHTML='';
-  BASES.forEach(b=>fb.appendChild(chip(b,fBase===b,()=>{fBase=fBase===b?null:b;renderBrowse();}, HAVE_SET().has(b)?'var(--have)':'var(--nothave)')));
-  const fst=document.getElementById('fStyle'); fst.innerHTML='';
-  STYLES.forEach(s=>fst.appendChild(chip(s,fStyle===s,()=>{fStyle=fStyle===s?null:s;renderBrowse();})));
-  const fsv=document.getElementById('fServed'); fsv.innerHTML='';
-  SERVED.forEach(s=>fsv.appendChild(chip((SERVED_ICON[s]?SERVED_ICON[s]+' ':'')+s,fServed===s,()=>{fServed=fServed===s?null:s;renderBrowse();})));
-  const fm=document.getElementById('fMood'); fm.innerHTML='';
-  MOODS.forEach(m=>fm.appendChild(chip(moodLbl(m),fMood===m,()=>{fMood=fMood===m?null:m;renderBrowse();})));
-  const fse=document.getElementById('fSeason'); fse.innerHTML='';
-  SEASONS.forEach(s=>fse.appendChild(chip(s+(SEASON_ICON[s]?' '+SEASON_ICON[s]:''),fSeason===s,()=>{fSeason=fSeason===s?null:s;renderBrowse();},SEASON_COLOR[s])));
-  const hg=document.getElementById('hgroup'); hg.style.display=HOLIDAYS.length?'':'none';
-  const fh=document.getElementById('fHoliday'); fh.innerHTML='';
-  HOLIDAYS.forEach(h=>fh.appendChild(chip((HOLIDAY_ICON[h]?HOLIDAY_ICON[h]+' ':'')+h,fHoliday===h,()=>{fHoliday=fHoliday===h?null:h;renderBrowse();})));
-  const fs=document.getElementById('fStatus'); fs.innerHTML='';
-  fs.appendChild(chip('<span class="mk-made" style="margin-right:5px">\u2714\uFE0E</span>Made',fStatus==='md',()=>{fStatus=fStatus==='md'?null:'md';renderBrowse();},null,null,'var(--made)'));
-  fs.appendChild(chip('<span class="mk-short" style="margin-right:5px">\u2714\uFE0E</span>Shortlist',fStatus==='ts',()=>{fStatus=fStatus==='ts'?null:'ts';renderBrowse();},null,null,'var(--short)'));
-  fs.appendChild(chip('Favorite',fStatus==='fv',()=>{fStatus=fStatus==='fv'?null:'fv';renderBrowse();},null,'var(--fav)','var(--fav)'));
-  fs.appendChild(chip(`<span class="chipog">${ORIGINAL_GLYPH}</span>Original`,fStatus==='og',()=>{fStatus=fStatus==='og'?null:'og';renderBrowse();},null,null,'var(--winter)'));
-  setFA('fa_base',fBase); setFA('fa_style',fStyle); setFA('fa_served',fServed); setFA('fa_mood',fMood);
-  const ff=document.getElementById('fFam'); if(ff){ ff.innerHTML=''; FAMILIES.forEach(x=>ff.appendChild(chip(x,fFam===x,()=>{fFam=fFam===x?null:x;renderBrowse();}))); }
-  const fe=document.getElementById('fEra'); if(fe){ fe.innerHTML=''; ERAS.forEach(x=>fe.appendChild(chip(x,fEra===x,()=>{fEra=fEra===x?null:x;renderBrowse();}))); }
-  /* Creator had no group at all, so a filter set from Explore could only be undone
-     from its chip. Capped at the 20 biggest -- 95 chips would swamp the panel -- with
-     whatever is currently selected forced in so it is always clearable from here. */
-  const fs2=document.getElementById('fSrcRow');
-  if(fs2){ fs2.innerHTML='';
-    let names=SOURCES.slice(0,20);
-    if(fSrc && names.indexOf(fSrc)<0) names=[fSrc].concat(names);
-    names.forEach(x=>fs2.appendChild(chip(x,fSrc===x,()=>{fSrc=fSrc===x?null:x;renderBrowse();})));
-  }
-  const fgg=document.getElementById('famgroup'); if(fgg) fgg.style.display=FAMILIES.length?'':'none';
-  const egg=document.getElementById('eragroup'); if(egg) egg.style.display=ERAS.length?'':'none';
-  const sgg=document.getElementById('srcgroup'); if(sgg) sgg.style.display=SOURCES.length?'':'none';
-  setFA('fa_season',fSeason); setFA('fa_holiday',fHoliday); setFA('fa_fam',fFam); setFA('fa_era',fEra); setFA('fa_src',fSrc);
-  setFA('fa_status', fStatus?({md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'})[fStatus]:'');
+/* ---------- BROWSE FILTERS ----------
+   One model for every category instead of eleven single-value variables. Each category
+   holds a Set, so any of them can take several picks. How picks combine:
+     across categories        always AND   (Bourbon + Up = bourbon drinks served up)
+     within a one-per-drink   always OR    (Bourbon + Gin = either base). Spirit, Style,
+       category                            Family, Era, Served, Creator, Holiday hold one
+                                           value per drink, so AND would always be empty.
+     Mood, Season             any / all    a drink can be Citrusy AND Smoky, so it's a
+                                           real choice; the toggle shows at two picks.
+     Marks                    always AND   they're qualifiers that stack: Ready + Favorite
+                                           means ready favorites.
+   Spirit is the BASE spirit, one per drink. "Has rum and cognac in it" is Build's job. */
+const MARKS=[['ready','Ready'],['untried','Untried'],['md','Made'],['ts','Shortlist'],['fv','Favorite'],['og','Original']];
+const MARK_LABEL=Object.fromEntries(MARKS);
+const MARK_ICON={ready:'<i class="mk-ready"></i>', untried:'<i class="mk-ring"></i>',
+  md:'<span class="mk-made">\u2714\uFE0E</span>', ts:'<span class="mk-short">\u2714\uFE0E</span>',
+  fv:'<span class="chipstar" style="--pip-color:var(--fav)">\u2605\uFE0E</span>', og:`<span class="chipog">${'\u2726'}</span>`};
+const FGRP={what:'var(--g-what)',when:'var(--g-when)',who:'var(--g-who)',mine:'var(--g-mine)'};
+const FCATS=[
+  {k:'base',   l:'Spirit',  g:'what', get:d=>d.b,   vals:()=>BASES, note:'base spirit'},
+  {k:'style',  l:'Style',   g:'what', get:d=>d.s,   vals:()=>STYLES},
+  {k:'fam',    l:'Family',  g:'what', get:d=>d.fam, vals:()=>FAMILIES},
+  {k:'era',    l:'Era',     g:'what', get:d=>d.era, vals:()=>ERAS, keep:true},
+  {k:'src',    l:'Creator', g:'who',  get:d=>String(d.sn||'').trim(), vals:()=>SOURCES, cap:15},
+  {k:'served', l:'Served',  g:'when', get:d=>d.g,   vals:()=>SERVED},
+  {k:'mood',   l:'Mood',    g:'when', get:d=>d.mo||[], vals:()=>MOODS, multi:true},
+  {k:'season', l:'Season',  g:'when', get:d=>d.se||[], vals:()=>SEASONS, multi:true, keep:true},
+  {k:'holiday',l:'Holiday', g:'when', get:d=>d.ho,  vals:()=>HOLIDAYS},
+  {k:'marks',  l:'Marks',   g:'mine', vals:()=>MARKS.map(m=>m[0]), keep:true, and:true},
+];
+const FCAT=Object.fromEntries(FCATS.map(c=>[c.k,c]));
+const fsel=Object.fromEntries(FCATS.map(c=>[c.k,new Set()]));
+const fAll={mood:false,season:false};
+let fOpen=null, fMore=false;
+/* Readiness is asked ~10,000 times per render once facets are counted, so it's worked
+   out once per render. Anything that changes your shelf re-renders, which resets it. */
+let _rdy=null;
+function isReady(d){ if(!_rdy){ const H=HAVE_SET(); _rdy=new Set(C.filter(x=>[...x._stock].every(n=>H.has(n)))); } return _rdy.has(d); }
+function markTest(k,d){ if(k==='ready') return isReady(d); if(k==='untried') return !d.md; if(k==='og') return isOriginal(d); return !!d[k]; }
+function catAnd(c){ return !!(c.and || (c.multi && fAll[c.k])); }
+function valHit(c,d,v){ if(c.k==='marks') return markTest(v,d); const x=c.get(d); return Array.isArray(x)?x.includes(v):x===v; }
+function catPass(c,d){ const s=fsel[c.k]; if(!s.size) return true; const vs=[...s];
+  return catAnd(c) ? vs.every(v=>valHit(c,d,v)) : vs.some(v=>valHit(c,d,v)); }
+function queryPass(d){ if(!query) return true; const q=query.toLowerCase();
+  return d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q)); }
+function matchB(d,skip){ for(const c of FCATS){ if(c.k!==skip && !catPass(c,d)) return false; } return queryPass(d); }
+/* Facet counts: for each value, how many drinks you'd get if you tapped it, given
+   every OTHER filter. So with Up picked, Spirit shows bourbon drinks served up, not all
+   bourbon drinks -- and values that lead nowhere dim instead of tricking you. */
+function facet(c){
+  const pool=C.filter(d=>matchB(d,c.k)); const and=catAnd(c); const cur=[...fsel[c.k]]; const out={};
+  c.vals().forEach(v=>{ let t=0,r=0;
+    pool.forEach(d=>{ if(!valHit(c,d,v)) return; if(and && !cur.every(o=>o===v||valHit(c,d,o))) return;
+      t++; if(isReady(d)) r++; });
+    out[v]={t,r}; });
+  return out;
 }
-function setFA(id,val){ const e=document.getElementById(id); if(e) e.textContent=val?('· '+val):''; }
-window.toggleFGroup=function(h){ h.parentElement.classList.toggle('collapsed'); };
-function matchB(d){
-  if(fBase&&d.b!==fBase)return false;
-  if(fStyle&&d.s!==fStyle)return false;
-  if(fServed&&d.g!==fServed)return false;
-  if(fMood&&!d.mo.includes(fMood))return false;
-  if(fSeason&&!(d.se||[]).includes(fSeason))return false;
-  if(fHoliday&&d.ho!==fHoliday)return false;
-  if(fFam&&d.fam!==fFam)return false;
-  if(fEra&&d.era!==fEra)return false;
-  if(fSrc&&String(d.sn||'').trim()!==fSrc)return false;
-  /* Set only from Explore's Tonight shortcuts. fReady is "everything on my shelf";
-     fUntried is "and I have never made it". */
-  if(fReady&&![...d._stock].every(n=>HAVE_SET().has(n)))return false;
-  if(fUntried&&d.md)return false;
-  if(fStatus==='og'){ if(!isOriginal(d)) return false; }   // og is derived from Source, not a column
-  else if(fStatus&&!d[fStatus])return false;
-  if(query){const q=query.toLowerCase(); if(!(d.n.toLowerCase().includes(q)||d.i.some(i=>i[0].toLowerCase().includes(q))))return false;}
-  return true;
+function fLabel(c,v){ return c.k==='marks' ? MARK_LABEL[v] : v; }
+function fRowLabel(c,v){ return c.k==='marks' ? MARK_ICON[v]+MARK_LABEL[v] : expLabel(c.k,v); }
+const fattr=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+window.fToggleOpen=function(k){ fOpen = fOpen===k ? null : k; fMore=false; renderBrowse(); };
+window.fPick=function(el){ const k=el.dataset.k, v=el.dataset.v, s=fsel[k]; s.has(v)?s.delete(v):s.add(v);
+  if(s.size<2 && fAll.hasOwnProperty(k)) fAll[k]=false; renderBrowse(); };
+window.fSetAll=function(e,k,on){ e.stopPropagation(); fAll[k]=on; renderBrowse(); };
+window.fShowMore=function(){ fMore=!fMore; renderBrowse(); };
+function renderShelfFilters(){
+  const el=document.getElementById('fShelf'); if(!el) return;
+  let h='<div class="fshelf">';
+  FCATS.forEach(c=>{
+    if(!c.vals().length) return;
+    const s=[...fsel[c.k]], act=s.length>0, open=fOpen===c.k;
+    let sub;
+    if(act) sub=`<span class="a">${fLabel(c,s[0])}${s.length>1?` <b>+${s.length-1}</b>`:''}</span>`;
+    else { const f=facet(c); sub=`<span class="m">${c.vals().filter(v=>f[v].t>0).length}</span>`; }
+    h+=`<div class="ft${act?' act':''}${open?' open':''}" style="--g:${FGRP[c.g]}" onclick="fToggleOpen('${c.k}')">`
+      +`<span class="t">${c.l}</span>${sub}</div>`;
+  });
+  h+='</div>';
+  if(fOpen && FCAT[fOpen]){
+    const c=FCAT[fOpen], f=facet(c), s=fsel[c.k];
+    let vals=c.vals().slice();
+    if(!c.keep) vals.sort((a,b)=>f[b].t-f[a].t || String(a).localeCompare(b));
+    let capped=false;
+    if(c.cap){
+      /* Creator: the biggest names, then alphabetised, the same rule as Explore -- with
+         anything you've picked forced in so it can always be unpicked from here. */
+      if(!fMore && vals.length>c.cap){ const top=vals.slice(0,c.cap); s.forEach(v=>{ if(top.indexOf(v)<0) top.push(v); }); vals=top; capped=true; }
+      vals.sort((a,b)=>String(a).localeCompare(b));
+    }
+    const notes=[]; if(c.note) notes.push(c.note);
+    if(s.size>1 && !c.multi) notes.push(c.and?'all of':'any of');
+    h+=`<div class="fvhd" style="--g:${FGRP[c.g]}"><span>${c.l}</span>${notes.length?`<em>${notes.join(' \u00b7 ')}</em>`:''}`
+      +(c.multi && s.size>1 ? `<span class="anyall"><button class="${fAll[c.k]?'':'on'}" onclick="fSetAll(event,'${c.k}',false)">Any</button>`
+                             +`<button class="${fAll[c.k]?'on':''}" onclick="fSetAll(event,'${c.k}',true)">All</button></span>` : '')
+      +`<span class="cnt">${c.vals().length}</span></div>`;
+    h+=`<div class="fvals" style="--g:${FGRP[c.g]}">`+vals.map(v=>{
+      const x=f[v]||{t:0,r:0}, picked=s.has(v);
+      const p=x.t?Math.round(x.r/x.t*100):0, col=p>=67?'var(--have)':(p>=34?'var(--brass)':'var(--nothave)');
+      return `<div class="fvr${picked?' picked':''}${!x.t&&!picked?' zero':''}" data-k="${c.k}" data-v="${fattr(v)}" onclick="fPick(this)">`
+        +`<span class="n">${fRowLabel(c,v)}</span><span class="bar"><i style="width:${p}%;background:${col}"></i></span>`
+        +`<span class="c">${picked?'\u2713':x.r+'/'+x.t}</span></div>`;
+    }).join('')+'</div>';
+    if(c.cap && c.vals().length>c.cap) h+=`<button class="fvmore" onclick="fShowMore()">${capped?'Show all '+c.vals().length:'Show top '+c.cap}</button>`;
+  }
+  el.innerHTML=h;
 }
 /* An "Original" needs no new column: your Source already says Original or Dad, and
    that ships as `sn`. Matched exactly, not loosely -- a substring rule on "me" would
@@ -1107,35 +1208,23 @@ function cardEl(d,extra){
   return c;
 }
 function activeFilters(){
-  const a=[];
-  if(fBase)a.push(['Spirit',()=>fBase=null,fBase]);
-  if(fStyle)a.push(['Style',()=>fStyle=null,fStyle]);
-  if(fServed)a.push(['Served',()=>fServed=null,fServed]);
-  if(fMood)a.push(['Mood',()=>fMood=null,fMood]);
-  if(fSeason)a.push(['Season',()=>fSeason=null,fSeason]);
-  if(fHoliday)a.push(['Holiday',()=>fHoliday=null,fHoliday]);
-  if(fFam)a.push(['Family',()=>fFam=null,fFam]);
-  if(fEra)a.push(['Era',()=>fEra=null,fEra]);
-  if(fSrc)a.push(['Source',()=>fSrc=null,fSrc]);
-  if(fStatus)a.push(['Marks',()=>fStatus=null,{md:'Made',ts:'Shortlist',fv:'Favorite',og:'Original'}[fStatus]]);
-  return a;
+  const a=[]; FCATS.forEach(c=>fsel[c.k].forEach(v=>a.push({c, v}))); return a;
 }
-window.toggleFilters=function(){ filtersOpen=!filtersOpen; document.getElementById('filterPanel').style.display=filtersOpen?'':'none'; document.getElementById('filterToggle').classList.toggle('act',filtersOpen); };
-window.clearFilter=function(i){ const a=activeFilters(); if(a[i]){a[i][1]();renderBrowse();} };
-window.clearAllFilters=function(){ fBase=fStyle=fServed=fMood=fSeason=fHoliday=fFam=fEra=fStatus=null; renderBrowse(); };
+window.clearAllFilters=function(){ FCATS.forEach(c=>fsel[c.k].clear()); fAll.mood=fAll.season=false; renderBrowse(); };
 function renderBrowse(){
-  renderFilters();
+  _rdy=null;
+  renderShelfFilters();
   const act=activeFilters();
-  document.getElementById('fcount').textContent=act.length?` · ${act.length}`:'';
-  document.getElementById('filterToggle').classList.toggle('act',filtersOpen||act.length>0);
+  /* The pills are the one complete record of what's picked; the tiles only summarise.
+     Each pill wears its group's colour so it's obvious which tile it came from. */
   const ac=document.getElementById('activeChips');
-  let chips = (!filtersOpen && act.length) ? act.map((x,i)=>`<button class="achip" onclick="clearFilter(${i})">${x[2]} ✕</button>`).join('') : '';
-  if(!filtersOpen && act.length>1) chips += `<button class="achip achip-clear" onclick="clearAllFilters()">Clear all ✕</button>`;
+  let chips = act.map(x=>`<button class="achip" style="--g:${FGRP[x.c.g]}" data-k="${x.c.k}" data-v="${fattr(x.v)}" onclick="fPick(this)">${fLabel(x.c,x.v)} ✕</button>`).join('');
+  if(act.length>1) chips += `<button class="achip achip-clear" onclick="clearAllFilters()">Clear all ✕</button>`;
   ac.innerHTML = chips;
-  const cab=document.getElementById('clearAllBtn'); if(cab) cab.style.display=act.length?'':'none';
+  ac.style.marginBottom = act.length ? '' : '0';
   const list=document.getElementById('list'); list.innerHTML='';
   const noFilters = !act.length && !query;
-  const rows = noFilters ? shuffledC.filter(matchB) : C.filter(matchB);
+  const rows = noFilters ? shuffledC.filter(d=>matchB(d)) : C.filter(d=>matchB(d));
   document.getElementById('countLine').innerHTML=`<b>${rows.length}</b> ${rows.length===1?'recipe':'recipes'}`+(noFilters?` <button class="shufbtn" onclick="reshuffleHome()">\u{1F3B2} shuffle</button>`:'');
   if(!rows.length){list.innerHTML=`<div class="empty"><svg width="52" height="37" viewBox="0 0 40 28" aria-hidden="true"><use href="#crabglum"/></svg><b>Nothing matches</b>Loosen a filter and try again.</div>`;return;}
   rows.slice(0,300).forEach(d=>list.appendChild(cardEl(d)));
@@ -1154,7 +1243,7 @@ function applyDense(){
 }
 window.toggleDense=function(){ dense=!dense; try{ localStorage.setItem('codex_dense',dense?'1':'0'); }catch(e){} applyDense(); };
 function surprise(){
-  const rows=C.filter(matchB); if(!rows.length)return;
+  _rdy=null; const rows=C.filter(d=>matchB(d)); if(!rows.length)return;
   openSheet(rows[Math.floor(Math.random()*rows.length)]);
 }
 
@@ -1270,19 +1359,14 @@ const SPIRIT_FAMILY={
 };
 window.toggleExp=function(k){ expOpen.has(k)?expOpen.delete(k):expOpen.add(k); renderExplore(); };
 function expClearFilters(){
-  fBase=fStyle=fServed=fMood=fSeason=fHoliday=fFam=fEra=fStatus=fSrc=null;
-  fReady=fUntried=false; setQuery('');
+  FCATS.forEach(c=>fsel[c.k].clear()); fAll.mood=fAll.season=false; fOpen=null; setQuery('');
 }
 window.expJump=function(kind,val){
   expClearFilters();
-  if(kind==='style') fStyle=val; else if(kind==='fam') fFam=val;
-  else if(kind==='era') fEra=val; else if(kind==='base') fBase=val;
-  else if(kind==='served') fServed=val; else if(kind==='mood') fMood=val;
-  else if(kind==='season') fSeason=val; else if(kind==='holiday') fHoliday=val;
-  else if(kind==='src') fSrc=val;
-  else if(kind==='untried'){ fReady=true; fUntried=true; }
-  else if(kind==='ts'){ fReady=true; fStatus='ts'; }
-  else if(kind==='fv'){ fReady=true; fStatus='fv'; }
+  /* Tiles land on READY drinks with that mark; rows land on one value. */
+  const MK={ready:['ready'],untried:['ready','untried'],md:['ready','md'],og:['ready','og'],ts:['ready','ts'],fv:['ready','fv']};
+  if(MK[kind]) MK[kind].forEach(m=>fsel.marks.add(m));
+  else if(fsel[kind] && val!=null) fsel[kind].add(val);
   setMode('browse'); window.scrollTo({top:0,behavior:'smooth'});
 };
 const expMore=new Set();
@@ -1297,8 +1381,22 @@ function expLabel(key,val){
   if(key==='season'&&SEASON_COLOR[val]) return `<i class="seadot" style="background:${SEASON_COLOR[val]}"></i>`+val+(SEASON_ICON[val]?`<span class="seaic">${SEASON_ICON[val]}</span>`:'');
   return val;
 }
+/* In Explore the search narrows the SECTIONS, not the drinks: type "hol" and you get
+   the Holiday rows, "smok" finds the Smoky mood, a creator's name finds the creator.
+   Every section with a hit opens, every section without one disappears, and the cap
+   on Creator lifts -- a search that only looked through the top 15 would miss most of
+   them. Tapping a row still jumps to Browse exactly as before. */
 function expGroup(key,label,pairs,note,cap){
-  const open=expOpen.has(key);
+  const qq=String(query||'').trim().toLowerCase();
+  if(qq){
+    const hit=p=>String(p.val).toLowerCase().indexOf(qq)>-1 || String(label).toLowerCase().indexOf(qq)>-1;
+    const kept=[]; let pendingHead=null;
+    pairs.forEach(p=>{ if(p.head){ pendingHead=p; return; }
+      if(hit(p)){ if(pendingHead){ kept.push(pendingHead); pendingHead=null; } kept.push(p); } });
+    if(!kept.length) return '';
+    pairs=kept; cap=0;
+  }
+  const open=qq ? true : expOpen.has(key);
   if(cap && !expMore.has(key)) pairs=pairs.slice(0,cap);
   let h=`<div class="barhead exph${open?' open':''}" onclick="toggleExp('${key}')"><span class="chev">\u25b8</span>${label}`
        +`<span class="n">${note}</span></div><div class="expbox" style="display:${open?'':'none'}">`;
@@ -1331,19 +1429,23 @@ function renderExplore(){
      as a single row of figures rather than a section you have to open. Side by side
      there is no room for a context line, and the totals live in each section below
      anyway -- the number and what it counts is the whole message. */
-  const tonight='<div class="expcards">'+[
-    ['untried','Ready &amp; untried', untried, 'a'],
-    ['ts','Shortlist ready', tsR, 'b'],
-    ['fv','Favourites ready', fvR, 'c'],
-  ].map(([k,title,num,cls])=>
-    `<div class="expbig ${cls}" onclick="expJump('${k}')"><span class="num">${num}</span>`
-    +`<span class="t">${title}</span></div>`).join('')+'</div>'
-    /* A standing line rather than a fourth tile: three across already sit at about
-       118px each and a fourth would squeeze the numbers. These are totals you read
-       once, not targets you tap. */
-    + `<div class="expstat"><b>${C.length}</b> drinks \u00b7 <b>${ready.length}</b> ready \u00b7 `
-    + `<b>${C.filter(d=>d.md).length}</b> made \u00b7 <b>${C.filter(d=>d.ts).length}</b> shortlisted \u00b7 `
-    + `<b>${C.filter(d=>d.fv).length}</b> favourites</div>`;
+  const mdA=C.filter(d=>d.md).length, mdR=C.filter(d=>d.md&&rdy(d)).length;
+  const unA=C.length-mdA;
+  const ogA=C.filter(isOriginal).length, ogR=C.filter(d=>isOriginal(d)&&rdy(d)).length;
+  const pctReady=Math.round(ready.length/Math.max(C.length,1)*100);
+  const sw=(c,hollow)=>`<span class="swk${hollow?' hollow':''}" style="--c:${c}"></span>`;
+  const tonight=`<div class="exphero" onclick="expJump('ready')"><span class="num">${ready.length}</span>`
+    + `<div style="flex:1;min-width:0"><span class="t">ready tonight <b>of ${C.length} drinks</b></span>`
+    + `<div class="rb"><i style="width:${pctReady}%"></i></div></div></div>`
+    + '<div class="expcards">'+[
+      ['untried', MARK_ICON.untried+'Untried', untried, unA, 'var(--have)'],
+      ['md',      MARK_ICON.md+'Made',             mdR, mdA, 'var(--made)'],
+      ['ts',      'Shortlist', tsR, tsA, 'var(--short)'],
+      ['fv',      'Favorites', fvR, fvA, 'var(--fav)'],
+      ['og',      'Originals', ogR, ogA, 'var(--winter)'],
+    ].map(([k,title,num,all,c])=>
+      `<div class="expbig" style="--c:${c}" onclick="expJump('${k}')"><span class="num">${num}<small>/${all}</small></span>`
+      +`<span class="t">${title}</span></div>`).join('')+'</div>';
 
   const tally=(keyfn)=>{
     const m={};
@@ -1396,8 +1498,7 @@ function renderExplore(){
      Within each band, broadest first. Alphabetical would make this a reference index,
      which is the wrong shape for something you open to decide what to drink; sorting
      by coverage would rank the sections by how far along your tagging is. */
-  el.innerHTML= tonight
-    + expGroup('base','Base Spirit', groupBases(bases), bases.length+' \u00b7 '+cov(bases))
+  const secs = expGroup('base','Base Spirit', groupBases(bases), bases.length+' \u00b7 '+cov(bases))
     + expGroup('style','Style', mk('style',styles), styles.length+' \u00b7 '+cov(styles))
     + expGroup('fam','Family', mk('fam',fams), fams.length+' \u00b7 '+cov(fams))
     + expGroup('era','Era', mk('era',eras), eras.length+' \u00b7 '+cov(eras))
@@ -1405,8 +1506,9 @@ function renderExplore(){
     + expGroup('mood','Mood', mk('mood',moods), moods.length+' \u00b7 '+covN(moods._drinks))
     + expGroup('season','Season', mk('season',seasons), seasons.length+' \u00b7 '+covN(seasons._drinks))
     + expGroup('holiday','Holiday', mk('holiday',hols), hols.length+' \u00b7 '+cov(hols))
-    + expGroup('src','Creator', mk('src', expMore.has('src')?srcs:srcsTop),
+    + expGroup('src','Creator', mk('src', (expMore.has('src')||String(query||'').trim())?srcs:srcsTop),
         srcsAll.length+' \u00b7 '+cov(srcsAll), 15);
+  el.innerHTML = tonight + (secs || `<div class="pairnone" style="padding:18px 2px">No section matches \u201c${String(query).trim()}\u201d.</div>`);
 }
 
 function renderShelf(){
@@ -1600,13 +1702,14 @@ function setMode(m){
   document.getElementById('barView').style.display=m==='bar'?'':'none';
   document.getElementById('shelfView').style.display=m==='shelf'?'':'none';
   document.getElementById('exploreView').style.display=m==='explore'?'':'none';
-  /* Hidden in Explore and My Bar, where it has nothing to act on. */
+  /* Shown on every tab now; in Explore it narrows the sections rather than the drinks. */
   const sw=document.querySelector('.search');
   if(sw){
-    sw.style.display=(m==='explore')?'none':'';
+    sw.style.display='';
     const qi=document.getElementById('q');
     if(qi) qi.placeholder = (m==='bar'||m==='shelf') ? 'Search an ingredient\u2026'
-                                                     : 'Search a drink or ingredient\u2026';
+                          : m==='explore' ? 'Search a spirit, style, mood, creator\u2026'
+                                          : 'Search a drink or ingredient\u2026';
   }
   if(m==='bar')renderBar(); else if(m==='shelf')renderShelf();
   else if(m==='explore')renderExplore(); else renderBrowse();
@@ -1996,7 +2099,7 @@ document.getElementById('q').addEventListener('input',e=>{
   setQuery(e.target.value);
   /* Build uses the same box rather than growing its own. A search bar that sits there
      doing nothing in three of four tabs is worse than no search bar. */
-  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf();
+  if(mode==='browse') renderBrowse(); else if(mode==='bar') renderBar(); else if(mode==='shelf') renderShelf(); else if(mode==='explore') renderExplore();
 });
 renderBrowse();
 </script>
