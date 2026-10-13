@@ -296,10 +296,22 @@
        yours       (muted)  Marks
      Kept clear of Build's ingredient colours so teal never means two things. */
   :root{--g-what:var(--brass);--g-when:var(--winter);--g-who:#b294bb;--g-mine:var(--muted)}
+  /* Head for the whole shelf, same component as Build's pairings head and the Explore
+     sections: chevron folds it away. The pills stay visible while it's folded, so you
+     never lose sight of what's filtering the list. */
+  .fshelfhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink);padding:7px 2px 7px;margin:0 0 6px;cursor:pointer;border-top:2px solid var(--line);user-select:none}
+  .fshelfhd .chev{display:inline-block;transition:transform .18s;color:var(--brass);font-size:10px}
+  .fshelfhd.open .chev{transform:rotate(90deg)}
+  .fshelfhd .cnt{margin-left:auto;color:var(--faint);letter-spacing:.04em;text-transform:none}
+  .fshelfhd .cnt b{color:var(--brass);font-weight:400}
   .fshelf{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:0 0 4px}
   .ft{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--g);border-radius:0;
-    padding:6px 7px 6px;height:44px;box-sizing:border-box;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
-  .ft .t{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);
+    padding:6px 5px 7px;min-height:44px;box-sizing:border-box;display:flex;flex-direction:column;gap:3px;min-width:0;cursor:pointer}
+  /* Was clipping: a fixed 44px height was shorter than its two lines, and the tracked
+     label lost its last letter on a 360px phone. Height now follows content (every tile
+     still has exactly two lines, so the grid stays even) and the label is untracked. */
+  .ft .t{font-family:var(--mono);font-size:9.5px;letter-spacing:0;line-height:1.3;text-transform:uppercase;color:var(--muted);
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ft .m{font-family:var(--mono);font-size:11px;color:var(--faint)}
   .ft .a{font-size:11.5px;color:var(--g);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -307,15 +319,22 @@
   .ft.act{background:color-mix(in srgb,var(--g) 13%,var(--surface))}
   .ft.act .t,.ft.open .t{color:var(--ink)}
   .ft.open{box-shadow:inset 0 -2px 0 var(--g)}
-  .fvhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-    color:var(--ink);border-top:2px solid var(--g);margin:10px 0 2px;padding:8px 2px 6px}
-  .fvhd em{font-style:normal;color:var(--faint);letter-spacing:.04em;text-transform:none}
-  .fvhd .cnt{margin-left:auto;color:var(--faint);letter-spacing:.04em}
-  .anyall{display:flex;border:1px solid var(--line);border-radius:100px;overflow:hidden;margin-left:auto}
+  /* Same head as Build's pairings: chevron collapses, sort toggles. Only the note may
+     shrink, so the controls on the right never get pushed off a narrow screen. */
+  .fvhd{display:flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--ink);border-top:2px solid var(--g);margin:10px 0 2px;padding:8px 2px 6px;cursor:pointer;white-space:nowrap}
+  .fvhd .chev{display:inline-block;transition:transform .18s;color:var(--g);font-size:10px;flex:none}
+  .fvhd.open .chev{transform:rotate(90deg)}
+  .fvhd > span:not(.anyall){flex:none}
+  .fvhd em{font-style:normal;color:var(--faint);letter-spacing:.02em;text-transform:none;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .fvhd .sortbtn{margin-left:auto;flex:none}
+  .fvhd .cnt{color:var(--faint);letter-spacing:.04em}
+  .fvhd .anyall{margin-left:auto}
+  .fvhd .anyall + .sortbtn{margin-left:0}
+  .anyall{display:flex;border:1px solid var(--line);border-radius:100px;overflow:hidden;flex:none}
   .anyall button{background:none;border:0;color:var(--muted);font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;
     text-transform:uppercase;padding:3px 9px;cursor:pointer}
   .anyall button.on{background:var(--g);color:#17110f}
-  .anyall + .cnt{margin-left:6px}
   /* Two columns that read DOWN then across, so the ranking runs top to bottom of the
      left column before continuing on the right -- the order your eye expects. */
   .fvals{columns:2;column-gap:14px;margin-bottom:6px}
@@ -1085,7 +1104,8 @@ const FCATS=[
 const FCAT=Object.fromEntries(FCATS.map(c=>[c.k,c]));
 const fsel=Object.fromEntries(FCATS.map(c=>[c.k,new Set()]));
 const fAll={mood:false,season:false};
-let fOpen=null, fMore=false;
+let fOpen=null, fMore=false, fValsOpen=true, fSort='freq', fShelfOpen=true;
+window.fToggleShelf=function(){ fShelfOpen=!fShelfOpen; renderBrowse(); };
 /* Readiness is asked ~10,000 times per render once facets are counted, so it's worked
    out once per render. Anything that changes your shelf re-renders, which resets it. */
 let _rdy=null;
@@ -1112,14 +1132,22 @@ function facet(c){
 function fLabel(c,v){ return c.k==='marks' ? MARK_LABEL[v] : v; }
 function fRowLabel(c,v){ return c.k==='marks' ? MARK_ICON[v]+MARK_LABEL[v] : expLabel(c.k,v); }
 const fattr=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-window.fToggleOpen=function(k){ fOpen = fOpen===k ? null : k; fMore=false; renderBrowse(); };
+window.fToggleOpen=function(k){ fOpen = fOpen===k ? null : k; fMore=false; fValsOpen=true; renderBrowse(); };
+window.fToggleVals=function(){ fValsOpen=!fValsOpen; renderBrowse(); };
+/* One sort setting for every category, like Build's: you're either picking (most used)
+   or hunting for a name you already know (A-Z), and that doesn't change per tile. */
+window.fSetSort=function(e){ e.stopPropagation(); fSort = fSort==='freq'?'az':'freq'; renderBrowse(); };
 window.fPick=function(el){ const k=el.dataset.k, v=el.dataset.v, s=fsel[k]; s.has(v)?s.delete(v):s.add(v);
   if(s.size<2 && fAll.hasOwnProperty(k)) fAll[k]=false; renderBrowse(); };
 window.fSetAll=function(e,k,on){ e.stopPropagation(); fAll[k]=on; renderBrowse(); };
 window.fShowMore=function(){ fMore=!fMore; renderBrowse(); };
 function renderShelfFilters(){
   const el=document.getElementById('fShelf'); if(!el) return;
-  let h='<div class="fshelf">';
+  const nAct=FCATS.reduce((n,c)=>n+fsel[c.k].size,0);
+  let h=`<div class="fshelfhd${fShelfOpen?' open':''}" onclick="fToggleShelf()"><span class="chev">\u25b8</span>Filters`
+    +`<span class="cnt">${nAct?`<b>${nAct}</b> active`:'none set'}</span></div>`;
+  if(!fShelfOpen){ el.innerHTML=h; return; }
+  h+='<div class="fshelf">';
   FCATS.forEach(c=>{
     if(!c.vals().length) return;
     const s=[...fsel[c.k]], act=s.length>0, open=fOpen===c.k;
@@ -1133,20 +1161,26 @@ function renderShelfFilters(){
   if(fOpen && FCAT[fOpen]){
     const c=FCAT[fOpen], f=facet(c), s=fsel[c.k];
     let vals=c.vals().slice();
-    if(!c.keep) vals.sort((a,b)=>f[b].t-f[a].t || String(a).localeCompare(b));
+    const byFreq=(a,b)=>f[b].t-f[a].t || String(a).localeCompare(b), byAZ=(a,b)=>String(a).localeCompare(b);
+    /* Era, Season and Marks keep their natural order -- Spring..Winter isn't improved by
+       either sort -- so they get no sort button. */
+    if(!c.keep) vals.sort(fSort==='az'?byAZ:byFreq);
     let capped=false;
-    if(c.cap){
-      /* Creator: the biggest names, then alphabetised, the same rule as Explore -- with
-         anything you've picked forced in so it can always be unpicked from here. */
-      if(!fMore && vals.length>c.cap){ const top=vals.slice(0,c.cap); s.forEach(v=>{ if(top.indexOf(v)<0) top.push(v); }); vals=top; capped=true; }
-      vals.sort((a,b)=>String(a).localeCompare(b));
+    if(c.cap && !fMore && vals.length>c.cap){
+      /* Creator: the cap always takes the biggest names, whichever order they're then
+         shown in, with anything you've picked forced in so it can always be unpicked. */
+      const top=vals.slice().sort(byFreq).slice(0,c.cap); s.forEach(v=>{ if(top.indexOf(v)<0) top.push(v); });
+      vals=top.sort(fSort==='az'?byAZ:byFreq); capped=true;
     }
     const notes=[]; if(c.note) notes.push(c.note);
     if(s.size>1 && !c.multi) notes.push(c.and?'all of':'any of');
-    h+=`<div class="fvhd" style="--g:${FGRP[c.g]}"><span>${c.l}</span>${notes.length?`<em>${notes.join(' \u00b7 ')}</em>`:''}`
+    h+=`<div class="fvhd${fValsOpen?' open':''}" style="--g:${FGRP[c.g]}" onclick="fToggleVals()"><span class="chev">\u25b8</span>`
+      +`<span>${c.l}</span>${notes.length?`<em>${notes.join(' \u00b7 ')}</em>`:''}`
       +(c.multi && s.size>1 ? `<span class="anyall"><button class="${fAll[c.k]?'':'on'}" onclick="fSetAll(event,'${c.k}',false)">Any</button>`
                              +`<button class="${fAll[c.k]?'on':''}" onclick="fSetAll(event,'${c.k}',true)">All</button></span>` : '')
-      +`<span class="cnt">${c.vals().length}</span></div>`;
+      +(!c.keep ? `<button class="sortbtn" onclick="fSetSort(event)">${fSort==='az'?'A\u2013Z':'Most used'}</button>` : '')
+      +`<span class="cnt"${c.keep && !(c.multi && s.size>1)?' style="margin-left:auto"':''}>${c.vals().length}</span></div>`;
+    if(fValsOpen){
     h+=`<div class="fvals" style="--g:${FGRP[c.g]}">`+vals.map(v=>{
       const x=f[v]||{t:0,r:0}, picked=s.has(v);
       const p=x.t?Math.round(x.r/x.t*100):0, col=p>=67?'var(--have)':(p>=34?'var(--brass)':'var(--nothave)');
@@ -1155,6 +1189,7 @@ function renderShelfFilters(){
         +`<span class="c">${picked?'\u2713':x.r+'/'+x.t}</span></div>`;
     }).join('')+'</div>';
     if(c.cap && c.vals().length>c.cap) h+=`<button class="fvmore" onclick="fShowMore()">${capped?'Show all '+c.vals().length:'Show top '+c.cap}</button>`;
+    }
   }
   el.innerHTML=h;
 }
