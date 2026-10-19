@@ -47,7 +47,7 @@
  *   normalizeAmounts             (CodexMaintenance.gs)
  *   auditAmounts                 (AuditAmounts.gs)
  *   previewBuildAmounts          (BuildAmounts.gs)
- *   auditMultiRecipeDescriptions (DescriptionSplitAudit.gs, needs RecipeBlocks.gs)
+ *   auditMultiRecipeDescriptions / applyDescReviewFixes (DescriptionSplitAudit.gs, needs RecipeBlocks.gs)
  *   highlightOrphans / clearOrphanHighlights  (AuditAmounts.gs)
  *   publishCodexData             (PublishCodex.gs)
  */
@@ -95,6 +95,7 @@ function onOpen(){
       .addItem('Check Column Mapping', 'codexCheckColumns')
       .addItem('Audit Amounts', 'auditAmounts')
       .addItem('Review Multi-Recipe Descriptions', 'auditMultiRecipeDescriptions')
+      .addItem('Apply Ticked Desc Review Fixes', 'applyDescReviewFixes')
       .addSeparator()
       .addItem('Repair Orphan Keys', 'repairOrphans')
       .addItem('Highlight Orphan Rows', 'highlightOrphans')
@@ -132,13 +133,13 @@ function showCodexGuide(){
   '     counted in the summary.\n\n' +
 
   '2 - AMOUNTS\n' +
-  '   * Preview Build Amounts — runs the same parse as Build Amounts but writes only a\n' +
-  '     "Build Preview" tab (every auto amount that would change, appear or vanish) and\n' +
-  '     the "Build Log". Nothing in the AmountIndex is touched. Run it before a build.\n' +
+  '   * Preview Build Amounts — runs the same parse as Build Amounts and shows, in a\n' +
+  '     pop-up, every auto amount that would change, appear or vanish. Nothing is written.\n' +
+  '     Run it before a build.\n' +
   '   * Build Amounts From Descriptions — parses those descriptions into the AmountIndex.\n' +
   '     It reads the ORIGINAL description from the cell note when there is one, and\n' +
   '     parses only the drink\'s own recipe block. If it cannot tell which block is the\n' +
-  '     drink\'s, it writes NO amounts for that drink and says why in "Build Log".\n' +
+  '     drink\'s, it writes NO amounts for that drink and lists it in a pop-up.\n' +
   '     SAFE: rewrites only AUTO rows. Any row with Source = "manual" is kept\n' +
   '     untouched, so hand-corrections are never overwritten by a rebuild.\n' +
   '   * Load All Missing Amounts — stages every ingredient still missing an amount\n' +
@@ -189,6 +190,8 @@ function showCodexGuide(){
   '   * Review Multi-Recipe Descriptions — read-only. Finds descriptions holding several\n' +
   '     recipes and checks each drink\'s published amounts against its OWN recipe block;\n' +
   '     results and suggested fixes on a "Desc Review" tab.\n' +
+  '   * Apply Ticked Desc Review Fixes — writes the New amount / New unit of every row\n' +
+  '     you ticked on "Desc Review" into the AmountIndex and marks those rows manual.\n' +
   '   * Audit Amounts — read-only. Flags amounts that look wrong and writes an\n' +
   '     "Amount Audit" tab with a link straight to each offending cell, so you are\n' +
   '     not hunting through 3,000 rows. Thresholds are LEARNED each run: it takes\n' +

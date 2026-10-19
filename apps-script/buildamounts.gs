@@ -1,5 +1,5 @@
 /**
- * Cocktail Codex — Build RC-Amounts from descriptions  (v12.1, recipe-block aware)
+ * Cocktail Codex — Build RC-Amounts from descriptions  (v12.3, recipe-block aware)
  * ------------------------------------------------------------------------
  * Parses the fetched-description column into the RC - Amounts table.
  *
@@ -76,6 +76,11 @@
  *    (three rum lines, two Rum rows) still takes them in order, as before — but it's
  *    now noted in the Build Log so it can be checked.
  *
+ * v12.3: no more tabs. Preview and the skipped-drinks list show in a pop-up instead,
+ *        and any old Build Log / Build Preview tab is deleted on the next run.
+ * v12.2: a description cell that already holds just this drink's recipe (cleaned, or
+ *        fixed by hand) is parsed instead of the note; and a skipped drink leaves the
+ *        Build Log once all its amounts are filled in by hand.
  * v12.1: within each recipe, rows are sorted in the app's category order (Spirit,
  *        Modifier, Acid, Sweetener, Seasoning, Top / Mix, Other) instead of arbitrary.
  *
@@ -84,8 +89,8 @@
  */
 
 var B_COCKTAILS='Cocktails';
-var B_LOG_TAB='Build Log';
-var B_PREVIEW_TAB='Build Preview';
+var B_LOG_TAB='Build Log';          // no longer written; removed if found (v12.3)
+var B_PREVIEW_TAB='Build Preview';  // no longer written; removed if found (v12.3)
 
 /** 1-based column index -> A1 letter, so the lookup formula follows the headers
  *  rather than hardcoding G and AU. */
@@ -282,17 +287,27 @@ function computeAmountRows_(ss){
 
   for(var r2=B_FIRST_ROW-1;r2<lastC;r2++){
     var name=vals[r2][B_NAME_COL-1]; if(!name) continue; name=String(name);
-    var desc=String(descNotes[r2][0]||'').trim() || vals[r2][B_DESC_COL-1];
+    var dVal=String(vals[r2][B_DESC_COL-1]||''), dNote=String(descNotes[r2][0]||'').trim();
+    var desc=dNote||dVal;
 
     // this drink's ingredient names, for scoring which recipe block is its own
     var ingNames=[];
     for(var c0=0;c0<B_COLS.length;c0++){ var v0=vals[r2][B_COLS[c0].idx]; if(v0!==''&&v0!=null&&String(v0).trim()) ingNames.push(String(v0).trim()); }
 
-    var segs=[];
+    // v12.2: the CELL wins when it already holds just this drink's recipe -- what the
+    // cleaner now produces, or what you typed in by hand to fix a description. The note
+    // is used only when the cell still holds several recipes or a v1-style smash (more
+    // amount lines than the drink has ingredients). Before, the note always won, so a
+    // description you corrected by hand was ignored and the drink stayed skipped.
+    if(dNote && dVal){
+      var vr=dsaBlocks_(cleanLines(dVal)).filter(function(b){ return b.meas.length>=2; });
+      if(vr.length===1 && vr[0].meas.length<=ingNames.length+2) desc=dVal;
+    }
+    var segs=[], skipWhy='';
     if(desc && String(desc).length>10){
       var pick0=recipeLinesFor_(cleanLines(String(desc)), name.trim(), ingNames, allNames);
       if(pick0.lines) segs=buildSegments(pick0.lines.filter(function(l){return String(l).trim();}));
-      else log.push([name,'skipped — no auto amounts',pick0.why]);
+      else skipWhy=pick0.why;
     }
     var seen={}, total={};
     ingNames.forEach(function(n){ total[n]=(total[n]||0)+1; });
@@ -318,6 +333,14 @@ function computeAmountRows_(ss){
         if(Object.keys(dist).length>1) log.push([name,'check — '+ing,cands.length+' lines match, '+total[ing]+' row(s); took '+cands.slice(0,total[ing]).map(function(x){return x.amt+' '+x.unit;}).join(', ')+' of '+Object.keys(dist).join(', ')]);
       }
       out.push([key,name,ing,occ+1,pick.amt,pick.unit,cat,'auto']);
+    }
+    // Log a skipped drink only while it still has rows nobody has filled. Once you've
+    // entered its amounts by hand (manual rows), the skip no longer matters and it
+    // drops off the Build Log.
+    if(skipWhy){
+      var seen2={}, open=false;
+      ingNames.forEach(function(n){ var o=(seen2[n]||0); seen2[n]=o+1; var k=o===0?name+'|'+n:name+'|'+n+'|'+(o+1); if(!manualKeys[k]) open=true; });
+      if(open) log.push([name,'skipped — no auto amounts',skipWhy]);
     }
   }
   // ----- sort: Recipe A-Z (matches RC - Missing Amount), then the APP's category order -----
@@ -353,14 +376,19 @@ function buildAmountsFromDescriptions(){
     '=ARRAYFORMULA(IF(B2:B="","",IFERROR(XLOOKUP(B2:B,'+B_COCKTAILS+'!'+nameA1+':'+nameA1+','
     +B_COCKTAILS+'!'+descA1+':'+descA1+',""),"")))');
 
-  writeBuildLog_(ss, res.log);
-  var skipped=res.log.filter(function(r){ return r[1].indexOf('skipped')===0; }).length;
+  bRemoveOldTabs_(ss);
+  var skipped=res.log.filter(function(r){ return r[1].indexOf('skipped')===0; });
   ss.toast('Build amounts: wrote '+(out.length-1)+' rows (manual preserved).'
-    +(skipped?' '+skipped+' drink(s) skipped rather than guessed — see '+B_LOG_TAB+'.':''),'Cocktail Codex',10);
+    +(skipped.length?' '+skipped.length+' drink(s) skipped rather than guessed.':''),'Cocktail Codex',10);
+  // No tab: the skipped drinks (if any) appear in a pop-up you close when done.
+  if(skipped.length) bShowReport_('Build Amounts — drinks skipped rather than guessed',
+    skipped.length+' drink(s) got no auto amounts because their recipe could not be told apart in the description. '
+    +'Fill them in by hand (they also appear in RC - Missing Amount); each one leaves this list once all its amounts are filled.',
+    ['Recipe','Why'], skipped.map(function(r){ return [r[0], r[2]]; }));
 }
 
-/* Same parse, nothing written to RC. Lists every auto row whose amount would change,
-   appear, or disappear, so a rebuild can be checked before it happens. */
+/* Same parse, nothing written anywhere. Shows every auto row whose amount would change,
+   appear or disappear, plus the drinks it would skip, in a pop-up -- no tab. */
 function previewBuildAmounts(){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
   var res=computeAmountRows_(ss), as=res.as;
@@ -380,21 +408,33 @@ function previewBuildAmounts(){
   var ord={changed:0,removed:1,added:2};
   rows.sort(function(a,b){ return ord[a[0]]-ord[b[0]] || String(a[1]).localeCompare(String(b[1])); });
 
-  var sh=ss.getSheetByName(B_PREVIEW_TAB)||ss.insertSheet(B_PREVIEW_TAB);
-  sh.clear();
-  sh.getRange(1,1,1,5).setValues([['Change','Recipe','Ingredient','Now','After rebuild']]).setFontWeight('bold');
-  if(rows.length) sh.getRange(2,1,rows.length,5).setValues(rows);
-  sh.setFrozenRows(1);
-  writeBuildLog_(ss, res.log);
+  bRemoveOldTabs_(ss);
   var n={changed:0,removed:0,added:0}; rows.forEach(function(r){ n[r[0]]++; });
-  ss.toast('Preview: '+n.changed+' changed, '+n.removed+' removed, '+n.added+' added. Nothing in RC was touched.','Cocktail Codex',10);
+  var notes=res.log.map(function(r){ return [r[1].indexOf('skipped')===0?'skipped':'check', r[0], r[1].replace(/^(skipped — no auto amounts|check — )/,''), r[2], '']; });
+  ss.toast('Preview: '+n.changed+' changed, '+n.removed+' removed, '+n.added+' added. Nothing was written.','Cocktail Codex',10);
+  bShowReport_('Preview Build Amounts — nothing has been written',
+    n.changed+' changed, '+n.removed+' removed, '+n.added+' added'
+    +(notes.length?'; '+notes.length+' note(s) at the bottom (skipped drinks, and ingredients with more matching lines than rows)':'')
+    +'. If it looks right, run Build Amounts.',
+    ['Change','Recipe','Ingredient','Now','After rebuild'], rows.concat(notes));
 }
 
-function writeBuildLog_(ss, log){
-  var sh=ss.getSheetByName(B_LOG_TAB)||ss.insertSheet(B_LOG_TAB);
-  sh.clear();
-  sh.getRange(1,1,1,3).setValues([['Recipe','What happened','Why']]).setFontWeight('bold');
-  log.sort(function(a,b){ return (a[1].indexOf('skipped')===0?0:1)-(b[1].indexOf('skipped')===0?0:1) || String(a[0]).localeCompare(String(b[0])); });
-  if(log.length) sh.getRange(2,1,log.length,3).setValues(log);
-  sh.setFrozenRows(1); sh.setColumnWidth(3,520);
+/* The old Build Log / Build Preview tabs are no longer used; tidy them away. */
+function bRemoveOldTabs_(ss){
+  [B_LOG_TAB, B_PREVIEW_TAB].forEach(function(t){ var sh=ss.getSheetByName(t); if(sh) try{ ss.deleteSheet(sh); }catch(e){} });
+}
+
+/* A scrollable pop-up table. From the script editor there is no screen for a pop-up,
+   so it falls back to the execution log. */
+function bShowReport_(title, intro, header, rows){
+  var esc=function(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  var html='<div style="font:13px Arial,sans-serif"><p>'+esc(intro)+'</p>'
+    +'<table style="border-collapse:collapse;width:100%"><tr>'+header.map(function(h){ return '<th style="text-align:left;border-bottom:2px solid #999;padding:4px 6px;position:sticky;top:0;background:#fff">'+esc(h)+'</th>'; }).join('')+'</tr>'
+    +rows.map(function(r){ return '<tr>'+r.slice(0,header.length).map(function(c){ return '<td style="border-bottom:1px solid #ddd;padding:4px 6px;vertical-align:top">'+esc(c)+'</td>'; }).join('')+'</tr>'; }).join('')
+    +'</table>'+(rows.length?'':'<p><i>Nothing to show.</i></p>')+'</div>';
+  try{
+    SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(900).setHeight(560), title);
+  }catch(e){
+    Logger.log(title+'\n'+intro+'\n'+rows.map(function(r){ return r.join(' | '); }).join('\n'));
+  }
 }
