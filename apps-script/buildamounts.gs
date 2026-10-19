@@ -1,5 +1,5 @@
 /**
- * Cocktail Codex — Build RC-Amounts from descriptions  (v12, recipe-block aware)
+ * Cocktail Codex — Build RC-Amounts from descriptions  (v12.1, recipe-block aware)
  * ------------------------------------------------------------------------
  * Parses the fetched-description column into the RC - Amounts table.
  *
@@ -75,6 +75,9 @@
  *  - Within a drink's own block, an ingredient matching more lines than it has rows
  *    (three rum lines, two Rum rows) still takes them in order, as before — but it's
  *    now noted in the Build Log so it can be checked.
+ *
+ * v12.1: within each recipe, rows are sorted in the app's category order (Spirit,
+ *        Modifier, Acid, Sweetener, Seasoning, Top / Mix, Other) instead of arbitrary.
  *
  * Manual rows (Source = "manual") are always preserved. Auto rows regenerate
  * on every run. Menu: Cocktail Codex -> Build amounts.
@@ -317,9 +320,18 @@ function computeAmountRows_(ss){
       out.push([key,name,ing,occ+1,pick.amt,pick.unit,cat,'auto']);
     }
   }
-  // ----- sort data rows by Recipe name to match RC - Missing Amount ordering -----
+  // ----- sort: Recipe A-Z (matches RC - Missing Amount), then the APP's category order -----
+  // v12.1: within a recipe, rows follow the order the app lists ingredients in --
+  // Spirit, Modifier, Acid, Sweetener, Seasoning, Top / Mix, then the rest -- instead of
+  // whatever order they came out in. Keep CAT_RANK in step with CAT_ORDER in index.html.
+  var CAT_RANK={'Spirit':1,'Modifier':2,'Acid':3,'Sweetener':4,'Seasoning':5,'Top / Mix':6,'Muddled':7,'Other':8};
   var header=out.shift();
-  out.sort(function(a,b){ var x=String(a[1]).toLowerCase(), y=String(b[1]).toLowerCase(); return x<y?-1:(x>y?1:0); });
+  out.sort(function(a,b){
+    var x=String(a[1]).toLowerCase(), y=String(b[1]).toLowerCase();
+    if(x!==y) return x<y?-1:1;                                     // recipe A-Z, as before
+    var r=(CAT_RANK[a[6]]||9)-(CAT_RANK[b[6]]||9);                 // then category order
+    return r || (Number(a[3])||0)-(Number(b[3])||0);               // repeats (Rum, Rum|2) stay in Occ order
+  });
   out.unshift(header);
   return {out:out, log:log, as:as};
 }

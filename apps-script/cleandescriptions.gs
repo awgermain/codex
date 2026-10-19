@@ -1,6 +1,33 @@
 /**
- * Cocktail Codex — Clean Descriptions  (v1)
+ * Cocktail Codex — Clean Descriptions  (v2)
  * -----------------------------------------
+ * v2 — ONE RECIPE PER CELL, WITH ITS TITLE.
+ *   v1 kept every line with a measurement, so a description holding three recipes
+ *   came out as all three ingredient lists run together, and the recipe names -- which
+ *   have no measurement -- were the very lines it threw away. Academic Review's cell
+ *   held Fall Back's and Trouble Will Find Me's ingredients too, with nothing to show
+ *   where one ended.
+ *   Now it first splits the description into recipe blocks (RecipeBlocks.gs, the same
+ *   splitter Build Amounts uses), keeps ONLY this drink's block, and puts that block's
+ *   title on the first line. When it can't tell which block is the drink's, it leaves
+ *   the full original text rather than guess.
+ *   It also works FROM THE NOTE when there is one, so re-running Clean Descriptions In
+ *   Place repairs cells v1 already smashed. The note itself is never changed.
+ *   Needs RecipeBlocks.gs and BuildAmounts.gs (it borrows recipeLinesFor_ so the
+ *   cleaner and the builder always pick the same block).
+ *
+ * v2.1 — RECIPE ONLY, NO PROSE.
+ *   v1's "keep any line that mentions one of this drink's ingredients" let intros
+ *   through ("Today's cocktail is the Enzoni! Muddled grapes balance Campari's..."
+ *   mentions Campari). A line now stays only if it is an ingredient line: an amount
+ *   ("3/4 oz", "2 dashes"), a count ("1 whole egg", "5 seedless grapes"), a short
+ *   ingredient-only line ("Top with Club Soda", "Absinthe rinse"), or a short garnish
+ *   line. Sentences, chapter lists, credits, links and hashtags all go.
+ *   When the drink's own recipe can't be singled out, every recipe in the description
+ *   is kept, each under its own title, instead of the raw text -- clean either way,
+ *   and the titles show which is which.
+ *   Short descriptions are now cleaned too (CLEAN_MIN_LENGTH 0); the result floor
+ *   still keeps the original wherever the rules find almost nothing.
  * Pulls the recipe out of a YouTube description and leaves the rest behind.
  *
  * The method is the one worth understanding: it does NOT try to recognise boilerplate.
@@ -44,7 +71,7 @@
    24% is a line someone wrote on purpose. Skipping them gives up 1.2% of the total
    saving and removes every risky row at a stroke, which is a far better trade than
    reading 145 diffs. Raise it if you want to be even more conservative. */
-var CLEAN_MIN_LENGTH = 400;
+var CLEAN_MIN_LENGTH = 0;   // v2.1: was 400. Every description is cleaned; see the header.
 
 /* A floor on the RESULT as well as the source. If a long description cleans down to
    almost nothing, the rule has failed to find a recipe that is probably in there --
@@ -74,40 +101,83 @@ function cleanDescHeaders_(sh){
   return m;
 }
 
-/** The extraction itself. Exposed separately so preview and run can never diverge. */
-function cleanOneDescription_(desc, ings){
+/** The extraction itself. Exposed separately so preview and run can never diverge.
+ *  name/allNames are optional; without them it can't separate recipes and just
+ *  filters the lines. */
+function cleanOneDescription_(desc, ings, name, allNames){
   if(!desc) return '';
-  if(String(desc).length < CLEAN_MIN_LENGTH) return String(desc);   // short: hand back unchanged
-  var lines=String(desc).split('\n'), keep=[];
-  for (var i=0;i<lines.length;i++){
-    var l=lines[i].replace(/\s+$/,'').replace(/^\s+/,'');
-    if(!l) continue;
-    if(CLEAN_JUNK.test(l)) continue;
-    var hasAmt=CLEAN_AMT.test(l), hasIng=false;
-    for (var k=0;k<ings.length && !hasIng;k++){
-      var g=ings[k];
-      if(g.length>3 && l.toLowerCase().indexOf(g.toLowerCase())>-1) hasIng=true;
+  desc=String(desc);
+  if(desc.length < CLEAN_MIN_LENGTH) return desc;
+  var parts=[];
+  if(name && allNames && typeof dsaBlocks_==='function' && typeof recipeLinesFor_==='function'){
+    var recipes=dsaBlocks_(desc).filter(function(b){ return b.meas.length>=2; });
+    if(recipes.length>=2){
+      var pick=recipeLinesFor_(desc, name, ings, allNames);
+      if(pick.lines) parts.push(cleanFormat_(pick.title||'', pick.lines, ings));
+      else recipes.forEach(function(b){ parts.push(cleanFormat_(b.title||'(untitled recipe)', b.lines, ings)); });
+    } else if(recipes.length===1){
+      parts.push(cleanFormat_(recipes[0].title||'', recipes[0].lines, ings));
     }
-    if(hasAmt||hasIng) keep.push(l);
   }
-  var res=keep.join('\n');
-  return res.length < CLEAN_MIN_RESULT ? String(desc) : res;   // too little found: keep the original
+  if(!parts.length) parts.push(cleanFormat_('', desc.split('\n'), ings));
+  parts=parts.filter(function(p){ return p.body.length; });
+  var body=parts.map(function(p){ return p.body; }).join('\n');
+  if(body.length < CLEAN_MIN_RESULT) return desc;          // too little found: keep the original
+  return parts.map(function(p){ return (p.title ? p.title+'\n' : '')+p.body; }).join('\n\n');
+}
+
+/** A block title worth showing: "THE ENZONI RECIPE 7:10" -> "THE ENZONI",
+ *  "Bitter Paloma Ingredients:" -> "Bitter Paloma". A sentence that merely sat above
+ *  the ingredients ("Smooth and simple. Try this one tonight!") is not a title. */
+function cleanTitle_(t){
+  t=String(t||'').replace(/\b(recipes?|ingredients?)\b/ig,' ').replace(/[:*_#]+/g,' ')
+    .replace(/\s+([\u2014\-])\s*$/,'').replace(/\s+/g,' ').trim();
+  if(!t || /[!?]/.test(t) || /\.\s|\.$/.test(t) || t.split(' ').length>10) return '';
+  return t;
+}
+
+/** One recipe's lines -> {title, body}: ingredient lines only. */
+function cleanFormat_(title, lines, ings){
+  var rawTitle=title; title=cleanTitle_(title);
+  var keep=[], lowIngs=ings.filter(function(g){ return g.length>3; }).map(function(g){ return g.toLowerCase(); });
+  var tl=String(rawTitle||'').toLowerCase();
+  for (var i=0;i<lines.length;i++){
+    var l=String(lines[i]).replace(/\s+$/,'').replace(/^\s+/,'');
+    if(!l || CLEAN_JUNK.test(l) || /^#/.test(l)) continue;
+    if(/[$%]|www\.|\.com\b|@\w/.test(l)) continue;                       // prices, codes, handles, sites
+    var words=l.split(/\s+/).length;
+    var short=l.length<=70 && words<=9 && !/[!?]/.test(l) && !/\.\s+[A-Z]/.test(l);
+    var amt=CLEAN_AMT.test(l) && l.length<=120 && words<=18;            // "3/4 oz lime", not a paragraph
+    var count=short && typeof dsaIsIng_==='function' && dsaIsIng_(l);  // "1 whole egg", "5 grapes"
+    var ing=short && lowIngs.some(function(g){ return l.toLowerCase().indexOf(g)>-1; });
+    var garnish=short && /\bgarnish|^expressed\b|\b(twist|wheel|peel|rinse|float|mist|fronds?|sprig)\b/i.test(l);
+    // the header line itself is already the title
+    if(tl && !amt && !count){ var ct=(typeof dsaCleanTitle_==='function'?dsaCleanTitle_(l):l).toLowerCase(); if(ct && tl.indexOf(ct)>-1) continue; }
+    if(amt||count||ing||garnish) keep.push(l.replace(/^[\-\u2022*]\s*/,''));
+  }
+  return {title:title, body:keep.join('\n')};
+}
+
+/** Every drink name on the sheet, for telling one recipe block's owner from another. */
+function cleanAllNames_(vals, m){
+  var a=[]; for (var r=0;r<vals.length;r++){ var v=String(vals[r][m['Name']-1]||'').trim(); if(v) a.push(v); } return a;
 }
 
 function previewCleanDescriptions(){
   var ss=SpreadsheetApp.getActive(), sh=ss.getSheetByName('Cocktails');
   var m=cleanDescHeaders_(sh), ING=codexIngCols_();
   var last=sh.getLastRow(), vals=sh.getRange(2,1,last-1,sh.getLastColumn()).getValues();
+  var pNotes=sh.getRange(2,m[CLEAN_SOURCE_HEADER],last-1,1).getNotes(), allNames=cleanAllNames_(vals,m);
   var n=0, emptied=0, shrank=0, short=0, skipped=0, samples=[], suspect=[];
   for (var r=0;r<vals.length;r++){
     var nm=String(vals[r][m['Name']-1]||'').trim(); if(!nm) continue;
-    var desc=String(vals[r][m[CLEAN_SOURCE_HEADER]-1]||''); if(!desc.trim()) continue;
+    var desc=String(pNotes[r][0]||'').trim() || String(vals[r][m[CLEAN_SOURCE_HEADER]-1]||''); if(!desc.trim()) continue;
     n++;
     if(CLEAN_SKIP[nm]){ skipped++; continue; }
     if(desc.length < CLEAN_MIN_LENGTH){ short++; continue; }
     var ings=[];
     for (var g=0;g<ING.length;g++){ var v=vals[r][ING[g].idx]; if(v!==''&&v!=null) ings.push(String(v).trim()); }
-    var cl=cleanOneDescription_(desc,ings);
+    var cl=cleanOneDescription_(desc,ings,nm,allNames);
     shrank+=desc.length-cl.length;
     /* Suspicious now means the opposite of before: a LONG description that came out
        with almost nothing. That is the cleaner failing to find a recipe it should
@@ -148,16 +218,17 @@ function cleanDescriptions(){
   }
   var ING=codexIngCols_(), last=sh.getLastRow();
   var vals=sh.getRange(2,1,last-1,sh.getLastColumn()).getValues();
+  var dNotes=sh.getRange(2,m[CLEAN_SOURCE_HEADER],last-1,1).getNotes(), allNames=cleanAllNames_(vals,m);
   var col=[], n=0, emptied=0, kept=0;
   for (var r=0;r<vals.length;r++){
     var nm=String(vals[r][m['Name']-1]||'').trim();
     var existing=String(vals[r][m[CLEAN_COL_HEADER]-1]||'');
     if(!nm){ col.push([existing]); continue; }
-    var desc=String(vals[r][m[CLEAN_SOURCE_HEADER]-1]||'');
+    var desc=String(dNotes[r][0]||'').trim() || String(vals[r][m[CLEAN_SOURCE_HEADER]-1]||'');
     if(!desc.trim()){ col.push([existing]); continue; }
     var ings=[];
     for (var g=0;g<ING.length;g++){ var v=vals[r][ING[g].idx]; if(v!==''&&v!=null) ings.push(String(v).trim()); }
-    var cl=cleanOneDescription_(desc,ings);
+    var cl=cleanOneDescription_(desc,ings,nm,allNames);
     n++;
     if(!cl){ emptied++; col.push([existing]); continue; }   // nothing found, leave whatever is there
     kept++; col.push([cl]);
@@ -184,6 +255,7 @@ function cleanDescriptionsInPlace(){
   var cur=sh.getRange(2,col,last-1,1).getValues();
   var notes=sh.getRange(2,col,last-1,1).getNotes();
 
+  var allNames=cleanAllNames_(vals,m);
   var planned=0, saved=0;
   var outV=[], outN=[];
   for (var r=0;r<vals.length;r++){
@@ -193,9 +265,12 @@ function cleanDescriptionsInPlace(){
     if(!nm || !desc.trim()){ outV.push([cur[r][0]]); outN.push([note]); continue; }
     var ings=[];
     for (var g=0;g<ING.length;g++){ var v=vals[r][ING[g].idx]; if(v!==''&&v!=null) ings.push(String(v).trim()); }
-    var cl=cleanOneDescription_(desc,ings);
+    // v2: clean from the ORIGINAL when one is saved, so a cell v1 already smashed is
+    // rebuilt from the full text (with its recipe headers) rather than from the smash.
+    var src=note.trim() ? note : desc;
+    var cl=cleanOneDescription_(src,ings,nm,allNames);
     if(!cl || cl===desc){ outV.push([cur[r][0]]); outN.push([note]); continue; }
-    planned++; saved+=desc.length-cl.length;
+    planned++; saved+=Math.max(0,desc.length-cl.length);
     outV.push([cl]);
     outN.push([note ? note : desc]);     // never clobber a note already holding an original
   }
