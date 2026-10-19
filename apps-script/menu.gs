@@ -1,5 +1,9 @@
 /**
- * Cocktail Codex — Menu / onOpen  (v8)
+ * Cocktail Codex — Menu / onOpen  (v11)
+ * v11 adds Preview Build Amounts (2 - Amounts) and Review Multi-Recipe Descriptions
+ *      (5 - Maintenance), and notes in the Guide that Build Amounts now reads the
+ *      description NOTES. Clear Description Notes is REMOVED: those notes are now the
+ *      only copy of each original, and Build Amounts depends on them.
  * ------------------------------------
  * v10 adds Audit Amounts under Maintenance, and CORRECTS THE GUIDE: it still said
  *      Tag Families and Tag Holidays rewrite their columns and that hand edits are
@@ -42,6 +46,8 @@
  *   tagSeason                    (TagSeason.gs)
  *   normalizeAmounts             (CodexMaintenance.gs)
  *   auditAmounts                 (AuditAmounts.gs)
+ *   previewBuildAmounts          (BuildAmounts.gs)
+ *   auditMultiRecipeDescriptions (DescriptionSplitAudit.gs, needs RecipeBlocks.gs)
  *   highlightOrphans / clearOrphanHighlights  (AuditAmounts.gs)
  *   publishCodexData             (PublishCodex.gs)
  */
@@ -60,10 +66,10 @@ function onOpen(){
       .addItem('Clean Descriptions (to Recipe Text column)', 'cleanDescriptions')
       .addItem('Clean Descriptions In Place (original kept in a note)', 'cleanDescriptionsInPlace')
       .addSeparator()
-      .addItem('Restore Descriptions From Notes', 'restoreDescriptionsFromNotes')
-      .addItem('Clear Description Notes', 'clearDescriptionNotes'))
+      .addItem('Restore Descriptions From Notes', 'restoreDescriptionsFromNotes'))
 
     .addSubMenu(ui.createMenu('2 - Amounts')
+      .addItem('Preview Build Amounts (writes nothing to RC)', 'previewBuildAmounts')
       .addItem('Build Amounts (From Descriptions)', 'buildAmountsFromDescriptions')
       .addItem('Load Amounts (All Missing Amounts to Add)', 'loadAllMissingAmounts')
       .addItem('File Amounts (File All Amounts Added)', 'fileAmounts')
@@ -88,6 +94,7 @@ function onOpen(){
     .addSubMenu(ui.createMenu('5 - Maintenance')
       .addItem('Check Column Mapping', 'codexCheckColumns')
       .addItem('Audit Amounts', 'auditAmounts')
+      .addItem('Review Multi-Recipe Descriptions', 'auditMultiRecipeDescriptions')
       .addSeparator()
       .addItem('Repair Orphan Keys', 'repairOrphans')
       .addItem('Highlight Orphan Rows', 'highlightOrphans')
@@ -125,7 +132,13 @@ function showCodexGuide(){
   '     counted in the summary.\n\n' +
 
   '2 - AMOUNTS\n' +
+  '   * Preview Build Amounts — runs the same parse as Build Amounts but writes only a\n' +
+  '     "Build Preview" tab (every auto amount that would change, appear or vanish) and\n' +
+  '     the "Build Log". Nothing in the AmountIndex is touched. Run it before a build.\n' +
   '   * Build Amounts From Descriptions — parses those descriptions into the AmountIndex.\n' +
+  '     It reads the ORIGINAL description from the cell note when there is one, and\n' +
+  '     parses only the drink\'s own recipe block. If it cannot tell which block is the\n' +
+  '     drink\'s, it writes NO amounts for that drink and says why in "Build Log".\n' +
   '     SAFE: rewrites only AUTO rows. Any row with Source = "manual" is kept\n' +
   '     untouched, so hand-corrections are never overwritten by a rebuild.\n' +
   '   * Load All Missing Amounts — stages every ingredient still missing an amount\n' +
@@ -173,6 +186,9 @@ function showCodexGuide(){
   '     you can see them in place. Clear Orphan Highlights removes the shading.\n' +
   '     An orphan publishes as NO AMOUNT: the key is what PublishCodex looks the\n' +
   '     amount up by, so a renamed drink or a stray space silently breaks the link.\n' +
+  '   * Review Multi-Recipe Descriptions — read-only. Finds descriptions holding several\n' +
+  '     recipes and checks each drink\'s published amounts against its OWN recipe block;\n' +
+  '     results and suggested fixes on a "Desc Review" tab.\n' +
   '   * Audit Amounts — read-only. Flags amounts that look wrong and writes an\n' +
   '     "Amount Audit" tab with a link straight to each offending cell, so you are\n' +
   '     not hunting through 3,000 rows. Thresholds are LEARNED each run: it takes\n' +

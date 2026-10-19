@@ -23,7 +23,10 @@
  *   cleanDescriptions          fills a separate "Recipe Text" column, source untouched
  *   cleanDescriptionsInPlace   overwrites YT_Description, original kept in a NOTE
  *   restoreDescriptionsFromNotes   puts every noted original back
- *   clearDescriptionNotes      drops the notes once you are satisfied
+ *   (clearDescriptionNotes was removed: since BuildAmounts v12 the notes are not an
+ *    undo you tidy away, they are the copy Build Amounts parses. The cleaned text has
+ *    lost the recipe headers, so without the note a multi-recipe description can't be
+ *    split and drinks pick up each other's amounts. Keep them.)
  *
  * The in-place version exists because the backup column is only needed while you are
  * checking the result, and a column that outlives its purpose is clutter. A cell note
@@ -200,7 +203,7 @@ function cleanDescriptionsInPlace(){
   var ans=ui.alert('Clean descriptions in place',
     planned+' description(s) will be shortened by '+saved+' characters in total.\n\n'+
     'The original text is kept in a note on each cell. Restore Descriptions From Notes '+
-    'puts them all back; Clear Description Notes drops them once you are happy.\n\nProceed?',
+    'puts them all back. Keep the notes: Build Amounts reads the originals from them.\n\nProceed?',
     ui.ButtonSet.YES_NO);
   if(ans!==ui.Button.YES){ ss.toast('Nothing changed.','Cocktail Codex',5); return; }
   var rng=sh.getRange(2,col,outV.length,1);
@@ -225,22 +228,6 @@ function restoreDescriptionsFromNotes(){
   rng.setValues(vals);
   ss.toast('Restored '+n+' descriptions. The notes are still there.','Cocktail Codex',10);
 }
-
-function clearDescriptionNotes(){
-  var ss=SpreadsheetApp.getActive(), ui=SpreadsheetApp.getUi(), sh=ss.getSheetByName('Cocktails');
-  var m=cleanDescHeaders_(sh), col=m[CLEAN_SOURCE_HEADER], last=sh.getLastRow();
-  var rng=sh.getRange(2,col,last-1,1);
-  var notes=rng.getNotes(), n=0;
-  for (var r=0;r<notes.length;r++) if(String(notes[r][0]||'')) n++;
-  if(!n){ ss.toast('No notes to clear.','Cocktail Codex',5); return; }
-  var ans=ui.alert('Clear description notes',
-    'This drops the stored originals for '+n+' row(s). After this there is no undo. Proceed?',
-    ui.ButtonSet.YES_NO);
-  if(ans!==ui.Button.YES) return;
-  rng.clearNote();
-  ss.toast('Cleared '+n+' notes.','Cocktail Codex',8);
-}
-
 
 /* ---------------------------------------------------------------------------
  * A scrollable modal for report text. Escapes everything: these strings contain
