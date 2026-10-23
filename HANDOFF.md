@@ -7,6 +7,23 @@ else.
 
 Keep this in the repo. Supersedes the previous handoff entirely.
 
+**Last updated: October 23 2026** — multi-recipe description fix, new Browse filter
+shelf, Explore tiles. See §7a for the description/amount pipeline as it now stands.
+
+**Working conventions with the owner**
+- Apps Script sources are mirrored in `apps-script/` in this repo. Claude reads them at
+  `https://raw.githubusercontent.com/awgermain/codex/main/apps-script/<file>`; the
+  GitHub listing API rate-limits, so the folder page on github.com is the way to see
+  file names. The owner pastes changes into Apps Script by hand and refreshes GitHub
+  occasionally — **Apps Script is the live copy**; GitHub may lag.
+- **Do not add tabs to the sheet.** Reports go in a pop-up (`bShowReport_` in
+  BuildAmounts) or a toast. The one exception is `Desc Review`, which needs tick boxes.
+- Give the owner one ordered list of steps per change, with the exact menu path.
+- Menus can't be built from the editor: `onOpen` / anything calling `getUi()` errors
+  when run there. Reload the sheet instead. Scripts that alert fall back to a toast.
+- No secrets in the repo: `GH_TOKEN` lives in Script Properties, YouTube uses the
+  built-in advanced service (no key). Keep it that way.
+
 ---
 
 ## 1. Architecture
@@ -65,11 +82,13 @@ three confidence tiers. `repairOrphans` applies the two safe tiers.
 | file | owns |
 |---|---|
 | `Config.gs` | `COL()`, `CODEX_ING_GROUPS`, `RC_TAB`, `CODEX_UNTRACKED_CATS` |
-| `Menu.gs` | the ribbon and the in-app Guide. v10+ |
+| `Menu.gs` | the ribbon and the in-app Guide. v11 |
 | `YTFetcher.gs` | YouTube descriptions |
 | `FetchWebDescriptions.gs` | non-YouTube descriptions, Shopify product API, `refetchClippedDescriptions` |
-| `CleanDescriptions.gs` | strips descriptions down to the recipe. **New** |
-| `BuildAmounts.gs` | parses descriptions into RC rows. v11 |
+| `RecipeBlocks.gs` | **shared** recipe-block splitter and scorer (`dsaBlocks_`, `dsaScore_`, `dsaOtherOwner_`, `dsaQtys_`…). Used by the three below — never delete |
+| `CleanDescriptions.gs` | reduces each description to the drink's own titled recipe. v2.1 |
+| `BuildAmounts.gs` | parses the drink's own recipe block into RC rows. v12.3 |
+| `DescriptionSplitAudit.gs` | `Desc Review` tab + `applyDescReviewFixes`. v4 |
 | `AmountEntry.gs` | Add Amount staging and filing. v19 |
 | `AmountGuard.gs` | locks hand-edited amount rows |
 | `CodexMaintenance.gs` | `normalizeAmounts`, `codexCheckColumns` |
@@ -163,29 +182,83 @@ block. Keep it that way.
 
 ## 7. Descriptions
 
-`CleanDescriptions.gs` keeps a line only if it has a measurement **or** an ingredient
-that drink actually has. It never blocklists boilerplate — every creator writes
-different filler, and the per-drink test means a gin line survives in a gin drink and
-dies in a rum one.
+The description cell (`YT_Description`) holds **only that drink's recipe**: a title
+line, then ingredient lines. The full original is kept in the cell's **note**.
 
-Two floors, both added after review lists proved too long to be useful:
+`CleanDescriptions.gs` v2.1:
+1. Splits the description into recipe blocks (`RecipeBlocks.gs`) and keeps only the
+   block that belongs to this drink, using `recipeLinesFor_` from BuildAmounts so the
+   cleaner and the builder always agree.
+2. Keeps a line only if it's an **ingredient line**: an amount, a count ("1 whole
+   egg"), a short ingredient-only phrase ("Top with Soda Water"), or a short garnish
+   line. Sentences go even if they name an ingredient — that loophole is what let
+   intros through in v1. Method lines ("Shake and strain") go too, by owner's choice.
+3. Title: the block's own, tidied ("THE ENZONI RECIPE 7:10" → "THE ENZONI"); a sentence
+   or a decorated section label ("📖 *Recipe(s)* 📖") is never a title; untitled single
+   recipes are headed with the drink's name.
+4. If the drink's block can't be singled out, the cell keeps **every** recipe, each
+   under its own title. If the rules find almost nothing (`CLEAN_MIN_RESULT = 40`), the
+   original is kept. `CLEAN_MIN_LENGTH` is now 0 — everything is cleaned.
+5. Works **from the note** when one exists, so re-running In Place is always safe and
+   repairs earlier output. Notes are written before values and never overwritten.
 
-- `CLEAN_MIN_LENGTH = 400` — short descriptions are returned untouched. Gives up 1.2%
-  of the saving and exempts every hand-written row.
-- `CLEAN_MIN_RESULT = 40` — if a long description cleans to almost nothing, keep the
-  original. The rule failed; do not write the scraps.
+**`Clear Description Notes` was removed.** The notes are no longer an undo — they're
+the copy BuildAmounts falls back to. Don't reintroduce it.
 
 **Order matters: `refetchClippedDescriptions` BEFORE cleaning.** A clipped Shopify blob
 is a single line containing measurements, so the cleaner preserves it verbatim and
 locks the truncation in. 26 Liber & Co rows were in this state.
 
-In-place mode stores the original in a **cell note**. Notes are written before values,
-so an interruption leaves originals saved and text untouched. Re-running never
-overwrites an existing note, so the first original always survives.
+**`RC - AmountIndex` column I is a single spilling XLOOKUP in I2**, not a copy.
+`BuildAmounts` writes **8 columns** and must never touch I — anything below I2 breaks
+the spill.
 
-**`RC - AmountIndex` column I is now a single spilling XLOOKUP in I2**, not a copy. The
-copy was 6.2M characters at 4.7× duplication and froze at build time. `BuildAmounts`
-writes **8 columns** and must never touch I — anything below I2 breaks the spill.
+---
+
+## 7a. Multi-recipe descriptions → wrong amounts (fixed Oct 2026)
+
+**The bug.** A description holding several recipes (Anders Erickson videos, Make &
+Drink two-drink episodes, How to Drink, roundup posts) was parsed as one recipe and each
+ingredient took the *first* matching amount anywhere in it. ~40 drinks had another
+recipe's amounts (Grapefruit Ginger Margarita had the Frozen Strawberry's lime;
+Magician's Descent had Test Pilot's rum; Tiramisu had 4 oz coffee liqueur). Two causes
+compounded: `sectionsFor` only recognised a header that *exactly* equalled a drink
+name, and CleanDescriptions v1 had stripped every header line from the cell anyway.
+
+**The fix, and the rules that came out of it:**
+- `RecipeBlocks.gs` splits text into blocks. A header is a short non-ingredient line
+  whose next real line is an ingredient, skipping **any number** of method lines
+  ("Build in the blender", "**Recipe Doubled**"). Attribution lines ("By Fanny Chu",
+  "Recipe from …") take the line above as the title. Emoji/decoration is stripped
+  before deciding a line is a section label. Chapter timestamps are never titles.
+- A block is scored for a drink by title match (exact +4, contains +3, token overlap;
+  an extra number like "No 2" costs 1.5) plus ingredient overlap. A block whose title
+  names a **different** codex drink is never used for this one.
+- **BuildAmounts refuses to guess.** Close call (<0.75 margin), weak match (<1), or the
+  best block belongs to another drink → that drink gets **no** auto amounts and lands
+  in RC - Missing Amount. A missing amount is visible; a wrong one wasn't.
+- BuildAmounts reads the **cell** when it holds one recipe of plausible size (cleaned,
+  or hand-fixed by the owner), else the **note**. Before v12.2 the note always won and
+  hand-corrected cells were ignored.
+- `previewBuildAmounts` shows what a rebuild would change in a pop-up, writes nothing.
+  Skipped drinks pop up after a real build only if there are any, and drop off once
+  all their amounts are filled by hand.
+- RC rows sort by recipe, then the app's category order (`CAT_RANK`, keep in step with
+  `CAT_ORDER` in index.html), then Occ.
+
+**Desc Review** (`auditMultiRecipeDescriptions`) compares each drink's **RC** amounts
+(not the published site — that made fixes look like they hadn't taken) against its own
+recipe block. One row per wrong amount, with editable New amount / New unit, an Apply
+tick box and a jump link. `applyDescReviewFixes` writes ticked rows to RC and marks them
+manual (script writes don't fire AmountGuard, so it sets Source itself). Matching
+rules worth keeping: duplicate ingredient rows compare as a set; a line offering
+alternatives matches on any of them; whole-word matching ("Ice" ≠ "juice"); float /
+rinse / mist rows only match lines that say so; more rows than matching lines → say
+nothing. The Source column holds rich-text links whose text is the creator — read
+the link, not the value.
+
+**Still true:** if a drink's recipe isn't in its description at all (clipped), nothing
+can isolate it — the owner types it into the cell; the note keeps the original.
 
 ---
 
@@ -201,14 +274,37 @@ equally prominent, which is the same as nothing being prominent. Now:
   ingredient opens, with a bar for how many you can make tonight;
 - selected rows stay **lit in place** rather than vanishing to a pill.
 
-**Explore** holds three "tonight" tiles (ready & untried, shortlist ready, favourites
-ready), a totals line, and nine collapsible sections ordered by the *kind* of question:
+**Explore** has one wide "ready tonight" tile (quiet bar, number is the message) and
+five peers: Untried (hollow ring), Made (✔), Shortlist, Favorites, Originals. Every big
+number means *ready*; the faint `/N` beside it is the size of that set. Tiles jump to
+Browse with the matching Marks. Then nine collapsible sections ordered by the *kind* of question:
 what it is (Base Spirit, Style, Family, Era), when you would drink it (Served, Mood,
 Season, Holiday), where it came from (Creator). Every row jumps to the existing Browse
 filter — no parallel filtering logic.
 
-**Search** sits below the tabs and drives Browse, Build and My Bar. Hidden in Explore.
-In Build it ignores the selected category; in My Bar it auto-opens matching groups.
+**Search** sits below the tabs on every tab. In Explore it narrows the *sections*
+(matching rows open, others hide, the Creator cap lifts). In Build, picking an
+ingredient clears the search and jumps the shelf to that ingredient's category; tapping
+a category also clears it. A ✕ in the box clears it anywhere. In My Bar it auto-opens
+matching groups.
+
+**Build** results now have their own collapsible head ("Drinks with Lemon Juice + …",
+count, "top 60" when capped). The category shelf is a wrapping grid
+(`auto-fill, minmax(92px,1fr)`), not a sideways scroll.
+
+**Browse filters** are a shelf of ten tiles, five across, grouped by colour: what it is
+(brass: Spirit, Style, Family, Era), who made it (mauve: Creator), when (blue: Served,
+Mood, Season, Holiday), yours (muted: Marks). One line per tile; picks summarise as
+"Bourbon +1"; the pill row above is the full record. Tapping a tile opens its values as
+two ranked columns with readiness bars and **faceted** counts (given every other
+filter). Head row folds the whole shelf; value list folds and sorts Most used / A–Z.
+- One model: `FCATS` + a Set per category (`fsel`). Across categories AND; within a
+  one-per-drink category OR; Mood and Season get an Any/All toggle at two picks;
+  Marks always AND (they're qualifiers: Ready, Untried, Made, Shortlist, Favorite,
+  Original).
+- **Spirit means the base spirit** (`d.b`, one per drink). "Has rum and cognac in it"
+  is Build's job — deliberately not duplicated in Browse.
+- American spelling in UI text ("Favorite", "color").
 
 ### Rules worth not relitigating
 - **`_stock` excludes untracked categories** (`Other`, `Muddled`); `_set` is display
@@ -254,6 +350,19 @@ published payload (`gid.c`, `gid.rc`) because a row number is ambiguous without 
 - `Strawberry`/`Strawberries`, `Red Cherries`/`Fresh Cherries` are separate ingredients.
 - `Cut & Dry Daquiri` is missing an `i`.
 - Dead columns on `RC - AmountIndex`: K, M–S, U, V, X. Nothing reads past column I.
+
+**From the Oct 2026 session**
+- Seven files call `COL()` at load time (`var HOL_COL = COL('Holiday')` etc.). A renamed
+  header then breaks *every* script, menu included. Convert to lazy getters like
+  BuildAmounts' `B_NAME_COL_()` when convenient.
+- `Frozen Margarita`'s Name cell contains a pasted recipe (breaks its keys).
+- Desc Review leftovers the owner chose not to fix: e.g. Breakfast Mai Tai (missing a
+  second rum row), Beachcomber Negroni (4.5 oz rum vs three ½ oz).
+- Audit tab: ~half its "high" flags are punches/bowls — check whether `AUDIT_BIG_STYLES`
+  applies to the per-row check, or whether those drinks lack Style = Punch. Three
+  `auto` flags were the multi-recipe bug (now fixed).
+- `apps-script/recipeblocks.txt` and `descriptionsplitaudit.txt` should be `.gs`;
+  `amountrntry.gs` is a typo for amountentry.
 
 **Unfinished**
 - Melt progression should be regenerated from the rotated original; drips currently run
