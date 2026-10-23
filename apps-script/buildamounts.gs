@@ -1,5 +1,9 @@
 /**
- * Cocktail Codex — Build RC-Amounts from descriptions  (v12.3, recipe-block aware)
+ * Cocktail Codex — Build RC-Amounts from descriptions  (v12.4, recipe-block aware)
+ *
+ * v12.4: lines with a link are no longer dropped -- only the link is removed
+ *   (stripLinks_ in Config.gs). This was silently losing linked ingredients,
+ *   most often grenadine and St. Germain.
  * ------------------------------------------------------------------------
  * Parses the fetched-description column into the RC - Amounts table.
  *
@@ -236,7 +240,10 @@ function cleanLines(desc){
   var lines=normFrac(desc).split('\n'), out=[];
   for(var i=0;i<lines.length;i++){
     var ln=lines[i], low=ln.toLowerCase();
-    if(low.indexOf('http')>-1||low.indexOf('amzn')>-1||low.indexOf('://')>-1||low.indexOf('.com')>-1||low.indexOf('.to/')>-1) continue; // drop URL/affiliate lines
+    // v12.4: strip the link, keep the line. Dropping the whole line lost every linked
+    // ingredient ("0.5 oz grenadine (Liber - https://...)"). A line that was ONLY a
+    // link comes back empty and is still dropped, exactly as before.
+    var sl=stripLinks_(ln); if(sl!==ln){ ln=sl; if(!ln) continue; }
     ln=ln.replace(/(^|[\s(]),(\d)/g,'$1.$2');   // ,75 -> .75
     if(/\d\s*(?:ml|cl)\b/i.test(ln)) ln=ln.replace(/\([^)]*\d[^)]*(?:oz|ounce|fl\s*oz)[^)]*\)/ig,' '); // drop redundant paren oz
     out.push(ln);

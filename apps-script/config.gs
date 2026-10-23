@@ -136,3 +136,33 @@ function codexCheckColumns(){
   Logger.log(msg);
   SpreadsheetApp.getUi().alert('Codex — column check', msg, SpreadsheetApp.getUi().ButtonSet.OK);
 }
+
+
+/* ── LINKS: strip the link, keep the line ────────────────────────────────────
+ * Shared by BuildAmounts (cleanLines) and CleanDescriptions (cleanFormat_).
+ * Both used to DROP any line containing a URL, which silently deleted ingredient
+ * lines like "2 oz Haitian Rum (Barbancourt white - https://bit.ly/3EgC0Cl)".
+ * Grenadine and St. Germain went missing most often because creators link those
+ * bottles. Now only the link goes:
+ *   "0.5 oz grenadine (Liber & Co - https://amzn.to/x)" -> "0.5 oz grenadine (Liber & Co)"
+ *   "Shop the bar tools: https://kit.co/foo"            -> "Shop the bar tools"
+ *   "https://bit.ly/xyz"                                -> ""   (caller drops it)
+ * A line with no link is returned byte-for-byte unchanged. Bare domains are only
+ * matched with a dot directly between word characters, so "St. Germain", "e.g.",
+ * "Liber & Co." and "0.75 oz" are never mistaken for links. */
+var LINK_TLDS_ = 'com|net|org|co|ly|to|io|me|us|uk|ca|au|de|shop|store|link|gl|gg|app|bar|cc|tv|page';
+// A link ends at whitespace or a closing bracket, so "(Vida - https://bit.ly/x)" keeps its ")".
+var LINK_RE_ = new RegExp('(?:https?:\\/\\/|www\\.)[^\\s)\\]]+'
+  + '|\\b[a-z0-9][a-z0-9-]*(?:\\.[a-z0-9-]+)*\\.(?:' + LINK_TLDS_ + ')\\b(?:\\/[^\\s)\\]]*)?', 'ig');
+function stripLinks_(s){
+  s = String(s == null ? '' : s);
+  var t = s.replace(LINK_RE_, ' ');
+  if (t === s) return s;
+  return t
+    .replace(/\s*[-\u2013\u2014:|,;]+\s*\)/g, ')')     // "(Barbancourt white - )" -> "(Barbancourt white)"
+    .replace(/\(\s*[-\u2013\u2014:|,;]+\s*/g, '(')     // "( - Barbancourt)"       -> "(Barbancourt)"
+    .replace(/\(\s*\)|\[\s*\]/g, ' ')                  // aside that was only a link
+    .replace(/\s*[-\u2013\u2014:|,;]+\s*$/, '')          // trailing "Grenadine -"
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}

@@ -1,5 +1,8 @@
 /**
- * Cocktail Codex — Clean Descriptions  (v2)
+ * Cocktail Codex — Clean Descriptions  (v2.2)
+ *
+ * v2.2 — links are stripped from a line instead of the line being thrown away.
+ *   "2 oz Haitian Rum (Barbancourt - https://bit.ly/..)" used to vanish whole.
  * -----------------------------------------
  * v2 — ONE RECIPE PER CELL, WITH ITS TITLE.
  *   v1 kept every line with a measurement, so a description holding three recipes
@@ -92,7 +95,7 @@ var CLEAN_SOURCE_HEADER = 'YT_Description';
    "3 MORE gin cocktails" does not qualify -- there has to be a unit after the figure. */
 var CLEAN_AMT = /(^|[\s(])(\d+(\.\d+)?|\d\/\d|\d+\s+\d\/\d|[½¼¾⅓⅔⅛])\s*(oz|ounce|ounces|ml|cl|l\b|dash|dashes|tsp|teaspoon|tbsp|tablespoon|barspoon|bar spoon|parts?|drops?|pinch|cups?|g\b|grams?)/i;
 /* Lines that are pure plumbing, kept out even when they mention an ingredient. */
-var CLEAN_JUNK = /(https?:\/\/|^\s*(subscribe|follow|instagram|tiktok|patreon|facebook|twitter|music by|filmed|edited|shot on|my gear|affiliate)\b)/i;
+var CLEAN_JUNK = /(^\s*(subscribe|follow|instagram|tiktok|patreon|facebook|twitter|music by|filmed|edited|shot on|my gear|affiliate)\b)/i;
 
 function cleanDescHeaders_(sh){
   var row=sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0], m={};
@@ -144,7 +147,11 @@ function cleanFormat_(title, lines, ings){
   for (var i=0;i<lines.length;i++){
     var l=String(lines[i]).replace(/\s+$/,'').replace(/^\s+/,'');
     if(!l || CLEAN_JUNK.test(l) || /^#/.test(l)) continue;
-    if(/[$%]|www\.|\.com\b|@\w/.test(l)) continue;                       // prices, codes, handles, sites
+    // v2.2: strip the link, keep the line (stripLinks_ in Config.gs). A line that
+    // was only a link, or a link plus words but no amount ("Grenadine I use: <link>"),
+    // is a product plug and still goes.
+    var linked=false; var sl=stripLinks_(l); if(sl!==l){ linked=true; l=sl; if(!l || CLEAN_JUNK.test(l)) continue; }
+    if(/[$%]|@\w/.test(l)) continue;                                       // prices, codes, handles
     var words=l.split(/\s+/).length;
     var short=l.length<=70 && words<=9 && !/[!?]/.test(l) && !/\.\s+[A-Z]/.test(l);
     var amt=CLEAN_AMT.test(l) && l.length<=120 && words<=18;            // "3/4 oz lime", not a paragraph
@@ -153,6 +160,7 @@ function cleanFormat_(title, lines, ings){
     var garnish=short && /\bgarnish|^expressed\b|\b(twist|wheel|peel|rinse|float|mist|fronds?|sprig)\b/i.test(l);
     // the header line itself is already the title
     if(tl && !amt && !count){ var ct=(typeof dsaCleanTitle_==='function'?dsaCleanTitle_(l):l).toLowerCase(); if(ct && tl.indexOf(ct)>-1) continue; }
+    if(linked && !amt && !count) continue;
     if(amt||count||ing||garnish) keep.push(l.replace(/^[\-\u2022*]\s*/,''));
   }
   return {title:title, body:keep.join('\n')};
