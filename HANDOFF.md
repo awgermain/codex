@@ -75,19 +75,39 @@ Three real instances:
 `auditAmounts` now detects all of these as **orphans** and suggests the correct key in
 three confidence tiers. `repairOrphans` applies the two safe tiers.
 
+### 2a. The ingredient library
+The other common miss is not the key but the **match**: the sheet says `Amaro`,
+`Tequila`, `Lime Juice`, `Amaro Ramazzotti`; the description says `Averna`, `Fortaleza
+blanco`, `3/4 oz lime`, `Ramazotti`. `IngredientLibrary.gs` is the one glossary all three
+matchers use (it replaced BuildAmounts' 25-entry `SYN`; RecipeBlocks falls back to it).
+
+- Terms = the name, its plural/singular, `ING_LIBRARY` (brands, styles, spellings), the
+  optional **Glossary** tab (`Ingredient | Also matches`, additive, owner-edited), and
+  derived short forms (`Lime Juice` → `lime`) that carry a **next-word block** so `lime`
+  does not fire on `lime wheel` / `lime cordial`, nor `demerara` on `demerara rum`.
+- Whole-word matching on normalised text, never substring.
+- **One amount, one ingredient.** When two of a drink's ingredients claim a line, the
+  earliest match plus anything overlapping it or on the next word compete; longest wins,
+  then the narrower ingredient, then the later word. `Hamilton Pimento Dram` → Allspice,
+  not Rum as well. Checked against every published drink: 0 of 4,673 lines misassigned.
+- Links are stripped from a line, never the line itself (`stripLinks_`). Lines used to be
+  dropped whole, which is why linked grenadine / St. Germain went missing.
+- **Glossary Coverage** (2 - Amounts) lists ingredients matching on their name only.
+
 ---
 
 ## 3. Apps Script files
 
 | file | owns |
 |---|---|
-| `Config.gs` | `COL()`, `CODEX_ING_GROUPS`, `RC_TAB`, `CODEX_UNTRACKED_CATS` |
-| `Menu.gs` | the ribbon and the in-app Guide. v11 |
+| `Config.gs` | `COL()`, `CODEX_ING_GROUPS`, `RC_TAB`, `CODEX_UNTRACKED_CATS`, `stripLinks_` |
+| `IngredientLibrary.gs` | the glossary + matcher behind BuildAmounts, RecipeBlocks, CleanDescriptions. **New** — §2a |
+| `Menu.gs` | the ribbon and the in-app Guide. v11 + Glossary Coverage |
 | `YTFetcher.gs` | YouTube descriptions |
 | `FetchWebDescriptions.gs` | non-YouTube descriptions, Shopify product API, `refetchClippedDescriptions` |
 | `RecipeBlocks.gs` | **shared** recipe-block splitter and scorer (`dsaBlocks_`, `dsaScore_`, `dsaOtherOwner_`, `dsaQtys_`…). Used by the three below — never delete |
-| `CleanDescriptions.gs` | reduces each description to the drink's own titled recipe. v2.1 |
-| `BuildAmounts.gs` | parses the drink's own recipe block into RC rows. v12.3 |
+| `CleanDescriptions.gs` | reduces each description to the drink's own titled recipe. v2.3 |
+| `BuildAmounts.gs` | parses the drink's own recipe block into RC rows. v13 |
 | `DescriptionSplitAudit.gs` | `Desc Review` tab + `applyDescReviewFixes`. v4 |
 | `AmountEntry.gs` | Add Amount staging and filing. v19 |
 | `AmountGuard.gs` | locks hand-edited amount rows |
@@ -96,8 +116,8 @@ three confidence tiers. `repairOrphans` applies the two safe tiers.
 | `AuditAmounts.gs` | the Audit tab, orphans, repair, highlighting. **Heavily extended** |
 | `PublishCodex.gs` | builds and pushes `codexdata.js`. v6 |
 
-**`MergeIndex.gs` was deleted** — a one-time migration that would have cleared every
-amount row if ever re-run.
+**`MergeIndex.gs` was deleted** (from the repo too) — a one-time migration that would
+have cleared every amount row if ever re-run.
 
 ### One script owns one column
 All five tag scripts are **fill-blanks-only**. The sheet wins; type a value and nothing

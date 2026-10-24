@@ -68,8 +68,12 @@
   /* -42.7% rather than -50%: the crab's mass sits about 7% left of the frame centre,
      because the right of the shared frame is reserved for the widest stage's puddle.
      Centring the frame therefore looks off-centre; centring the crab reads balanced. */
-  /* pushes the story below the fold so the figure is what you see first */
-  .starspacer{flex:none;height:88vh;width:1px}
+  /* Pushes the story down so the figure is what you see first -- but not all the way
+     off: the title, the subtitle and the first section heading peek up from the bottom
+     edge so it's obvious there's more to scroll to. 204px = 24px wrap padding + 70px of
+     the story's fade-in padding + ~110px of visible type. max() keeps a short landscape
+     screen from collapsing the spacer to nothing. vh line is the fallback for no-dvh. */
+  .starspacer{flex:none;width:1px;height:max(40vh,calc(100vh - 204px));height:max(40dvh,calc(100dvh - 204px))}
   .starwrap.show .starfig{transform:translate(-42.7%,-50%) scale(1)}
   .starfig img{position:absolute;inset:0;width:100%;height:100%;opacity:.72}
   .starfig svg{position:absolute;left:2.655%;top:15.030%;width:82.422%;height:76.519%;color:#f2d79a;opacity:.95}
@@ -197,7 +201,7 @@
      Made and Untried share the green and differ by the swatch, the same filled/hollow
      language Build uses for stocked/not: filled = made, hollow = never made. */
   .exphero{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);
-    border-top:3px solid var(--have);border-radius:0;padding:10px 12px;margin-bottom:6px;cursor:pointer}
+    border-radius:0;padding:10px 12px;margin-bottom:6px;cursor:pointer}
   .exphero .num{font-family:var(--mono);font-size:26px;color:var(--have);line-height:1}
   .exphero .t{display:block;font-size:12px;color:var(--muted)}
   .exphero .t b{font-family:var(--mono);font-weight:400;color:var(--faint)}
@@ -419,10 +423,17 @@
   .taxo-k .tk-3{color:var(--short)}
   .taxo-k .taxjump{cursor:pointer;border-bottom:1px solid currentColor;padding-bottom:1px}
   .recipe-row .nm{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-  /* The note from the sheet cell, e.g. which rum a "Rum" actually is. flex-basis:100%
-     drops it to its own line under the name; the row is align-items:baseline so the
-     amount stays level with the ingredient, not with the note. */
-  .ingnote{flex-basis:100%;font-size:11.5px;font-style:italic;color:var(--faint);line-height:1.4;margin-top:1px}
+  /* The note from the sheet cell, e.g. which rum a "Rum" actually is. It sits on the
+     SAME line as the name, after a dot, filling the space up to the % column and
+     ellipsing if it runs out -- so a note no longer adds a line to the recipe. Tap it
+     to unfold the full text onto its own line (tap again to fold). min-width:9ch means
+     a long ingredient name pushes the note to the next line rather than crushing it
+     to "Re...". Links inside stop propagation, so tapping a link opens it instead. */
+  .ingnote{flex:1 1 0;min-width:9ch;font-size:11.5px;font-style:italic;color:var(--faint);line-height:1.4;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+  .ingnote::before{content:"\00b7\00a0";font-style:normal;opacity:.6}
+  .ingnote.open{flex-basis:100%;white-space:normal;overflow:visible}
+  .ingnote.open::before{content:none}
   .ingnote a{color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(199,154,75,.35);font-style:normal}
   /* No-link sources (Dad, Pinche Chivo, Pineapple Rum Punch...) get the SAME bar as
      linked ones -- just non-interactive, so the card never changes shape. */
@@ -774,11 +785,11 @@
     <h3>Why a melting crab?</h3>
     <p class="sub">The Crabby Melter</p>
 
-    <h4>The sky</h4>
-    <p>Cancer is one of the twelve constellations of the zodiac and the faintest of them all. Latin for &ldquo;crab,&rdquo; it is a shape you have to work hard to find in the northern sky. &gamma; and &delta; are Asellus Borealis and Asellus Australis, the northern and southern donkeys. Between them sits Messier&nbsp;44 &mdash; <em>Praesepe</em>, the manger they&rsquo;re feeding from, better known now as the Beehive Cluster. Acubens (&alpha;&nbsp;Cancri) marks the crab&rsquo;s southern claw. The name derives from the Arabic <em>al-zub&#257;n&#257;</em>, &ldquo;the claw.&rdquo; It&rsquo;s a multiple star system sitting close enough to the ecliptic that the Moon can pass in front of it and blot it out entirely.</p>
-
     <h4>The drink</h4>
     <p>My grandparents made Manhattans in big red glass tumblers the size of small vases &mdash; enormous, unfussy, cheap whiskey and even cheaper vermouth. My father kept the idea though dropped the volume to that of a double rocks glass, upgraded the ingredients for the better, but stopped short of anything you might call refined technique. Two parts Rye or Bourbon, one part Carpano Antica, a little maraschino syrup, at least two cherries, built in the glass over ice and barely stirred &hellip; possibly with a finger. He started referring to them as Crabby Melters &hellip; Double pours, quick to build, strong, and straight to the point. He will make one to &ldquo;melt the crab away&rdquo; &hellip; to take the edge off and loosen up.</p>
+
+    <h4>The sky</h4>
+    <p>Cancer, the Crab, is one of the twelve constellations of the zodiac and the faintest of them all &mdash; its name is simply Latin for &ldquo;crab,&rdquo; and it is a shape you have to work hard to find in the northern sky. &gamma; and &delta; are Asellus Borealis and Asellus Australis, the northern and southern donkeys. Between them sits Messier&nbsp;44 &mdash; <em>Praesepe</em>, the manger they&rsquo;re feeding from, better known now as the Beehive Cluster. Acubens (&alpha;&nbsp;Cancri) marks the crab&rsquo;s southern claw. The name derives from the Arabic <em>al-zub&#257;n&#257;</em>, &ldquo;the claw.&rdquo; It&rsquo;s a multiple star system sitting close enough to the ecliptic that the Moon can pass in front of it and blot it out entirely.</p>
 
     <h4>The connection</h4>
     <p>This one&rsquo;s an homage to my father&rsquo;s unfussy Manhattan. His waggish name for it and the crab connection made a natural pairing, so this app&rsquo;s mascot pretty much picked itself. As a Cancer who is both rather partial to a Manhattan and can, at times, live up to the crabby nature of my astrological sign, I too like something to help melt that crabby edge away. I guess it runs in the family.</p>
@@ -1828,7 +1839,7 @@ function computeRows(d){
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
          + `<span class="nm"><i class="rdot" aria-hidden="true" style="--cat:${CAT_COLOR[it[3]]||'var(--faint)'}"></i>${it[0]}`
          + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
-         + (note?`<span class="ingnote">${note}</span>`:'')
+         + (note?`<span class="ingnote" title="${String(it[5]).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="event.stopPropagation();this.classList.toggle('open')">${note}</span>`:'')
          + `</span>`
          + `<span class="pct">${right}</span></div>`;
   }).join('');
