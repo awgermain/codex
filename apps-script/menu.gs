@@ -75,6 +75,7 @@ function onOpen(){
       .addItem('File Amounts (File All Amounts Added)', 'fileAmounts')
       .addSeparator() 
       .addItem('Normalize Amounts (convert + snap)', 'normalizeAmounts')
+      .addItem('Glossary Coverage (ingredient aliases)', 'glossaryCoverage')
      .addSeparator()
       .addItem('Reset Entry Sheet', 'setupAmountEntry'))
 
@@ -145,7 +146,11 @@ function showCodexGuide(){
   '   * Load All Missing Amounts — stages every ingredient still missing an amount\n' +
   '     onto the "Add Amount" tab to fill.\n' +
   '   * File Amounts — commits those back to the AmountIndex (as manual rows).\n' +
-  '     Reset Entry Sheet — clears the staging tab.\n\n' +
+  '     Reset Entry Sheet — clears the staging tab.\n' +
+  '   * Glossary Coverage — which ingredients only match on their own name, busiest\n' +
+  '     first. Brands and spellings live in IngredientLibrary.gs; add your own on the\n' +
+  '     "Glossary" tab (Ingredient | Also matches, comma-separated) — created the first\n' +
+  '     time you run this. Then Preview Build Amounts to see what it picks up.\n\n' +
 
   '3 - CLASSIFY & TAG   (one script per column — no two scripts share a column)\n' +
   '   ALL FIVE NOW FILL BLANKS ONLY. THE SHEET WINS. Type a value into any tag\n' +

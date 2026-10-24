@@ -156,7 +156,8 @@ function cleanFormat_(title, lines, ings){
     var short=l.length<=70 && words<=9 && !/[!?]/.test(l) && !/\.\s+[A-Z]/.test(l);
     var amt=CLEAN_AMT.test(l) && l.length<=120 && words<=18;            // "3/4 oz lime", not a paragraph
     var count=short && typeof dsaIsIng_==='function' && dsaIsIng_(l);  // "1 whole egg", "5 grapes"
-    var ing=short && lowIngs.some(function(g){ return l.toLowerCase().indexOf(g)>-1; });
+    var ing=short && (lowIngs.some(function(g){ return l.toLowerCase().indexOf(g)>-1; })
+                      || (typeof ingMatch_==='function' && ings.some(function(g){ return !!ingMatch_(l, g); })));   // v2.3: library terms too
     var garnish=short && /\bgarnish|^expressed\b|\b(twist|wheel|peel|rinse|float|mist|fronds?|sprig)\b/i.test(l);
     // the header line itself is already the title
     if(tl && !amt && !count){ var ct=(typeof dsaCleanTitle_==='function'?dsaCleanTitle_(l):l).toLowerCase(); if(ct && tl.indexOf(ct)>-1) continue; }

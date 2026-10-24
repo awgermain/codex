@@ -1,5 +1,10 @@
 /**
- * Cocktail Codex — Build RC-Amounts from descriptions  (v12.4, recipe-block aware)
+ * Cocktail Codex — Build RC-Amounts from descriptions  (v13, recipe-block aware)
+ *
+ * v13: ingredient matching comes from IngredientLibrary.gs -- brands, styles, short
+ *   forms and misspellings (Averna -> Amaro, Fortaleza -> Tequila, "3/4 oz lime" ->
+ *   Lime Juice, Ramazotti -> Amaro Ramazzotti) -- and each amount now goes to ONE
+ *   ingredient instead of every ingredient that matched it. "bsp" reads as barspoon.
  *
  * v12.4: lines with a link are no longer dropped -- only the link is removed
  *   (stripLinks_ in Config.gs). This was silently losing linked ingredients,
@@ -110,36 +115,8 @@ function B_COLS_(){ return codexIngCols_(); }   // [{col,idx,header,cat}, ...]
 
 var VOL={ml:0.033814, cl:0.33814, tbsp:0.5, parts:1.0, 'fl oz':1};  // tsp/barspoon stay native
 
-var SYN={
- 'sweet vermouth':['sweet vermouth','rosso','di torino','carpano','punt e mes','cinzano rosso','red vermouth'],
- 'blanc vermouth':['blanc vermouth','bianco','vermouth blanc'],
- 'dry vermouth':['dry vermouth','extra dry vermouth','french vermouth'],
- 'orange liqueur':['orange liqueur','cointreau','triple sec','grand marnier','dry curacao','orange curacao','combier'],
- 'allspice liqueur':['allspice liqueur','allspice dram','pimento dram','st elizabeth'],
- 'cherry liqueur':['cherry liqueur','maraschino','luxardo maraschino','cherry heering','heering','kirsch'],
- 'apricot liqueur':['apricot liqueur','apricot brandy','abricot'],
- 'coffee liqueur':['coffee liqueur','kahlua','mr black','tia maria','borghetti'],
- 'agave syrup':['agave syrup','agave nectar','agave'],
- 'passion fruit syrup':['passion fruit syrup','passionfruit syrup','passion fruit puree','passoa'],
- 'coconut cream syrup':['coconut cream syrup','cream of coconut','coconut cream','coco lopez'],
- 'simple syrup':['simple syrup','rich simple','1:1 syrup','sugar syrup'],
- 'apple brandy':['apple brandy','applejack','calvados','bonded applejack','lairds'],
- 'rhum agricole':['rhum agricole','agricole','barbancourt','clairin','neisson','clement'],
- 'scotch':['scotch','single malt','islay'],'rye whiskey':['rye whiskey','rye'],
- 'fernet branca':['fernet','fernet branca','fernet-branca','branca'],
- 'club soda':['club soda','soda water','soda','sparkling water'],
- 'soda water':['soda water','club soda','soda'],
- 'lime juice':['lime juice','fresh lime'],'lemon juice':['lemon juice','fresh lemon'],
- 'saline solution':['saline solution','saline','salt solution'],
- 'angostura bitters':['angostura bitters','angostura','aromatic bitters'],
- 'lemon lavender syrup':['lemon lavender syrup','lemon lavender cordial','lavender cordial','lavender syrup'],
- 'st. germain':['st germain','st-germain','st. germain','elderflower liqueur','elderflower'],
- 'st germain':['st germain','st-germain','st. germain','elderflower liqueur','elderflower']
-};
-var STOP=('juice syrup bitters liqueur rum gin vodka whiskey whisky brandy orange lime lemon sweet dry '+
- 'white aged simple cream water soda club fruit passion the of and red black spiced fresh light dark '+
- 'blanc bianco rouge rosso vermouth tequila mezcal wine sugar salt honey agave ginger coconut apple '+
- 'cherry apricot peach banana grapefruit pineapple cranberry egg mint tea cold brew rich demerara cordial').split(' ');
+/* v13: SYN and STOP moved to IngredientLibrary.gs (ING_LIBRARY, LIB_STOP), which
+   BuildAmounts, RecipeBlocks and CleanDescriptions now all share. */
 
 var UF={'\u00bd':' 1/2','\u00bc':' 1/4','\u00be':' 3/4','\u2153':' 1/3','\u2154':' 2/3','\u215b':' 1/8','\u215c':' 3/8','\u215d':' 5/8','\u215e':' 7/8'};
 function normFrac(s){ s=String(s); for(var k in UF){ s=s.split(k).join(UF[k]); } return s; }
@@ -153,7 +130,7 @@ function normUnit(u){ u=u.toLowerCase().replace(/\./g,'').trim();
   if(u==='oz'||u==='ounce'||u==='ounces'||u==='floz'||u==='fl oz')return 'fl oz';
   if(u==='ml'||u==='cl')return u;
   if(u.indexOf('dash')===0)return 'dashes';
-  if(u.indexOf('barspoon')>-1||u.indexOf('bar spoon')>-1)return 'barspoon';
+  if(u.indexOf('barspoon')>-1||u.indexOf('bar spoon')>-1||u==='bsp')return 'barspoon';
   if(u.indexOf('tsp')===0||u.indexOf('teaspoon')>-1)return 'tsp';
   if(u.indexOf('tbsp')===0||u.indexOf('tablespoon')>-1)return 'tbsp';
   if(u.indexOf('drop')===0)return 'drops';
@@ -177,22 +154,12 @@ function normOz(a,u){
   return [a,u];
 }
 
-var UNITS_RE='(?:fl\\s*oz|oz\\.?|ounces?|ml|cl|dashes?|dash|barspoons?|bar\\s*spoons?|tsp|teaspoons?|tbsp|tablespoons?|drops?|parts?|pinch(?:es)?)';
+var UNITS_RE='(?:fl\\s*oz|oz\\.?|ounces?|ml|cl|dashes?|dash|barspoons?|bar\\s*spoons?|bsp|tsp|teaspoons?|tbsp|tablespoons?|drops?|parts?|pinch(?:es)?)';
 var QTY_RE='(?<!\\d)(\\d\\s+\\d+/\\d+|\\d+/\\d+|\\d*\\.\\d+|\\d+)';
 
 function tokens(t){ return stripAcc(String(t).toLowerCase()).split(/\W+/).filter(function(x){return x;}); }
-function termsFor(ing){ var k=stripAcc(String(ing).toLowerCase()).trim(); return SYN[k]||[k]; }
-function segMatches(segtext,ing){
-  var ll=stripAcc(String(segtext).toLowerCase()); var terms=termsFor(ing);
-  for(var i=0;i<terms.length;i++){
-    var tk=tokens(terms[i]); if(!tk.length) continue;
-    var all=true; for(var j=0;j<tk.length;j++){ if(!new RegExp('\\b'+tk[j]+'\\b').test(ll)){all=false;break;} }
-    if(all) return true;
-    var d=tk.filter(function(t){return STOP.indexOf(t)<0 && t.length>3;});
-    if(d.length){ var ad=true; for(var k=0;k<d.length;k++){ if(!new RegExp('\\b'+d[k]+'\\b').test(ll)){ad=false;break;} } if(ad) return true; }
-  }
-  return false;
-}
+function termsFor(ing){ return libTerms_(ing).terms.map(function(t){ return t.t; }); }   // kept for anything still calling it
+function segMatches(segtext,ing){ return !!ingMatch_(segtext, ing); }
 
 /* v12: replaces sectionsFor. Picks this drink's recipe out of a (cleaned) description.
    Returns {lines: [...]} to parse, or {lines: null, why: '...'} when it won't guess.
@@ -316,6 +283,10 @@ function computeAmountRows_(ss){
       if(pick0.lines) segs=buildSegments(pick0.lines.filter(function(l){return String(l).trim();}));
       else skipWhy=pick0.why;
     }
+    // v13: each amount goes to ONE of this drink's ingredients (ingWinners_), so
+    // "Hamilton Pimento Dram" fills Allspice Liqueur, not Rum as well.
+    var distinctIngs=ingNames.filter(function(n,i){ return ingNames.indexOf(n)===i; });
+    segs.forEach(function(sg){ sg.win=ingWinners_(sg.text, distinctIngs); });
     var seen={}, total={};
     ingNames.forEach(function(n){ total[n]=(total[n]||0)+1; });
     for(var c=0;c<B_COLS.length;c++){
@@ -330,7 +301,7 @@ function computeAmountRows_(ss){
       var key=occ===0 ? name+'|'+ing : name+'|'+ing+'|'+(occ+1);
       if(manualKeys[key]) continue;
       if(!segs.length) continue;
-      var cands=[]; for(var s=0;s<segs.length;s++){ if(segMatches(segs[s].text,ing)) cands.push(segs[s]); }
+      var cands=[]; for(var s=0;s<segs.length;s++){ if(segs[s].win.indexOf(ing)>-1) cands.push(segs[s]); }
       if(!cands.length) continue;
       var pick=(occ<cands.length)?cands[occ]:cands[0];
       // More matching lines than rows, with different amounts: taken in order as

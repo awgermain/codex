@@ -140,9 +140,12 @@ function dsaLinesFor_(lines, ing) {
   var direct = clean.filter(function (x) { return new RegExp('(^|[^a-z])' + esc + '([^a-z]|$)').test(x.c); });
   if (direct.length) return direct.map(function (x) { return x.l; });
   var words = dsaTokens_(ing).filter(function (t) { return DSA_GENERIC_ING.indexOf(t) < 0; });
-  if (!words.length) return [];
-  return clean.filter(function (x) { return words.every(function (w) { return new RegExp('\\b' + w + '\\b').test(x.c); }); })
-              .map(function (x) { return x.l; });
+  var byWords = !words.length ? [] : clean.filter(function (x) { return words.every(function (w) { return new RegExp('\\b' + w + '\\b').test(x.c); }); });
+  if (byWords.length) return byWords.map(function (x) { return x.l; });
+  // Ingredient library (IngredientLibrary.gs): "Averna" is an Amaro line, "Fortaleza" a
+  // Tequila line, "3/4 oz lime" a Lime Juice line. Float/rinse rows were filtered above.
+  if (typeof ingMatch_ !== 'function') return [];
+  return clean.filter(function (x) { return !!ingMatch_(x.c, ing); }).map(function (x) { return x.l; });
 }
 function dsaFindLine_(lines, ing) { var r = dsaLinesFor_(lines, ing); return r.length === 1 ? r[0] : null; }
 
