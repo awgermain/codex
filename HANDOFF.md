@@ -81,8 +81,7 @@ The other common miss is not the key but the **match**: the sheet says `Amaro`,
 blanco`, `3/4 oz lime`, `Ramazotti`. `IngredientLibrary.gs` is the one glossary all three
 matchers use (it replaced BuildAmounts' 25-entry `SYN`; RecipeBlocks falls back to it).
 
-- Terms = the name, its plural/singular, `ING_LIBRARY` (brands, styles, spellings), the
-  optional **Glossary** tab (`Ingredient | Also matches`, additive, owner-edited), and
+- Terms = the name, its plural/singular, `ING_LIBRARY` (brands, styles, spellings), and
   derived short forms (`Lime Juice` → `lime`) that carry a **next-word block** so `lime`
   does not fire on `lime wheel` / `lime cordial`, nor `demerara` on `demerara rum`.
 - Whole-word matching on normalised text, never substring.
@@ -92,7 +91,9 @@ matchers use (it replaced BuildAmounts' 25-entry `SYN`; RecipeBlocks falls back 
   not Rum as well. Checked against every published drink: 0 of 4,673 lines misassigned.
 - Links are stripped from a line, never the line itself (`stripLinks_`). Lines used to be
   dropped whole, which is why linked grenadine / St. Germain went missing.
-- **Glossary Coverage** (2 - Amounts) lists ingredients matching on their name only.
+- **Code only, by choice.** No glossary tab, no menu item -- the owner doesn't want more
+  tabs to maintain. Add terms in `ING_LIBRARY`. `glossaryCoverage` (run from the editor)
+  lists ingredients that still match on their bare name only.
 
 ---
 
@@ -102,7 +103,7 @@ matchers use (it replaced BuildAmounts' 25-entry `SYN`; RecipeBlocks falls back 
 |---|---|
 | `Config.gs` | `COL()`, `CODEX_ING_GROUPS`, `RC_TAB`, `CODEX_UNTRACKED_CATS`, `stripLinks_` |
 | `IngredientLibrary.gs` | the glossary + matcher behind BuildAmounts, RecipeBlocks, CleanDescriptions. **New** — §2a |
-| `Menu.gs` | the ribbon and the in-app Guide. v11 + Glossary Coverage |
+| `Menu.gs` | the ribbon and the in-app Guide. v11 |
 | `YTFetcher.gs` | YouTube descriptions |
 | `FetchWebDescriptions.gs` | non-YouTube descriptions, Shopify product API, `refetchClippedDescriptions` |
 | `RecipeBlocks.gs` | **shared** recipe-block splitter and scorer (`dsaBlocks_`, `dsaScore_`, `dsaOtherOwner_`, `dsaQtys_`…). Used by the three below — never delete |
