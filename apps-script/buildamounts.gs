@@ -140,6 +140,13 @@ function normUnit(u){ u=u.toLowerCase().replace(/\./g,'').trim();
   if(u.indexOf('drop')===0)return 'drops';
   if(u.indexOf('part')===0)return 'parts';
   if(u.indexOf('pinch')===0)return 'pinch';
+  // v14.1: big-batch units, so punch descriptions ("2 cups lemon juice", "1 bottle
+  // prosecco") parse instead of being skipped.
+  if(u.indexOf('cup')===0)return 'cup';
+  if(u.indexOf('pint')===0)return 'pint';
+  if(u.indexOf('quart')===0||u.indexOf('qt')===0)return 'quart';
+  if(u.indexOf('lit')===0)return 'liter';
+  if(u.indexOf('bottle')===0)return 'bottle';
   return u;
 }
 function snapClean(v){
@@ -158,7 +165,7 @@ function normOz(a,u){
   return [a,u];
 }
 
-var UNITS_RE='(?:fl\\s*oz|oz\\.?|ounces?|ml|cl|dashes?|dash|barspoons?|bar\\s*spoons?|bsp|tsp|teaspoons?|tbsp|tablespoons?|drops?|parts?|pinch(?:es)?)';
+var UNITS_RE='(?:fl\\s*oz|oz\\.?|ounces?|ml|cl|dashes?|dash|barspoons?|bar\\s*spoons?|bsp|tsp|teaspoons?|tbsp|tablespoons?|drops?|parts?|pinch(?:es)?|cups?|pints?|quarts?|qts?|liters?|litres?|bottles?)';
 var QTY_RE='(?<!\\d)(\\d\\s+\\d+/\\d+|\\d+/\\d+|\\d*\\.\\d+|\\d+)';
 
 function tokens(t){ return stripAcc(String(t).toLowerCase()).split(/\W+/).filter(function(x){return x;}); }
@@ -248,14 +255,15 @@ function bPunchOz_(a,u){
   if(typeof a!=='number'||u==='parts') return 0;   // parts are a ratio, not a volume
   if(u==='fl oz') return a;
   if(VOL[u]!=null) return a*VOL[u];
-  if(u==='cup'||u==='cups') return a*8;
+  var BIG={cup:8,cups:8,pint:16,quart:32,liter:33.814,bottle:25.36};   // bottle = 750 ml
+  if(BIG[u]!=null) return a*BIG[u];
   return 0;
 }
 function bPunchDivide_(a,u,n){
   if(typeof a!=='number'||!n) return [a,u];
   var x=a/n, r=function(v,step,min){ return Math.max(min, Math.round(v/step)*step); };
   if(u==='parts') return [a,u];                                   // a ratio, not a quantity
-  if(u==='fl oz'||VOL[u]!=null||u==='cup'||u==='cups'){
+  if(u==='fl oz'||VOL[u]!=null||bPunchOz_(1,u)>0){
     var oz=bPunchOz_(a,u)/n;
     if(oz<0.125) return [r(oz*6,0.25,0.25),'tsp'];                 // under 1/8 oz reads better in tsp
     return [r(oz,0.125,0.125),'fl oz'];

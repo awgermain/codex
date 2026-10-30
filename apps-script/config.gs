@@ -184,7 +184,13 @@ var CODEX_SERVES = {
   'Boathouse Punch': 24,
   'Breezeway Bowl': 2,
   'Scorpion Bowl': 4,
-  'Hoist the Colors': 3      // stored as the D&C batch / 3, so the bowl = the book's punch
+  'Hoist the Colors': 3,     // stored as the D&C batch / 3, so the bowl = the book's punch
+  'Sweet Gin Music': 8,
+  'Sparkling Pear Punch': 16,
+  'Pineapple Rum Punch': 16,
+  'Camparinara': 18,          // Rummy Version x 18 = about the original punch's volume
+  'Clementine & Mezcal Punch': 32,
+  'Hot Christmas Punch': 4
 };
 var CODEX_SERVES_RE = [
   // "Servings: 8" / "Serves: 8" / "Serves 8" / "Servings 8 to 10" -- label first, count after.
@@ -271,6 +277,6 @@ function cpbInfer_(name, row, ING, desc, allNames, rc){
   var med = ratios[Math.floor(ratios.length / 2)], fmt = function(x){ return Math.round(x * 10) / 10; };
   var agree = ratios.filter(function(x){ return Math.abs(x - med) / med <= 0.15; }).length;
   if (med < 1.8) return {n: 0, why: 'description looks single-serve already (about x' + fmt(med) + ')'};
-  if (agree < Math.max(2, Math.ceil(ratios.length * 0.7))) return {n: 0, why: 'ingredients scale unevenly (x' + ratios.map(fmt).join(', x') + ') -- check by hand'};
+  if (agree < Math.max(2, Math.ceil(ratios.length * 0.6))) return {n: 0, why: 'ingredients scale unevenly (x' + ratios.map(fmt).join(', x') + ') -- check by hand'};
   return {n: Math.round(med), why: 'worked out: ' + agree + ' of ' + ratios.length + ' ingredients scale about x' + fmt(med) + ' from the description to the RC amounts'};
 }
