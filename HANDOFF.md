@@ -390,3 +390,18 @@ published payload (`gid.c`, `gid.rc`) because a row number is ambiguous without 
   20.75° off vertical.
 - Time-of-day melt: one line in `crabStage()`, example in the comment above it.
 - `OverlapReport.gs` is probably redundant now the audit computes overlap.
+
+### Icons (served + style)
+- **Served** = one hard-coded emoji set, `SERVED_SVG` in index.html, rendered as `<img>`
+  data URIs via `servedImg(g,size)` (so the SVGs' internal ids never collide). Built on
+  Twemoji (CC-BY 4.0, credited at the foot of the Crabby Melter story); Down / Rocks / Big
+  Rock / Crushed (slim hurricane) / Frozen (piña colada) / Hot / Ice Shell / Up (coupe) are
+  custom variants. Rocks/Big Rock/Crushed reuse Twemoji's 🧊 via `<use href="#c">`.
+  Source SVGs live outside the repo; the owner signed off on the final set -- don't redraw.
+- **Style** = brass line icons, `STYLE_PATHS` + `styleIcon(st,size)`. Deliberately a
+  different visual language from served so Martini (style) never reads as Up (served).
+- Where: compact rows get a fixed 26px served column at the far right (grid col 3,
+  spanning both lines) so icons align regardless of Need text; full cards put it in the
+  bottom-right corner; recipe sheet has the style icon in the kicker and the served icon
+  on the Served value; Explore/filter rows (`expLabel`) show both.
+- Compact row padding is 9.5px (owner tuned: 8 was cramped, 11 too loose).
