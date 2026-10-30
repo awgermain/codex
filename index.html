@@ -688,7 +688,10 @@
      left-aligned exactly as before. */
   .recipe-row .amt{width:13ch;flex:none;font-family:var(--mono);font-size:14px;
     color:var(--brass);font-weight:700}
-  .recipe-row .nm{font-size:14.5px;flex:1}
+  /* min-width:0 lets the name column shrink to its share of the row; without it a long
+     inline note set the column's minimum width and pushed that row's % off the edge. */
+  .recipe-row .nm{font-size:14.5px;flex:1;min-width:0}
+  .recipe-row .pct{flex:none}
   .recipe-row .pct{font-family:var(--mono);font-size:11px;color:var(--faint);min-width:44px;text-align:right}
   .recipe-row .pct .approx{display:block;color:var(--brass);opacity:.75;font-size:10px;margin-top:2px;white-space:nowrap}
   .recipe-row .pct .perdrink{color:var(--winter);font-size:10px;white-space:nowrap}
