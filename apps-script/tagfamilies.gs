@@ -1,5 +1,9 @@
 /**
- * Cocktail Codex — Tag Families  (structure + description, v4)
+ * Cocktail Codex — Tag Families  (structure + description, v9)
+ *
+ * v9: TRADE WINDS -- coconut + citrus + a fruit-or-corn liqueur (the apricot slot),
+ *   no orgeat, pineapple no bigger than the citrus. Catches the Tradewinds itself
+ *   plus riffs like El Niño (Nixta) and Staycation. Also a name/description cue.
  * -----------------------------------------------------------
  * Writes a "Family" to column AX (50) from ingredient STRUCTURE, then uses the
  * recipe DESCRIPTION as a second signal. Specific named families only (Sour and
@@ -222,6 +226,11 @@ function famRatio_(ings){ var b=0,m=0;
     for(var k2=0;k2<FAM_MOD_R.length;k2++) if(R[FAM_MOD_R[k2]]) isM=true;
     if(isB) b+=amt; else if(isM) m+=amt; }
   return (b>0&&m>0)?(b/m):null; }
+// Total ounces of the ingredients whose name matches rx (dash-measured items ignored).
+function famOz_(ings,rx){ var t=0;
+  for(var i=0;i<ings.length;i++){ var a=ings[i][1];
+    if(typeof a==='number' && rx.test(famNorm_(ings[i][0])) && !FAM_DASHED.test(String(ings[i][0]))) t+=a; }
+  return t; }
 function famAny_(names,rx){ for(var i=0;i<names.length;i++) if(rx.test(famNorm_(names[i]))) return true; return false; }
 function famBaseCount_(R){ var k=['rum','gin','whiskey','agave','brandy','vodka'], n=0;
   for(var i=0;i<k.length;i++) if((R[k[i]]||0)>0) n++; return n; }
@@ -304,6 +313,17 @@ function classifyFamily_(ings, name, style, served){
 
   // Jungle Bird (modern classic)
   if(h('rum') && h('bitteraperitif') && h('pineapple') && cit && sweet) return 'Jungle Bird';
+  // v9 TRADE WINDS: lemon + coconut cream + apricot liqueur is the template, and the
+  // riffs keep the coconut and the citrus but swap the liqueur (El Niño uses corn /
+  // Nixta). So: coconut + citrus + a fruit-or-corn liqueur, no orgeat (that's the
+  // Mai Tai / Scorpion side), and pineapple, if any, no bigger than the citrus --
+  // a pineapple-led coconut drink is still a Piña Colada. Checked before Piña
+  // Colada for that reason.
+  // Coconut must be the creamy kind (not coconut rum / water) and the swap a LIQUEUR,
+  // not a syrup -- otherwise any banana-syrup + coconut-rum tiki drink lands here.
+  if(famAny_(names,/coconut cream|cream of coconut|coco lopez|coconut milk/) && cit
+     && famAny_(names,/(apricot|abricot|peach|peche|pear|poire|banana|banane|corn|elote).*(liqueur|brandy|eau)|nixta|creme de (peche|banane)/)
+     && !orgeat && famOz_(ings,/pineapple/) <= famOz_(ings,/lime|lemon|grapefruit|yuzu/)) return 'Trade Winds';
   // Piña Colada (Painkiller folds in here)
   if(h('rum') && coconut && pineapple) return 'Piña Colada';
   // Hurricane: multi-rum passionfruit punch, not a Jungle Bird / Last Word / Daiquiri
@@ -348,6 +368,7 @@ var FAM_NAME=[
  ['espresso martini','Espresso Martini'],['naked and famous','Naked & Famous'],['naked & famous','Naked & Famous'],
  ['mai tai','Mai Tai'],['fog cutter','Fog Cutter'],['scorpion','Scorpion'],
  ['pina colada','Piña Colada'],['piña colada','Piña Colada'],['painkiller','Piña Colada'],
+ ['trade winds','Trade Winds'],['tradewinds','Trade Winds'],
  ['jungle bird','Jungle Bird'],['last word','Last Word'],['paper plane','Paper Plane'],
  ['penicillin','Penicillin'],['gold rush','Penicillin'],['boulevardier','Negroni'],['negroni','Negroni'],
  ['manhattan','Manhattan'],['old fashioned','Old Fashioned'],['whiskey sour','Whiskey Sour'],
@@ -371,7 +392,8 @@ var FAM_CUE=[
  ['sidecar','Sidecar'],
  ['mai tai','Mai Tai'],['fog cutter','Fog Cutter'],['scorpion','Scorpion'],
  ['piña colada','Piña Colada'],['pina colada','Piña Colada'],['painkiller','Piña Colada'],
- ['hurricane','Hurricane'],['penicillin','Penicillin'],['gold rush','Penicillin'],
+ ['hurricane','Hurricane'],['trade winds','Trade Winds'],['tradewinds','Trade Winds'],
+ ['penicillin','Penicillin'],['gold rush','Penicillin'],
  ["bee's knees","Bee's Knees"],['bees knees',"Bee's Knees"],['gimlet','Gimlet'],['mojito','Mojito']];
 function famFromDescription_(desc){
   if(!desc) return '';

@@ -1,5 +1,9 @@
 /**
- * Cocktail Codex — Build RC-Amounts from descriptions  (v13, recipe-block aware)
+ * Cocktail Codex — Build RC-Amounts from descriptions  (v14, recipe-block aware)
+ *
+ * v14: punches are saved single-serve. When a drink has a bowl size (CODEX_SERVES, or
+ *   'Serves 8' in a punch's description) and the parsed amounts are batch-sized, each
+ *   one is divided by the bowl size and rounded. Flagged in Preview as a check note.
  *
  * v13: ingredient matching comes from IngredientLibrary.gs -- brands, styles, short
  *   forms and misspellings (Averna -> Amaro, Fortaleza -> Tequila, "3/4 oz lime" ->
@@ -237,12 +241,35 @@ function buildSegments(sectionLines){
 
 /* The whole parse, shared by the build and the preview. Returns the rows to write
    (header first, sorted) and a log of drinks it declined to guess for. */
+/* v14 punch helpers. bPunchOz_ = rough fl oz of one amount (0 for dashes/counts), used
+   only to decide whether a parse is batch-sized. bPunchDivide_ = one glass's share,
+   rounded so the app shows "0.75 fl oz" rather than "0.7083 fl oz". */
+function bPunchOz_(a,u){
+  if(typeof a!=='number'||u==='parts') return 0;   // parts are a ratio, not a volume
+  if(u==='fl oz') return a;
+  if(VOL[u]!=null) return a*VOL[u];
+  if(u==='cup'||u==='cups') return a*8;
+  return 0;
+}
+function bPunchDivide_(a,u,n){
+  if(typeof a!=='number'||!n) return [a,u];
+  var x=a/n, r=function(v,step,min){ return Math.max(min, Math.round(v/step)*step); };
+  if(u==='parts') return [a,u];                                   // a ratio, not a quantity
+  if(u==='fl oz'||VOL[u]!=null||u==='cup'||u==='cups'){
+    var oz=bPunchOz_(a,u)/n;
+    if(oz<0.125) return [r(oz*6,0.25,0.25),'tsp'];                 // under 1/8 oz reads better in tsp
+    return [r(oz,0.125,0.125),'fl oz'];
+  }
+  if(u==='tbsp') return x<1 ? [r(x*3,0.25,0.25),'tsp'] : [r(x,0.5,0.5),'tbsp'];
+  if(u==='tsp'||u==='barspoon') return [r(x,0.25,0.25),u];
+  return [r(x,1,1),u];                                            // dashes, drops, pinch, counts
+}
 function computeAmountRows_(ss){
   var cs=ss.getSheetByName(B_COCKTAILS), as=ss.getSheetByName(RC_TAB);
   if(!cs||!as) throw new Error('Missing Cocktails or RC - Amounts sheet.');
   var lastC=cs.getLastRow();
-  var B_NAME_COL=B_NAME_COL_(), B_DESC_COL=B_DESC_COL_(), B_COLS=B_COLS_();
-  var bWide=B_COLS.reduce(function(m,g){return Math.max(m,g.col);}, Math.max(B_NAME_COL,B_DESC_COL));
+  var B_NAME_COL=B_NAME_COL_(), B_DESC_COL=B_DESC_COL_(), B_COLS=B_COLS_(), B_STYLE_COL=COL('Style');
+  var bWide=B_COLS.reduce(function(m,g){return Math.max(m,g.col);}, Math.max(B_NAME_COL,B_DESC_COL,B_STYLE_COL));
   var vals=cs.getRange(1,1,lastC,bWide).getValues();
   // v12: the cleaner keeps each original in the description cell's NOTE. The note
   // still has the recipe headers; the cleaned value doesn't.
@@ -287,7 +314,7 @@ function computeAmountRows_(ss){
     // "Hamilton Pimento Dram" fills Allspice Liqueur, not Rum as well.
     var distinctIngs=ingNames.filter(function(n,i){ return ingNames.indexOf(n)===i; });
     segs.forEach(function(sg){ sg.win=ingWinners_(sg.text, distinctIngs); });
-    var seen={}, total={};
+    var seen={}, total={}, mine=[];   // v14: this drink's rows, held back for the punch check
     ingNames.forEach(function(n){ total[n]=(total[n]||0)+1; });
     for(var c=0;c<B_COLS.length;c++){
       var col=B_COLS[c].col, cat=B_COLS[c].cat;
@@ -310,8 +337,25 @@ function computeAmountRows_(ss){
         var dist={}; cands.forEach(function(x){ dist[x.amt+' '+x.unit]=1; });
         if(Object.keys(dist).length>1) log.push([name,'check — '+ing,cands.length+' lines match, '+total[ing]+' row(s); took '+cands.slice(0,total[ing]).map(function(x){return x.amt+' '+x.unit;}).join(', ')+' of '+Object.keys(dist).join(', ')]);
       }
-      out.push([key,name,ing,occ+1,pick.amt,pick.unit,cat,'auto']);
+      mine.push([key,name,ing,occ+1,pick.amt,pick.unit,cat,'auto']);
     }
+    // v14 PUNCHES: a punch description lists the whole bowl, but every recipe is stored
+    // single-serve (the app's bowl button scales it back up). When this drink has a
+    // bowl size -- CODEX_SERVES in Config.gs, or "Serves 8" / "Yield: 8 servings" in a
+    // punch's description (codexServes_) -- and what was parsed is batch-sized (10+ fl
+    // oz in total), each amount is divided by the bowl size and rounded to a friendly
+    // measure. Logged as a "check" note in Preview so you can eyeball it first.
+    var bowl=codexServes_(name.trim(), String(vals[r2][B_STYLE_COL-1]||''), dNote, dVal);
+    if(bowl.n && mine.length){
+      var batchOz=mine.reduce(function(t,m){ return t+bPunchOz_(m[4],m[5]); },0);
+      if(batchOz>=10){
+        mine.forEach(function(m){ var d=bPunchDivide_(m[4],m[5],bowl.n); m[4]=d[0]; m[5]=d[1]; });
+        var glassOz=mine.reduce(function(t,m){ return t+bPunchOz_(m[4],m[5]); },0);
+        log.push([name,'check — punch: divided by '+bowl.n,'bowl size from '+bowl.from+'; parsed ~'
+          +Math.round(batchOz)+' fl oz for the bowl, saved as ~'+(Math.round(glassOz*4)/4)+' fl oz a glass']);
+      }
+    }
+    for(var mi=0;mi<mine.length;mi++) out.push(mine[mi]);
     // Log a skipped drink only while it still has rows nobody has filled. Once you've
     // entered its amounts by hand (manual rows), the skip no longer matters and it
     // drops off the Build Log.
