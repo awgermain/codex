@@ -729,10 +729,17 @@
   .rfoot .lbl{flex:none}
   .rfoot .rt{position:absolute;left:50%;transform:translateX(-50%);color:var(--brass);white-space:nowrap}
   .rfoot .gt{margin-left:auto;flex:none;color:var(--muted);text-align:right}
-  .rfoot .gt small{display:block;font-size:10px;color:var(--faint);margin-top:3px;white-space:nowrap;letter-spacing:.04em}
-  /* ABV / standard drinks, under the footer */
-  .abvline{margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted)}
-  .abvline .abvnote{display:block;margin-top:3px;color:var(--faint);font-size:9.5px}
+  /* Second footer row: ABV (left) and the batch conversions (right) share line boxes --
+     line 1 and line 2 are the same height on both sides, so they always align. */
+  .rfoot2{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:6px;
+    font-family:var(--mono);letter-spacing:.04em}
+  .rfoot2 .l1,.rfoot2 .l2{display:block;white-space:nowrap}
+  .rfoot2 .l1{font-size:10.5px;line-height:16px}
+  .rfoot2 .l2{font-size:9.5px;line-height:15px;margin-top:2px}
+  .abvline{color:var(--muted);min-width:0}
+  .abvline .l2{color:var(--faint);white-space:normal}
+  .gtsub{text-align:right;flex:none}
+  .gtsub .l1,.gtsub .l2{color:var(--faint);font-size:10px}
   /* On-the-fly tweaks: amounts are tappable; the open one becomes a little stepper. */
   .recipe-row .amt.tappable{cursor:pointer;-webkit-tap-highlight-color:transparent}
   .recipe-row .amt.tappable:hover{text-decoration:underline dotted rgba(199,154,75,.6);text-underline-offset:3px}
@@ -2004,9 +2011,14 @@ function computeRows(d){
   if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(totL*100)/100)} ${normU}</span>`
     + `<span class="lbl">TOTAL</span>`
     + `<span class="rt">${ratio||''}</span>`
-    + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}`
-    + `${(batching&&totR)?(()=>{ const alt=altUnit(totR,batchU); return alt?`<small class="alt">${alt}</small>`:''; })():''}`
-    + `${(batching&&bmult)?(()=>{ const n=Math.round(bmult*mult); return `<small>\u2248 ${fmt(n)} drink${n===1?'':'s'}</small>`; })():''}</span></div>`;
+    + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}</span></div>`;
+  /* Second footer row, shared: ABV on the left, the batch total's conversions on the
+     right, so the two sides line up line-for-line instead of the ABV starting below
+     however tall the right-hand stack happens to be. */
+  const subs=[];
+  if(batching&&totR){ const alt=altUnit(totR,batchU); if(alt) subs.push(alt); }
+  if(batching&&bmult){ const n=Math.round(bmult*mult); subs.push(`\u2248 ${fmt(n)} drink${n===1?'':'s'}`); }
+  let abvHTML='';
   /* ABV + standard drinks for what's on the left (one recipe x Scale), after this drink's
      dilution. Skipped when any ingredient has no amount -- a partial number misleads. */
   if(tot && d.i.every((it,ix)=>it[1]!=null || ovr[ix]!=null)){
@@ -2014,10 +2026,12 @@ function computeRows(d){
     if(alc>0){
       const dl=dilution>0?dilution:0, abv=alc/(tot*(1+dl/100))*100;
       const mlF=convFactor(normU,'ml'), std = mlF!=null ? alc*mlF/17.74 : null;   // US standard drink = 14 g = 17.74 ml ethanol
-      html+=`<div class="abvline">\u2248 ${Math.round(abv)}% ABV${std!=null?` \u00b7 ${fmt(Math.round(std*10)/10)} standard drink${Math.round(std*10)/10===1?'':'s'}`:''}`
-          + `<span class="abvnote">Estimate \u00b7 includes ${dl}% dilution</span></div>`;
+      abvHTML=`<div class="abvline"><span class="l1">\u2248 ${Math.round(abv)}% ABV${std!=null?` \u00b7 ${fmt(Math.round(std*10)/10)} standard drink${Math.round(std*10)/10===1?'':'s'}`:''}</span>`
+          + `<span class="l2">Estimate \u00b7 includes ${dl}% dilution</span></div>`;
     }
   }
+  if(tot && (abvHTML || subs.length))
+    html+=`<div class="rfoot2">${abvHTML||'<div></div>'}<div class="gtsub">${subs.map((t,i)=>`<span class="l${i+1}">${t}</span>`).join('')}</div></div>`;
   if(Object.keys(ovr).some(k=>ovr[k]!==d.i[k][1]))
     html+=`<div class="tweakbar">Adjusted for this pour only \u00b7 <button onclick="resetTweaks()">Reset to recipe</button></div>`;
   return html;
