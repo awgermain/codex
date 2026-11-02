@@ -423,7 +423,8 @@
   .lblic{display:inline-flex;vertical-align:-4px;margin-right:6px}
   .lblic .svimg{display:inline-block}
   .lblic.sty{color:var(--brass);vertical-align:-2px}
-  .taxo-k .tk-ic{display:inline-flex;color:var(--brass);margin-right:1px}
+  /* the icon takes the style word's colour, so the pair reads as one label */
+  .taxo-k .tk-ic{display:inline-flex;color:var(--muted);margin-right:1px}
 .taxo-k{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;display:flex;align-items:center;gap:7px;flex-wrap:wrap;line-height:1.5}
 /* ---- owner-only edit links ---- */
   .ownedit{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
@@ -728,6 +729,22 @@
   .rfoot .lbl{flex:none}
   .rfoot .rt{position:absolute;left:50%;transform:translateX(-50%);color:var(--brass);white-space:nowrap}
   .rfoot .gt{margin-left:auto;flex:none;color:var(--muted);text-align:right}
+  .rfoot .gt small{display:block;font-size:10px;color:var(--faint);margin-top:3px;white-space:nowrap;letter-spacing:.04em}
+  /* ABV / standard drinks, under the footer */
+  .abvline{margin-top:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.04em;color:var(--muted)}
+  .abvline .abvnote{display:block;margin-top:3px;color:var(--faint);font-size:9.5px}
+  /* On-the-fly tweaks: amounts are tappable; the open one becomes a little stepper. */
+  .recipe-row .amt.tappable{cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .recipe-row .amt.tappable:hover{text-decoration:underline dotted rgba(199,154,75,.6);text-underline-offset:3px}
+  /* a tweaked amount gets a small brass dot after it (inside the cell -- the card's left
+     edge would clip anything placed before it) */
+  .recipe-row .amt.tweaked::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:6px;vertical-align:middle;box-shadow:0 0 0 2px rgba(199,154,75,.18)}
+  .recipe-row .amt.editing{display:inline-flex;align-items:center;gap:6px;width:auto;min-width:13ch}
+  .recipe-row .amt.editing b{font-weight:500;white-space:nowrap}
+  .recipe-row .amt .tw{width:24px;height:24px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--raised);
+    color:var(--brass);font:500 15px/1 var(--mono);cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  .tweakbar{margin-top:10px;font-family:var(--mono);font-size:10.5px;color:var(--brass);letter-spacing:.03em}
+  .tweakbar button{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;font:inherit;cursor:pointer}
   /* water is not part of the drink: winter blue, and left out of both the
      percentages and the proportion bar. No divider -- the colour carries it. */
   .recipe-row.water .amt,.recipe-row.water .nm{color:var(--winter)}
@@ -850,7 +867,7 @@ function servedImg(g,size){
 }
 /* STYLE: brass line icons -- deliberately a different visual language from the served
    emoji (line vs full colour), so a martini-glass STYLE never reads as a served-UP glass. */
-const STYLE_PATHS={"Sour": "<defs><mask id=\"sourKn\"><rect width=\"24\" height=\"24\" fill=\"#fff\" stroke=\"none\"/><circle cx=\"16.8\" cy=\"16.4\" r=\"5.6\" fill=\"#000\" stroke=\"none\"/></mask></defs><g mask=\"url(#sourKn)\"><g transform=\"translate(9.4 9.8) rotate(-32) scale(.8) translate(-12 -12)\"><path d=\"M2.8 12.6c0-.9.5-1.5 1.3-1.7C5.3 8 8.4 6.3 12 6.3s6.7 1.7 7.9 4.6c.8.2 1.3.8 1.3 1.7s-.5 1.5-1.3 1.7c-1.2 2.9-4.3 4.6-7.9 4.6s-6.7-1.7-7.9-4.6c-.8-.2-1.3-.8-1.3-1.7z\"/><path d=\"M8 10.4c.8-.8 1.8-1.2 2.8-1.4\" opacity=\".7\"/></g></g><circle cx=\"16.8\" cy=\"16.4\" r=\"5\" stroke-width=\".8\"/><circle cx=\"16.8\" cy=\"16.4\" r=\"3.8\" stroke-width=\".5\"/><path d=\"M16.8 12.599999999999998v7.6M13.0 16.4h7.6M14.100000000000001 13.7l5.4 5.4M19.5 13.7l-5.4 5.4\" stroke-width=\".42\"/>", "Martini": "<path d=\"M4 5h16l-8 8.5z\"/><path d=\"M6.4 7.5h11.2\"/><path d=\"M12 13.5v6.5M8.5 20h7\"/><path d=\"M15.5 3l-2 4.6\"/><circle cx=\"13.2\" cy=\"8.4\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/>", "Old Fashioned": "<path d=\"M4.5 8h15l-1.2 11a1.6 1.6 0 0 1-1.6 1.4H7.3a1.6 1.6 0 0 1-1.6-1.4z\"/><rect x=\"7.6\" y=\"10.2\" width=\"8.8\" height=\"8\" rx=\"1.4\"/><path d=\"M9.6 12.4l1.5 1.3\"/>", "Highball": "<path d=\"M7 3h10l-1 17.2a1 1 0 0 1-1 .8H9a1 1 0 0 1-1-.8z\"/><path d=\"M7.4 7h9.2\"/><circle cx=\"10.4\" cy=\"17\" r=\"1\"/><circle cx=\"13.4\" cy=\"14\" r=\".9\"/><circle cx=\"10.9\" cy=\"11.2\" r=\".8\"/><circle cx=\"13.2\" cy=\"9.2\" r=\".6\"/>", "Tiki": "<path d=\"M12 21V11\"/><path d=\"M12 11c-1.5-3-4.8-4.2-8-3 2.6.4 4.4 1.4 5.2 3.2\"/><path d=\"M12 11c1.5-3 4.8-4.2 8-3-2.6.4-4.4 1.4-5.2 3.2\"/><path d=\"M12 11c-.6-3.3-2.8-5.4-5.8-6 1.9 1 3.1 2.6 3.4 4.6\"/><path d=\"M12 11c.6-3.3 2.8-5.4 5.8-6-1.9 1-3.1 2.6-3.4 4.6\"/><path d=\"M8 21h8\"/>", "Punch": "<path d=\"M3 11.5h18c0 4.4-4 7-9 7s-9-2.6-9-7z\"/><path d=\"M9.5 18.2l-1 2.3h7l-1-2.3\"/><path d=\"M16.5 3.5l-2.5 9\"/><path d=\"M14 12.5c-.3 1.2-2 1.2-2.2 0\"/>", "Flip": "<path d=\"M12 3c-3.6 0-6.5 5.2-6.5 9.6A6.5 6.5 0 0 0 12 19.5a6.5 6.5 0 0 0 6.5-6.9C18.5 8.2 15.6 3 12 3z\"/>", "Toddy": "<path d=\"M5 10h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z\"/><path d=\"M16 12h1.4a2.4 2.4 0 0 1 0 4.8H16\"/><path d=\"M8 3.6c-.9 1.1.9 2.2 0 3.6M11.5 3.6c-.9 1.1.9 2.2 0 3.6M15 3.6c-.9 1.1.9 2.2 0 3.6\"/><path d=\"M8 13.2h5\" opacity=\".7\"/>"};
+const STYLE_PATHS={"Sour": "<g transform=\"translate(0.73 0.28)\"><defs><mask id=\"sourKn\"><rect width=\"24\" height=\"24\" fill=\"#fff\" stroke=\"none\"/><circle cx=\"16.8\" cy=\"16.4\" r=\"5.6\" fill=\"#000\" stroke=\"none\"/></mask></defs><g mask=\"url(#sourKn)\"><g transform=\"translate(9.4 9.8) rotate(-32) scale(.8) translate(-12 -12)\"><path d=\"M2.8 12.6c0-.9.5-1.5 1.3-1.7C5.3 8 8.4 6.3 12 6.3s6.7 1.7 7.9 4.6c.8.2 1.3.8 1.3 1.7s-.5 1.5-1.3 1.7c-1.2 2.9-4.3 4.6-7.9 4.6s-6.7-1.7-7.9-4.6c-.8-.2-1.3-.8-1.3-1.7z\"/><path d=\"M8 10.4c.8-.8 1.8-1.2 2.8-1.4\" opacity=\".7\"/></g></g><circle cx=\"16.8\" cy=\"16.4\" r=\"5\" stroke-width=\".8\"/><circle cx=\"16.8\" cy=\"16.4\" r=\"3.8\" stroke-width=\".5\"/><path d=\"M16.8 12.599999999999998v7.6M13.0 16.4h7.6M14.100000000000001 13.7l5.4 5.4M19.5 13.7l-5.4 5.4\" stroke-width=\".42\"/></g>", "Martini": "<g transform=\"translate(0.0 0.5)\"><path d=\"M4 5h16l-8 8.5z\"/><path d=\"M6.4 7.5h11.2\"/><path d=\"M12 13.5v6.5M8.5 20h7\"/><path d=\"M15.5 3l-2 4.6\"/><circle cx=\"13.2\" cy=\"8.4\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/></g>", "Old Fashioned": "<g transform=\"translate(0.0 -2.2)\"><path d=\"M4.5 8h15l-1.2 11a1.6 1.6 0 0 1-1.6 1.4H7.3a1.6 1.6 0 0 1-1.6-1.4z\"/><rect x=\"7.6\" y=\"10.2\" width=\"8.8\" height=\"8\" rx=\"1.4\"/><path d=\"M9.6 12.4l1.5 1.3\"/></g>", "Highball": "<path d=\"M7 3h10l-1 17.2a1 1 0 0 1-1 .8H9a1 1 0 0 1-1-.8z\"/><path d=\"M7.4 7h9.2\"/><circle cx=\"10.4\" cy=\"17\" r=\"1\"/><circle cx=\"13.4\" cy=\"14\" r=\".9\"/><circle cx=\"10.9\" cy=\"11.2\" r=\".8\"/><circle cx=\"13.2\" cy=\"9.2\" r=\".6\"/>", "Tiki": "<g transform=\"translate(0.0 -1.0)\"><path d=\"M12 21V11\"/><path d=\"M12 11c-1.5-3-4.8-4.2-8-3 2.6.4 4.4 1.4 5.2 3.2\"/><path d=\"M12 11c1.5-3 4.8-4.2 8-3-2.6.4-4.4 1.4-5.2 3.2\"/><path d=\"M12 11c-.6-3.3-2.8-5.4-5.8-6 1.9 1 3.1 2.6 3.4 4.6\"/><path d=\"M12 11c.6-3.3 2.8-5.4 5.8-6-1.9 1-3.1 2.6-3.4 4.6\"/><path d=\"M8 21h8\"/></g>", "Punch": "<path d=\"M3 11.5h18c0 4.4-4 7-9 7s-9-2.6-9-7z\"/><path d=\"M9.5 18.2l-1 2.3h7l-1-2.3\"/><path d=\"M16.5 3.5l-2.5 9\"/><path d=\"M14 12.5c-.3 1.2-2 1.2-2.2 0\"/>", "Flip": "<g transform=\"translate(0.0 0.75)\"><path d=\"M12 3c-3.6 0-6.5 5.2-6.5 9.6A6.5 6.5 0 0 0 12 19.5a6.5 6.5 0 0 0 6.5-6.9C18.5 8.2 15.6 3 12 3z\"/></g>", "Toddy": "<g transform=\"translate(-0.4 0.2)\"><path d=\"M5 10h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z\"/><path d=\"M16 12h1.4a2.4 2.4 0 0 1 0 4.8H16\"/><path d=\"M8 3.6c-.9 1.1.9 2.2 0 3.6M11.5 3.6c-.9 1.1.9 2.2 0 3.6M15 3.6c-.9 1.1.9 2.2 0 3.6\"/><path d=\"M8 13.2h5\" opacity=\".7\"/></g>"};
 function styleIcon(st,size){
   const p=STYLE_PATHS[st]; if(!p) return ''; const s=size||16;
   return `<svg class="styic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -892,6 +909,28 @@ const NATIVE_UNITS=new Set(['tsp','tbsp']);
    "add one per drink and shake", not "15 egg whites". Showing a scaled count here
    would be arithmetically right and practically wrong. */
 const PER_DRINK=/\begg\b/i;
+/* ABV ESTIMATE -- a rough strength per ingredient, so the card can show "~18% ABV".
+   Category defaults, then a short list of name overrides for the ones a category gets
+   badly wrong (vermouth is a Modifier but 17%, Chartreuse is a Modifier but 55%). Not a
+   library and not precise: modifier-heavy drinks can be off by a few points. */
+const ABV_CAT={Spirit:.40, Modifier:.20, Sweetener:0, Acid:0, Seasoning:0, 'Top/Mix':0, Other:0};
+const ABV_NAME=[
+  [/overproof|151|navy strength|smith (&|and) cross|rum fire|wray/i, .57],
+  [/absinthe|herbsaint/i, .60], [/pernod|pastis|ricard/i, .40],
+  [/yellow chartreuse/i, .40], [/chartreuse/i, .55],
+  [/vermouth|lillet|cocchi|americano|bonal|byrrh|punt e mes|carpano|dubonnet|quinquina|kina|suze|bitter bianco/i, .17],
+  [/sherry|fino|amontillado|oloroso|olorosso|manzanilla|\bpx\b|\bport\b|madeira|marsala/i, .18],
+  [/cointreau|triple sec|cura[cç]ao|grand marnier|orange liqueur|benedictine|drambuie|strega|ancho reyes|chile liqueur|galliano/i, .40],
+  [/fernet|branca/i, .39], [/nonino|ramazzotti|ciociaro|meletti|amaro/i, .29], [/cynar/i, .165], [/averna/i, .29],
+  [/montenegro|braulio/i, .23], [/campari/i, .24], [/aperol/i, .11], [/falernum/i, .11],
+  [/maraschino/i, .32], [/licor 43/i, .31], [/amaretto/i, .28], [/coffee liqueur|kahlua/i, .20],
+  [/allspice/i, .22], [/cassis/i, .16], [/pimm/i, .25],
+  [/sparkling|champagne|prosecco|cava|wine|malbec/i, .12], [/\bbeer\b|lager|\bale\b|stout|cider/i, .05],
+  [/bitters|tincture/i, .45]
+];
+function abvOf(name,cat){ for(const [rx,v] of ABV_NAME){ if(rx.test(name)) return v; } return ABV_CAT[cat]||0; }
+/* Natural step for the on-the-fly stepper, in the DISPLAYED unit. */
+const TWEAK_STEP={'fl oz':.25,'oz':.25,'ml':5,'cl':.5,'tsp':.25,'tbsp':.25,'barspoon':.5,'dash':1,'drop':1};
 /* Count units are stored in the sheet however they read at their written quantity --
    "1 dash", "2 dashes" -- which is correct there and wrong the moment you scale, since
    the unit is a literal string and 1 dash x 10 would print "10 dash". Pluralising in
@@ -1810,6 +1849,10 @@ function setMode(m){
 
 /* ---------- RECIPE SHEET + BATCH ---------- */
 let cur=null, mult=1, normU='fl oz', batchQty='', batchU='g', dilution=25, dilTouched=false;
+/* On-the-fly tweaks: per-drink amount overrides for the open recipe, keyed by row index,
+   in the row's own sheet unit. Never stored -- closing or opening another drink clears
+   them; permanent changes belong on the RC tab. editIdx = the row whose stepper is open. */
+let ovr={}, editIdx=-1;
 /* Dilution default per Style. All eight of the sheet's styles are listed, so this is
    a lookup rather than a guess:
      stirred and spirit-forward -> 18   (Martini, Old Fashioned)
@@ -1830,7 +1873,7 @@ function computeRows(d){
      the percentages and the proportion bar. Without it a 1000 g batch of Vieux Carre
      actually produced 1049 g -- the bitters were added on top of a split that already
      summed to the target. isCount keeps the DISPLAY as a count; only the maths changes. */
-  const conv=d.i.map(it=>{ const [nm,a,u]=it; if(a==null)return{disp:'\u2014',raw:null};
+  const conv=d.i.map((it,ix)=>{ const nm=it[0], u=it[2], a=(ovr[ix]!=null?ovr[ix]:it[1]); if(a==null)return{disp:'\u2014',raw:null};
     if(BARE.has((u||'').toLowerCase().trim())) return {disp:`${fmt(a*mult)}`,raw:null};
     const f=convFactor(u,normU);
     if(f==null){
@@ -1847,14 +1890,19 @@ function computeRows(d){
   /* How many recipes' worth the batch target represents. The sheet's own Conversion
      Table already crosses mass and volume at 1 g/ml, so g, kg, ml, l, fl oz and oz
      all resolve through it -- no separate density assumption needed here. */
+  /* v2: the batch target is what ends up in the container, water INCLUDED. With 20%
+     dilution a 500 ml target is 416.7 ml of ingredients + 83.3 ml of water, so it fills a
+     500 ml bottle instead of overshooting to 600. ingQty = the ingredients' share. */
+  const dilF = (batching && dilution>0) ? 1+dilution/100 : 1;
+  const ingQty = batching ? parseFloat(batchQty)/dilF : 0;
   let bmult=null;
   if(batching && tot){
     const f=convFactor(batchU, normU);
-    if(f!=null) bmult = (parseFloat(batchQty)*f)/tot;
+    if(f!=null) bmult = (ingQty*f)/tot;
   }
   let html=d.i.map((it,idx)=>{
     const cc=conv[idx]; let right=(cc.raw&&tot)?`${Math.round(cc.raw/tot*100)}%`:'';
-    if(batching&&cc.raw&&tot){ const w=cc.raw/tot*parseFloat(batchQty); right=`${Math.round(w*10)/10} ${batchU}`; }
+    if(batching&&cc.raw&&tot){ const w=cc.raw/tot*ingQty; right=`${Math.round(w*10)/10} ${batchU}`; }
     /* Count units used to show nothing at all in the batch column, so 2 dashes of
        Angostura silently dropped out of a 1000 g batch. They scale like everything
        else; they just cannot be expressed as a share of a volume total. The scaled
@@ -1866,12 +1914,12 @@ function computeRows(d){
     /* Count rows show the scaled count, with the measurable amount underneath -- the
        same figure every other row shows, since their volume is now in the total. */
     else if(batching && bmult && cc.isCount && it[1]!=null){
-      const n=it[1]*mult*bmult, nr=Math.round(n*10)/10;
-      const w = (cc.raw!=null&&tot) ? cc.raw/tot*parseFloat(batchQty) : null;
+      const n=(ovr[idx]!=null?ovr[idx]:it[1])*mult*bmult, nr=Math.round(n*10)/10;
+      const w = (cc.raw!=null&&tot) ? cc.raw/tot*ingQty : null;
       right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim()
             + (w!=null ? `<span class="approx">\u2248${fmt(Math.round(w*10)/10)} ${batchU}</span>` : '');
     } else if(batching && bmult && cc.raw==null && it[1]!=null){
-      const n=it[1]*mult*bmult, nr=Math.round(n*10)/10;
+      const n=(ovr[idx]!=null?ovr[idx]:it[1])*mult*bmult, nr=Math.round(n*10)/10;
       right = `${fmt(nr)} ${unitLabel(nr,it[2])}`.trim();   // whole / leaves: no honest volume
     }
     /* Green/red only for categories actually tracked in My Bar. "Other" matched
@@ -1883,7 +1931,12 @@ function computeRows(d){
     const eu = it[4] ? sheetUrl(it[4],'rc') : '';
     // it[5], when published, is the cell note -- the specificity the value omits
     const note = it[5] ? noteHTML(it[5]) : '';
-    return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}"><span class="amt">${cc.disp}</span>`
+    const tweaked = ovr[idx]!=null && ovr[idx]!==it[1];
+    const canTweak = it[1]!=null;
+    const amtCell = (canTweak && editIdx===idx)
+      ? `<span class="amt editing"><button class="tw" onclick="event.stopPropagation();tweakAmt(${idx},-1)" aria-label="less">\u2212</button><b>${cc.disp}</b><button class="tw" onclick="event.stopPropagation();tweakAmt(${idx},1)" aria-label="more">+</button></span>`
+      : `<span class="amt${canTweak?' tappable':''}${tweaked?' tweaked':''}"${canTweak?` onclick="openTweak(${idx})" title="Tap to adjust"`:''}>${cc.disp}</span>`;
+    return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}${tweaked?' is-tweaked':''}">${amtCell}`
          + `<span class="nm"><i class="rdot" aria-hidden="true" style="--cat:${CAT_COLOR[it[3]]||'var(--faint)'}"></i>${it[0]}`
          + (eu?`<a class="rowedit" href="${eu}" target="_blank" rel="noopener" onclick="event.stopPropagation()">\u2197</a>`:'')
          + (note?`<span class="ingnote" title="${String(it[5]).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}" onclick="event.stopPropagation();this.classList.toggle('open')">${note}</span>`:'')
@@ -1895,7 +1948,7 @@ function computeRows(d){
      anatomy to read. It is excluded from the percentages and from the bar, because
      "20% water" is a fact about the batch, not about the drink. */
   if(batching && dilution>0){
-    const w=parseFloat(batchQty)*dilution/100;
+    const w=ingQty*dilution/100;
     const wv=tot*dilution/100;   // same water, expressed per-drink on the left
     html+=`<div class="recipe-row water"><span class="amt">${fmt(Math.round(wv*100)/100)} ${normU}</span>`
         + `<span class="nm"><i class="rdot" aria-hidden="true"></i>Water (dilution)</span>`
@@ -1937,14 +1990,45 @@ function computeRows(d){
      where a human is reading a jigger measurement. */
   const totVol = conv.reduce((s,x)=>s+((x.raw&&!x.isCount)?x.raw:0),0);
   const totL = totVol*(batching&&dilution>0 ? 1+dilution/100 : 1);
-  const totR = batching ? parseFloat(batchQty)*(dilution>0?1+dilution/100:1) : null;
+  const totR = batching ? parseFloat(batchQty) : null;   // the target IS the total now
+  /* "~N drinks" lives under the batch total in the right column -- it describes the
+     batch, and on the left it collided with the centred ratio. */
   if(tot) html+=`<div class="rfoot"><span class="tv">${fmt(Math.round(totL*100)/100)} ${normU}</span>`
-    + `<span class="lbl">TOTAL${(batching&&bmult)?` \u00b7 \u2248${fmt(Math.round(bmult))} DRINKS`:''}</span>`
+    + `<span class="lbl">TOTAL</span>`
     + `<span class="rt">${ratio||''}</span>`
-    + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}</span></div>`;
+    + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}`
+    + `${(batching&&bmult)?`<small>\u2248 ${fmt(Math.round(bmult))} drink${Math.round(bmult)===1?'':'s'}</small>`:''}</span></div>`;
+  /* ABV + standard drinks for what's on the left (one recipe x Scale), after this drink's
+     dilution. Skipped when any ingredient has no amount -- a partial number misleads. */
+  if(tot && d.i.every((it,ix)=>it[1]!=null || ovr[ix]!=null)){
+    let alc=0; d.i.forEach((it,ix)=>{ const r=conv[ix].raw; if(r) alc+=r*abvOf(it[0],it[3]); });
+    if(alc>0){
+      const dl=dilution>0?dilution:0, abv=alc/(tot*(1+dl/100))*100;
+      const mlF=convFactor(normU,'ml'), std = mlF!=null ? alc*mlF/17.74 : null;   // US standard drink = 14 g = 17.74 ml ethanol
+      html+=`<div class="abvline">\u2248 ${Math.round(abv)}% ABV${std!=null?` \u00b7 ${fmt(Math.round(std*10)/10)} standard drink${Math.round(std*10)/10===1?'':'s'}`:''}`
+          + `<span class="abvnote">Estimate \u00b7 includes ${dl}% dilution</span></div>`;
+    }
+  }
+  if(Object.keys(ovr).some(k=>ovr[k]!==d.i[k][1]))
+    html+=`<div class="tweakbar">Adjusted for this pour only \u00b7 <button onclick="resetTweaks()">Reset to recipe</button></div>`;
   return html;
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); syncBatchUI(); }
+window.openTweak=function(i){ editIdx = (editIdx===i ? -1 : i); updateRows(); };
+window.tweakAmt=function(i,dir){
+  if(!cur) return; const it=cur.i[i]; if(!it||it[1]==null) return;
+  const u=it[2], base=unitBase(u), f=convFactor(u,normU);
+  // step in the unit you SEE: 1/4 oz when showing fl oz, 5 ml when showing ml, 1 dash for dashes
+  let step;
+  if(f!=null && !NATIVE_UNITS.has(base)) step=(TWEAK_STEP[normU]||.25)/f;
+  else step=TWEAK_STEP[base]||TWEAK_STEP[u]||.5;
+  step=step/(mult||1);                       // the step applies to what's shown (x Scale)
+  const curA = ovr[i]!=null ? ovr[i] : it[1];
+  let v = Math.round((curA+dir*step)*10000)/10000;
+  if(v<0) v=0;
+  ovr[i]=v; updateRows();
+};
+window.resetTweaks=function(){ ovr={}; editIdx=-1; updateRows(); };
 // Style -> Family -> Era is a genuine taxonomy: broad build, then the specific
 // template, then the period. Rendered as a descending strip rather than three
 // sibling badges so the relationship reads at a glance.
@@ -2161,7 +2245,7 @@ window.closeStars=function(){ _closeNav(); };
 function _pushNav(kind){ if(_overlay===null){ try{ history.pushState({codex:kind},''); }catch(e){} } _overlay=kind; }
 function _closeNav(){ if(_overlay!==null){ if(history.state&&history.state.codex){ history.back(); } else { _applyClose(); } } }
 window.addEventListener('popstate',function(){ if(_overlay!==null) _applyClose(); });
-function openSheet(d){ cur=d; mult=1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb) _sb.scrollTop=0; _pushNav('sheet'); }
+function openSheet(d){ cur=d; mult=1; ovr={}; editIdx=-1; normU='fl oz'; batchQty=''; batchU='g'; dilTouched=false; dilution=defaultDilution(d); renderSheet(); document.getElementById('scrim').classList.add('show'); document.getElementById('sheet').classList.add('show'); const _sb=document.querySelector('.sbody'); if(_sb) _sb.scrollTop=0; _pushNav('sheet'); }
 function closeSheet(){ _closeNav(); }
 /* Drag the top bar down to dismiss. Bound to .sbar, which sits outside the scroll box,
    so it can never fight the body's own scrolling. */

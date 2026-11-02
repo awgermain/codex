@@ -405,3 +405,16 @@ published payload (`gid.c`, `gid.rc`) because a row number is ambiguous without 
   bottom-right corner; recipe sheet has the style icon in the kicker and the served icon
   on the Served value; Explore/filter rows (`expLabel`) show both.
 - Compact row padding is 9.5px (owner tuned: 8 was cramped, 11 too loose).
+
+### Recipe card: tweaks, batch target, ABV
+- **On-the-fly tweaks:** tap an amount -> inline -/+ stepper (1/4 oz, 5 ml, 1 dash...; floor 0,
+  no cap). Overrides live in `ovr{}` for the open drink only, never stored; cleared on open.
+  Everything (%, ratio, totals, batch, ABV) recomputes from them. Brass dot + "Reset to recipe".
+- **Batch target includes dilution:** `ingQty = batchQty / (1 + dilution%)`; water = ingQty x dil.
+  A 500 ml target now totals exactly 500 ml. 1 g = 1 ml is still assumed everywhere
+  (owner chose to table per-category densities).
+- **"~N drinks"** moved under the batch total in the right column (was colliding with the ratio).
+- **ABV estimate:** `abvOf(name,cat)` = category default (Spirit 40, Modifier 20, others 0) with
+  ~25 name overrides (vermouth 17, Chartreuse 55, Aperol 11, beer 5...). Shown under the footer
+  with US standard drinks (17.74 ml ethanol), after the drink's current dilution. Hidden when any
+  ingredient lacks an amount.
