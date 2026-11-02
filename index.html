@@ -709,7 +709,7 @@
      dot) further right than a short "1 fl oz" -- the names never lined up. Longest
      string in the data is 12ch, so 13ch fits every case with the text reading
      left-aligned exactly as before. */
-  .recipe-row .amt{width:13ch;flex:none;font-family:var(--mono);font-size:14px;
+  .recipe-row .amt{width:15ch;flex:none;font-family:var(--mono);font-size:14px;
     color:var(--brass);font-weight:700}
   /* min-width:0 lets the name column shrink to its share of the row; without it a long
      inline note set the column's minimum width and pushed that row's % off the edge. */
@@ -739,10 +739,18 @@
   /* a tweaked amount gets a small brass dot after it (inside the cell -- the card's left
      edge would clip anything placed before it) */
   .recipe-row .amt.tweaked::after{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--brass);margin-left:6px;vertical-align:middle;box-shadow:0 0 0 2px rgba(199,154,75,.18)}
-  .recipe-row .amt.editing{display:inline-flex;align-items:center;gap:6px;width:auto;min-width:13ch}
-  .recipe-row .amt.editing b{font-weight:500;white-space:nowrap}
-  .recipe-row .amt .tw{width:24px;height:24px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--raised);
-    color:var(--brass);font:500 15px/1 var(--mono);cursor:pointer;padding:0;display:inline-flex;align-items:center;justify-content:center}
+  /* Editing: the amount text never moves. An up/down pair sits at a FIXED spot at the
+     right end of the amount column, so the same spot can be tapped again and again and
+     the ingredient column never shifts, whatever the number of decimals. */
+  .recipe-row .amt{position:relative}
+  .recipe-row .amt.editing{color:var(--ink)}
+  .recipe-row .amt .tws{position:absolute;right:2px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px}
+  .recipe-row .amt .tw{width:26px;height:19px;border:1px solid var(--line);background:var(--raised);color:var(--brass);
+    font:9px/1 var(--mono);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+  .recipe-row .amt .tw.up{border-radius:6px 6px 2px 2px}
+  .recipe-row .amt .tw.dn{border-radius:2px 2px 6px 6px}
+  .recipe-row .amt .tw:active{background:var(--brass);color:var(--bg)}
+  .recipe-row .amt.editing.tweaked::after{display:none}   /* the open stepper already marks the row */
   .tweakbar{margin-top:10px;font-family:var(--mono);font-size:10.5px;color:var(--brass);letter-spacing:.03em}
   .tweakbar button{background:none;border:0;padding:0;color:var(--ink);text-decoration:underline;font:inherit;cursor:pointer}
   /* water is not part of the drink: winter blue, and left out of both the
@@ -1934,7 +1942,7 @@ function computeRows(d){
     const tweaked = ovr[idx]!=null && ovr[idx]!==it[1];
     const canTweak = it[1]!=null;
     const amtCell = (canTweak && editIdx===idx)
-      ? `<span class="amt editing"><button class="tw" onclick="event.stopPropagation();tweakAmt(${idx},-1)" aria-label="less">\u2212</button><b>${cc.disp}</b><button class="tw" onclick="event.stopPropagation();tweakAmt(${idx},1)" aria-label="more">+</button></span>`
+      ? `<span class="amt tappable editing${tweaked?' tweaked':''}" onclick="openTweak(${idx})">${cc.disp}<span class="tws" onclick="event.stopPropagation()"><button class="tw up" onclick="tweakAmt(${idx},1)" aria-label="more">\u25B2</button><button class="tw dn" onclick="tweakAmt(${idx},-1)" aria-label="less">\u25BC</button></span></span>`
       : `<span class="amt${canTweak?' tappable':''}${tweaked?' tweaked':''}"${canTweak?` onclick="openTweak(${idx})" title="Tap to adjust"`:''}>${cc.disp}</span>`;
     return `<div class="recipe-row ${!tracked?'untracked':(stocked?'have':'miss')}${tweaked?' is-tweaked':''}">${amtCell}`
          + `<span class="nm"><i class="rdot" aria-hidden="true" style="--cat:${CAT_COLOR[it[3]]||'var(--faint)'}"></i>${it[0]}`
@@ -1997,7 +2005,8 @@ function computeRows(d){
     + `<span class="lbl">TOTAL</span>`
     + `<span class="rt">${ratio||''}</span>`
     + `<span class="gt">${totR!==null?`${fmt(Math.round(totR*10)/10)} ${batchU}`:''}`
-    + `${(batching&&bmult)?`<small>\u2248 ${fmt(Math.round(bmult))} drink${Math.round(bmult)===1?'':'s'}</small>`:''}</span></div>`;
+    + `${(batching&&totR)?(()=>{ const alt=altUnit(totR,batchU); return alt?`<small class="alt">${alt}</small>`:''; })():''}`
+    + `${(batching&&bmult)?(()=>{ const n=Math.round(bmult*mult); return `<small>\u2248 ${fmt(n)} drink${n===1?'':'s'}</small>`; })():''}</span></div>`;
   /* ABV + standard drinks for what's on the left (one recipe x Scale), after this drink's
      dilution. Skipped when any ingredient has no amount -- a partial number misleads. */
   if(tot && d.i.every((it,ix)=>it[1]!=null || ovr[ix]!=null)){
@@ -2014,6 +2023,14 @@ function computeRows(d){
   return html;
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); syncBatchUI(); }
+/* The batch total in the other system: metric target -> fl oz (and cups once it's big
+   enough to measure that way); US target -> ml. Uses 1 g = 1 ml like the rest of the app. */
+function altUnit(q,u){
+  const toOz=convFactor(u,'fl oz'), toMl=convFactor(u,'ml'); if(toOz==null||toMl==null||!q) return '';
+  if(u==='fl oz'||u==='oz'){ const ml=q*toMl; return ml>=1000?`\u2248 ${fmt(Math.round(ml/10)/100)} l`:`\u2248 ${fmt(Math.round(ml))} ml`; }
+  const oz=q*toOz, cups=oz/8;
+  return `\u2248 ${fmt(Math.round(oz*10)/10)} fl oz`+(cups>=2?` \u00b7 ${fmt(Math.round(cups*4)/4)} cups`:'');
+}
 window.openTweak=function(i){ editIdx = (editIdx===i ? -1 : i); updateRows(); };
 window.tweakAmt=function(i,dir){
   if(!cur) return; const it=cur.i[i]; if(!it||it[1]==null) return;
