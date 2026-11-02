@@ -2023,13 +2023,11 @@ function computeRows(d){
   return html;
 }
 function updateRows(){ const el=document.getElementById('recipeRows'); if(el&&cur)el.innerHTML=computeRows(cur); syncBatchUI(); }
-/* The batch total in the other system: metric target -> fl oz (and cups once it's big
-   enough to measure that way); US target -> ml. Uses 1 g = 1 ml like the rest of the app. */
+/* The batch total in the other system: metric target -> fl oz; US target -> ml. Uses 1 g = 1 ml like the rest of the app. */
 function altUnit(q,u){
   const toOz=convFactor(u,'fl oz'), toMl=convFactor(u,'ml'); if(toOz==null||toMl==null||!q) return '';
   if(u==='fl oz'||u==='oz'){ const ml=q*toMl; return ml>=1000?`\u2248 ${fmt(Math.round(ml/10)/100)} l`:`\u2248 ${fmt(Math.round(ml))} ml`; }
-  const oz=q*toOz, cups=oz/8;
-  return `\u2248 ${fmt(Math.round(oz*10)/10)} fl oz`+(cups>=2?` \u00b7 ${fmt(Math.round(cups*4)/4)} cups`:'');
+  return `\u2248 ${fmt(Math.round(q*toOz*10)/10)} fl oz`;
 }
 window.openTweak=function(i){ editIdx = (editIdx===i ? -1 : i); updateRows(); };
 window.tweakAmt=function(i,dir){
